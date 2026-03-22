@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BFL Fantasy Cricket 2026 — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .grid-bg {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(200,241,53,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200,241,53,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+    .role-tab {
+      flex: 1; padding: 9px 0; background: transparent; border: none; border-radius: 7px;
+      font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+      color: var(--text2); cursor: pointer; transition: all 0.2s ease;
+    }
+    .role-tab.active { background: var(--accent); color: #000; }
+    .pwd-toggle {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--text3);
+      padding: 6px; border-radius: 6px; cursor: pointer; transition: color 0.2s;
+    }
+    .pwd-toggle:hover { color: var(--text2); }
+    .pwd-toggle svg { width: 18px; height: 18px; stroke: currentColor; display: block; }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+<div class="grid-bg"></div>
+
+<div class="login-wrap" style="position:relative;z-index:1;">
+  <div class="login-card">
+
+    <div class="login-logo">
+      <div class="login-logo-text">BFL Fantasy</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:4px;letter-spacing:3px;text-transform:uppercase;">IPL 2026</div>
+    </div>
+
+    <!-- Role tabs -->
+    <div style="display:flex;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:4px;margin-bottom:24px;">
+      <button class="role-tab active" id="tab-team"  onclick="setRole('team')">My Team</button>
+      <button class="role-tab"        id="tab-admin" onclick="setRole('admin')">Admin</button>
+    </div>
+
+    <!-- Team selector (hidden in admin mode) -->
+    <div class="form-group" id="team-row">
+      <label class="form-label">Select Team</label>
+      <select class="form-select" id="team-select">
+        <option value="">— Loading teams… —</option>
+      </select>
+    </div>
+
+    <!-- Password -->
+    <div class="form-group">
+      <label class="form-label" id="pwd-label">Team Password</label>
+      <div class="input-wrap">
+        <input class="form-input" type="password" id="password"
+          placeholder="Enter your password" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter') doLogin()">
+        <button class="pwd-toggle" type="button" onclick="togglePwd()">
+          <svg id="eye-show" viewBox="0 0 24 24" fill="none" stroke-linecap="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+          </svg>
+          <svg id="eye-hide" style="display:none;" viewBox="0 0 24 24" fill="none" stroke-linecap="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div id="auth-error" style="color:var(--red);font-size:13px;min-height:18px;margin-bottom:12px;"></div>
+
+    <button class="btn btn-accent btn-full" id="login-btn" onclick="doLogin()">
+      Enter Auction Room
+    </button>
+
+    <div style="text-align:center;margin-top:20px;font-size:12px;color:var(--text3);">
+      BFL Fantasy Cricket · Private System
+    </div>
+  </div>
+</div>
+
+<!-- Load Supabase from unpkg (avoids Edge Tracking Prevention on jsdelivr) -->
+<script src="https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+<script>
+'use strict';
+
+var _role  = 'team';
+var _teams = [];
+
+// ── Role switcher ────────────────────────────────────────────
+function setRole(r) {
+  _role = r;
+  document.getElementById('tab-team').classList.toggle('active',  r === 'team');
+  document.getElementById('tab-admin').classList.toggle('active', r === 'admin');
+  document.getElementById('team-row').style.display = r === 'team' ? '' : 'none';
+  document.getElementById('pwd-label').textContent  = r === 'admin' ? 'Admin Password' : 'Team Password';
+  document.getElementById('login-btn').textContent  = r === 'admin' ? 'Enter Control Room' : 'Enter Auction Room';
+  document.getElementById('auth-error').textContent = '';
+}
+
+// ── Password toggle ──────────────────────────────────────────
+function togglePwd() {
+  var inp  = document.getElementById('password');
+  var show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  document.getElementById('eye-show').style.display = show ? 'none' : '';
+  document.getElementById('eye-hide').style.display = show ? ''     : 'none';
+}
+
+// ── Load teams ───────────────────────────────────────────────
+async function loadTeams() {
+  try {
+    var res = await sb.from('fantasy_teams').select('id,team_name').order('team_name');
+    _teams  = (res.data && res.data.length) ? res.data : [];
+  } catch(e) { _teams = []; }
+
+  var sel = document.getElementById('team-select');
+  sel.innerHTML = '<option value="">— Pick your team —</option>' +
+    _teams.map(function(t) {
+      return '<option value="' + t.id + '">' + t.team_name + '</option>';
+    }).join('');
+}
+
+// ── Login ────────────────────────────────────────────────────
+async function doLogin() {
+  var errEl = document.getElementById('auth-error');
+  var btn   = document.getElementById('login-btn');
+  var pwd   = document.getElementById('password').value.trim();
+  errEl.textContent = '';
+
+  if (!pwd) { errEl.textContent = 'Please enter your password.'; return; }
+  if (btn._busy) return;
+  btn._busy = true;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spin"></span> Signing in…';
+
+  try {
+    if (_role === 'admin') {
+      // ── Admin login ───────────────────────────────────────
+      var r = await sb.auth.signInWithPassword({ email: 'admin@bfl.in', password: pwd });
+      if (r.error) {
+        // Surface the real Supabase error so we know what went wrong
+        throw new Error(r.error.message || 'Incorrect admin password.');
+      }
+      UI.navigate('admin.html');
+
+    } else {
+      // ── Team login ────────────────────────────────────────
+      var tid = document.getElementById('team-select').value;
+      if (!tid) { throw new Error('Please select your team first.'); }
+
+      var team  = _teams.find(function(t) { return t.id === tid; });
+      var email = Auth.teamEmail(team.team_name);
+      var r2    = await sb.auth.signInWithPassword({ email: email, password: pwd });
+      if (r2.error) {
+        throw new Error('Incorrect password. Contact the auctioneer.');
+      }
+      UI.navigate('dashboard.html');
+    }
+  } catch(e) {
+    errEl.textContent = e.message;
+    btn._busy    = false;
+    btn.disabled = false;
+    btn.textContent = _role === 'admin' ? 'Enter Control Room' : 'Enter Auction Room';
+  }
+}
+
+// ── Auto-redirect if already logged in ──────────────────────
+(async function init() {
+  var sess = await Auth.getSession();
+  if (sess) {
+    if (Auth.isAdmin(sess.user)) { window.location.href = 'admin.html'; return; }
+    window.location.href = 'dashboard.html'; return;
+  }
+  await loadTeams();
+})();
+</script>
+</body>
+</html>

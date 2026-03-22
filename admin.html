@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — BFL Fantasy IPL 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+
+<!-- Admin navbar (red accent) -->
+<nav class="navbar" style="border-bottom-color:rgba(255,77,109,0.45);">
+  <div class="container" style="display:flex;align-items:center;gap:12px;">
+    <div class="nav-logo"><span class="nav-logo-dot" style="background:var(--red);"></span>BFL Admin</div>
+    <div style="margin-left:auto;display:flex;gap:10px;align-items:center;">
+      <div class="nav-user">
+        <div class="nav-avatar" style="background:linear-gradient(135deg,var(--red),var(--purple));">A</div>
+        <span>Auctioneer</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<div class="page-wrap">
+  <main class="main" style="position:relative;z-index:1;">
+    <div class="container">
+
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;">
+        <div>
+          <div class="page-title">Admin Control Room</div>
+          <div class="page-sub">Manage matches · Enter stats · Calculate points</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="loadAll()">↻ Refresh</button>
+          <a href="leaderboard.html" class="btn btn-ghost btn-sm" target="_blank">View Leaderboard ↗</a>
+        </div>
+      </div>
+
+      <!-- Quick stats -->
+      <div class="stat-grid" style="margin-bottom:24px;" id="admin-stats">
+        <div class="skel skel-chip"></div>
+        <div class="skel skel-chip"></div>
+        <div class="skel skel-chip"></div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('matches')">Matches</button>
+        <button class="tab-btn" onclick="switchTab('stats')">Player Stats</button>
+        <button class="tab-btn" onclick="switchTab('calc')">Calculate Points</button>
+        <button class="tab-btn" onclick="switchTab('teams')">Teams</button>
+      </div>
+
+      <!-- ═══ MATCHES ═══ -->
+      <div class="tab-panel active" id="tab-matches">
+        <div id="matches-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div class="card">
+            <div class="card-title">Add / Edit Match</div>
+            <input type="hidden" id="edit-match-id">
+            <div class="form-group">
+              <label class="form-label">Match Title</label>
+              <input class="form-input" id="m-title" placeholder="e.g. CSK vs MI — Match 1">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="form-group"><label class="form-label">Team 1</label><input class="form-input" id="m-team1" placeholder="CSK"></div>
+              <div class="form-group"><label class="form-label">Team 2</label><input class="form-input" id="m-team2" placeholder="MI"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Match Date & Time</label><input class="form-input" type="datetime-local" id="m-date" style="color-scheme:dark;"></div>
+            <div class="form-group"><label class="form-label">Venue</label><input class="form-input" id="m-venue" placeholder="Wankhede Stadium, Mumbai"></div>
+            <div class="card-title" style="margin-top:16px;font-size:11px;">Result (fill after match)</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="form-group"><label class="form-label">Actual Target</label><input class="form-input font-mono" id="m-target" type="number" placeholder="185"></div>
+              <div class="form-group"><label class="form-label">Winner (exact)</label><input class="form-input" id="m-winner" placeholder="CSK"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Player of Match (exact name)</label><input class="form-input" id="m-pom" placeholder="e.g. Virat Kohli"></div>
+            <div style="display:flex;gap:10px;">
+              <button class="btn btn-accent" onclick="saveMatch()">Save Match</button>
+              <button class="btn btn-ghost" onclick="clearMatchForm()">Clear</button>
+            </div>
+          </div>
+
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="padding:18px 20px 0;"><div class="card-title">All Matches</div></div>
+            <div class="table-wrap" style="max-height:480px;overflow-y:auto;">
+              <table class="data-table">
+                <thead><tr><th>Match</th><th>Date</th><th>Status</th><th></th></tr></thead>
+                <tbody id="matches-tbody"><tr><td colspan="4"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ PLAYER STATS ═══ -->
+      <div class="tab-panel" id="tab-stats">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-title">Select Match &amp; Player</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+              <label class="form-label">Match</label>
+              <select class="form-select" id="stats-match-select" onchange="loadStatsForm()">
+                <option value="">— Select match —</option>
+              </select>
+            </div>
+            <div style="flex:1;min-width:200px;">
+              <label class="form-label">Player</label>
+              <select class="form-select" id="stats-player-select" onchange="prefillStats()">
+                <option value="">— Select player —</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="stats-form-card" style="display:none;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+            <div class="card-title" style="margin:0;" id="stats-player-name">Player Stats</div>
+            <div style="background:var(--accent-dim);border:1px solid rgba(200,241,53,0.2);border-radius:8px;padding:7px 14px;">
+              <span style="font-size:11px;color:var(--text2);">Estimated Pts: </span>
+              <span id="live-pts" style="font-family:'Syne',sans-serif;font-weight:800;color:var(--accent);font-size:18px;">0</span>
+            </div>
+          </div>
+          <input type="hidden" id="stat-match-id">
+          <input type="hidden" id="stat-player-id">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;">
+            <div style="grid-column:1/-1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f87171;">Batting</div>
+            <div class="form-group"><label class="form-label">Runs</label><input class="form-input font-mono" type="number" id="s-runs" min="0" oninput="recalcLive()"></div>
+            <div class="form-group"><label class="form-label">Balls Faced</label><input class="form-input font-mono" type="number" id="s-balls" min="0" oninput="recalcLive()"></div>
+            <div class="form-group"><label class="form-label">Fours</label><input class="form-input font-mono" type="number" id="s-fours" min="0" oninput="recalcLive()"></div>
+            <div class="form-group"><label class="form-label">Sixes</label><input class="form-input font-mono" type="number" id="s-sixes" min="0" oninput="recalcLive()"></div>
+            <div class="form-group"><label class="form-label">Not Out?</label><select class="form-select" id="s-notout" onchange="recalcLive()"><option value="">No</option><option value="true">Yes</option></select></div>
+            <div style="grid-column:1/-1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#60a5fa;margin-top:4px;">Bowling</div>
+            <div class="form-group"><label class="form-label">Wickets</label><input class="form-input font-mono" type="number" id="s-wickets" min="0" oninput="recalcLive()"></div>
+            <div class="form-group"><label class="form-label">Overs</label><input class="form-input font-mono" type="number" id="s-overs" min="0" step="0.1" oninput="recalcLive()"></div>
+            <div class="form-group"><label class="form-label">Runs Conceded</label><input class="form-input font-mono" type="number" id="s-runsc" min="0" oninput="recalcLive()"></div>
+            <div class="form-group"><label class="form-label">Maidens</label><input class="form-input font-mono" type="number" id="s-maidens" min="0" oninput="recalcLive()"></div>
+            <div style="grid-column:1/-1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#34d399;margin-top:4px;">Fielding</div>
+            <div class="form-group"><label class="form-label">Catches</label><input class="form-input font-mono" type="number" id="s-catches" min="0" oninput="recalcLive()"></div>
+            <div class="form-group"><label class="form-label">Run Outs</label><input class="form-input font-mono" type="number" id="s-runouts" min="0" oninput="recalcLive()"></div>
+            <div class="form-group"><label class="form-label">Stumpings</label><input class="form-input font-mono" type="number" id="s-stumpings" min="0" oninput="recalcLive()"></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px;">
+            <button class="btn btn-accent" onclick="saveStats()">Save Stats</button>
+            <button class="btn btn-ghost" onclick="clearStatsForm()">Clear</button>
+          </div>
+        </div>
+
+        <div class="card" id="saved-stats-card" style="display:none;margin-top:16px;">
+          <div class="card-title">Saved Stats for This Match</div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Player</th><th>Runs</th><th>Wkts</th><th>Catches</th><th>Est. Pts</th></tr></thead>
+              <tbody id="saved-stats-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ CALCULATE ═══ -->
+      <div class="tab-panel" id="tab-calc">
+        <div id="calc-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div class="card">
+            <div class="card-title">Calculate Points for Match</div>
+            <div class="form-group">
+              <label class="form-label">Select Match</label>
+              <select class="form-select" id="calc-match-select"><option value="">— Select match —</option></select>
+            </div>
+            <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.7;">
+              This will:<br>
+              • Calculate batting, bowling, fielding pts for all players<br>
+              • Apply captain (2×), VC (1.5×), Impact Player (3×)<br>
+              • Score each team's target &amp; winner prediction<br>
+              • Refresh the leaderboard &amp; lock the match
+            </div>
+            <button class="btn btn-gold btn-full" id="calc-btn" onclick="calculatePoints()" style="font-size:15px;padding:13px;">
+              ⚡ Calculate &amp; Lock Match
+            </button>
+          </div>
+          <div class="card">
+            <div class="card-title">Calculation Log</div>
+            <div class="calc-log" id="calc-log" style="min-height:200px;">
+              <div class="calc-log-line" style="color:var(--text3);">Awaiting calculation…</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="document.getElementById('calc-log').innerHTML=''">Clear Log</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TEAMS ═══ -->
+      <div class="tab-panel" id="tab-teams">
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div style="padding:18px 20px 0;"><div class="card-title">All Fantasy Teams</div></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>#</th><th>Team Name</th><th>Owner</th><th>Matches</th><th>Total Pts</th></tr></thead>
+              <tbody id="teams-tbody"><tr><td colspan="5"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/api.js"></script>
+<script>
+'use strict';
+var _allPlayers = [], _allMatches = [];
+
+async function doLogout() { await Auth.signOut(); }
+
+async function init() {
+  var sess = await Auth.getSession();
+  if (!sess) { window.location.href = 'index.html'; return; }
+  if (!Auth.isAdmin(sess.user)) { window.location.href = 'dashboard.html'; return; }
+  await loadAll();
+}
+
+async function loadAll() {
+  await Promise.all([loadPlayers(), loadMatches(), loadTeams(), loadAdminStats()]);
+}
+
+async function loadAdminStats() {
+  try {
+    var [lb, matches] = await Promise.all([API.fetchLeaderboard(), API.fetchMatches()]);
+    var locked = matches.filter(function(m){ return m.is_locked; }).length;
+    document.getElementById('admin-stats').innerHTML =
+      '<div class="stat-chip" style="animation:fade-up 0.3s ease both;"><div class="stat-chip-val">' + matches.length + '</div><div class="stat-chip-lbl">Total Matches</div></div>' +
+      '<div class="stat-chip gold" style="animation:fade-up 0.3s 0.07s ease both;"><div class="stat-chip-val" style="color:var(--gold);">' + locked + '</div><div class="stat-chip-lbl">Completed</div></div>' +
+      '<div class="stat-chip cyan" style="animation:fade-up 0.3s 0.14s ease both;"><div class="stat-chip-val" style="color:var(--cyan);">' + lb.length + '</div><div class="stat-chip-lbl">Teams Active</div></div>';
+  } catch(e) {}
+}
+
+async function loadPlayers() {
+  _allPlayers = await API.fetchAllPlayers();
+  var sel = document.getElementById('stats-player-select');
+  if (sel) {
+    sel.innerHTML = '<option value="">— Select player —</option>' +
+      _allPlayers.map(function(p){ return '<option value="' + p.id + '">' + p.name + ' (' + (p.ipl_team||'?') + ')</option>'; }).join('');
+  }
+}
+
+async function loadMatches() {
+  _allMatches = await API.fetchMatches();
+  renderMatchesList();
+  ['stats-match-select','calc-match-select'].forEach(function(id) {
+    var sel = document.getElementById(id); if (!sel) return;
+    var cur = sel.value;
+    sel.innerHTML = '<option value="">— Select match —</option>' +
+      _allMatches.map(function(m){ return '<option value="' + m.id + '">' + UI.esc(m.match_title || m.team1 + ' vs ' + m.team2) + ' · ' + UI.shortDate(m.match_date) + '</option>'; }).join('');
+    if (cur) sel.value = cur;
+  });
+}
+
+async function loadTeams() {
+  var lb    = await API.fetchLeaderboard();
+  var tbody = document.getElementById('teams-tbody');
+  if (!lb.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No teams yet</td></tr>'; return; }
+  tbody.innerHTML = lb.map(function(r) {
+    return '<tr><td class="rank">' + r.rank + '</td>' +
+      '<td style="font-weight:700;">' + UI.esc(r.team ? r.team.team_name : '—') + '</td>' +
+      '<td style="color:var(--text2);">' + UI.esc(r.team ? (r.team.owner_name||'—') : '—') + '</td>' +
+      '<td>' + r.matches_played + '</td><td class="pts">' + r.total_points + '</td></tr>';
+  }).join('');
+}
+
+function renderMatchesList() {
+  var tbody = document.getElementById('matches-tbody');
+  if (!_allMatches.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No matches yet</td></tr>'; return; }
+  tbody.innerHTML = _allMatches.map(function(m) {
+    return '<tr>' +
+      '<td style="font-weight:600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + UI.esc(m.match_title || m.team1 + ' vs ' + m.team2) + '</td>' +
+      '<td style="color:var(--text2);font-size:13px;white-space:nowrap;">' + UI.shortDate(m.match_date) + '</td>' +
+      '<td><span class="match-status ' + (m.is_locked ? (m.winner ? 'status-done' : 'status-locked') : 'status-open') + '">' + (m.is_locked ? (m.winner ? 'Done' : 'Locked') : 'Open') + '</span></td>' +
+      '<td><button class="btn btn-ghost btn-sm" onclick="editMatch(\'' + m.id + '\')">Edit</button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function switchTab(tab) {
+  var tabs = ['matches','stats','calc','teams'];
+  document.querySelectorAll('.tab-btn').forEach(function(b, i){ b.classList.toggle('active', tabs[i] === tab); });
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+function clearMatchForm() {
+  ['edit-match-id','m-title','m-team1','m-team2','m-venue','m-winner','m-pom'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
+  document.getElementById('m-target').value = '';
+  document.getElementById('m-date').value   = '';
+}
+
+function editMatch(matchId) {
+  var m = _allMatches.find(function(x){ return x.id === matchId; }); if (!m) return;
+  document.getElementById('edit-match-id').value = m.id;
+  document.getElementById('m-title').value  = m.match_title || '';
+  document.getElementById('m-team1').value  = m.team1 || '';
+  document.getElementById('m-team2').value  = m.team2 || '';
+  document.getElementById('m-date').value   = m.match_date ? m.match_date.substring(0,16) : '';
+  document.getElementById('m-venue').value  = m.venue || '';
+  document.getElementById('m-target').value = m.actual_target || '';
+  document.getElementById('m-winner').value = m.winner || '';
+  // Find player name for PoM id
+  var pomPlayer = m.player_of_match ? _allPlayers.find(function(p){ return p.id === m.player_of_match; }) : null;
+  document.getElementById('m-pom').value = pomPlayer ? pomPlayer.name : '';
+  switchTab('matches');
+  document.getElementById('m-title').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+async function saveMatch() {
+  var id     = document.getElementById('edit-match-id').value;
+  var team1  = document.getElementById('m-team1').value.trim();
+  var team2  = document.getElementById('m-team2').value.trim();
+  var date   = document.getElementById('m-date').value;
+  var target = parseInt(document.getElementById('m-target').value || '0') || null;
+  var winner = document.getElementById('m-winner').value.trim() || null;
+  var pom    = document.getElementById('m-pom').value.trim() || null;
+  if (!team1 || !team2) { UI.toast('Enter both team names', 'warn'); return; }
+
+  var pomPlayerId = null;
+  if (pom) {
+    var pomPlayer = _allPlayers.find(function(p){ return p.name.toLowerCase() === pom.toLowerCase(); });
+    if (pomPlayer) pomPlayerId = pomPlayer.id;
+    else UI.toast('Player of Match "' + pom + '" not found in players table', 'warn');
+  }
+
+  var match = {
+    match_title:     document.getElementById('m-title').value.trim() || (team1 + ' vs ' + team2),
+    team1, team2,
+    venue:           document.getElementById('m-venue').value.trim(),
+    match_date:      date ? new Date(date).toISOString() : null,
+    actual_target:   target,
+    winner,
+    player_of_match: pomPlayerId,
+    is_locked:       !!winner,
+  };
+  if (id) match.id = id;
+
+  try {
+    await API.upsertMatch(match);
+    UI.toast('Match saved!', 'success');
+    clearMatchForm();
+    await loadMatches();
+  } catch(e) { UI.toast('Save failed: ' + e.message, 'error'); }
+}
+
+// Stats
+async function loadStatsForm() {
+  var matchId = document.getElementById('stats-match-select').value;
+  document.getElementById('stats-form-card').style.display = 'none';
+  if (!matchId) return;
+  await loadSavedStats(matchId);
+}
+
+async function loadSavedStats(matchId) {
+  var card  = document.getElementById('saved-stats-card');
+  var tbody = document.getElementById('saved-stats-tbody');
+  card.style.display = 'none';
+  try {
+    var stats = await API.fetchPlayerStats(matchId);
+    if (!stats.length) return;
+    card.style.display = '';
+    tbody.innerHTML = stats.map(function(s) {
+      var est = API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s);
+      return '<tr>' +
+        '<td style="font-weight:600;">' + UI.esc(s.player ? s.player.name : '—') + '</td>' +
+        '<td class="font-mono">' + (s.runs||0) + '</td>' +
+        '<td class="font-mono">' + (s.wickets||0) + '</td>' +
+        '<td class="font-mono">' + (s.catches||0) + '</td>' +
+        '<td class="pts">' + Math.round(est) + '</td></tr>';
+    }).join('');
+  } catch(e) {}
+}
+
+function prefillStats() {
+  var playerId = document.getElementById('stats-player-select').value;
+  if (!playerId) { document.getElementById('stats-form-card').style.display = 'none'; return; }
+  var player = _allPlayers.find(function(p){ return p.id === playerId; });
+  document.getElementById('stats-player-name').textContent = player ? player.name : 'Player Stats';
+  document.getElementById('stat-match-id').value  = document.getElementById('stats-match-select').value;
+  document.getElementById('stat-player-id').value = playerId;
+  clearStatsForm(false);
+  document.getElementById('stats-form-card').style.display = '';
+}
+
+function clearStatsForm(hideCard) {
+  if (hideCard === undefined) hideCard = true;
+  ['s-runs','s-balls','s-fours','s-sixes','s-wickets','s-overs','s-runsc','s-maidens','s-catches','s-runouts','s-stumpings'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
+  document.getElementById('s-notout').value = '';
+  if (hideCard) document.getElementById('stats-form-card').style.display = 'none';
+  recalcLive();
+}
+
+function getStatsObj() {
+  return {
+    runs:          parseInt(document.getElementById('s-runs').value     || 0),
+    balls_faced:   parseInt(document.getElementById('s-balls').value    || 0),
+    fours:         parseInt(document.getElementById('s-fours').value    || 0),
+    sixes:         parseInt(document.getElementById('s-sixes').value    || 0),
+    not_out:       document.getElementById('s-notout').value === 'true',
+    wickets:       parseInt(document.getElementById('s-wickets').value  || 0),
+    overs_bowled:  parseFloat(document.getElementById('s-overs').value  || 0),
+    runs_conceded: parseInt(document.getElementById('s-runsc').value    || 0),
+    maidens:       parseInt(document.getElementById('s-maidens').value  || 0),
+    catches:       parseInt(document.getElementById('s-catches').value  || 0),
+    run_outs:      parseInt(document.getElementById('s-runouts').value  || 0),
+    stumpings:     parseInt(document.getElementById('s-stumpings').value|| 0),
+  };
+}
+
+function recalcLive() {
+  var s   = getStatsObj();
+  var pts = API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s);
+  var el  = document.getElementById('live-pts');
+  if (el) el.textContent = Math.round(pts);
+}
+
+async function saveStats() {
+  var matchId  = document.getElementById('stat-match-id').value;
+  var playerId = document.getElementById('stat-player-id').value;
+  if (!matchId || !playerId) { UI.toast('Select match and player first', 'warn'); return; }
+  var s = getStatsObj();
+  s.match_id  = matchId;
+  s.player_id = playerId;
+  try {
+    await API.upsertPlayerStats(s);
+    UI.toast('Stats saved!', 'success');
+    await loadSavedStats(matchId);
+  } catch(e) { UI.toast('Save failed: ' + e.message, 'error'); }
+}
+
+// Calculate
+function addLog(msg, type) {
+  var log  = document.getElementById('calc-log');
+  var line = document.createElement('div');
+  line.className = 'calc-log-line ' + (type || '');
+  line.textContent = '[' + new Date().toLocaleTimeString('en-IN') + '] ' + msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function calculatePoints() {
+  var matchId = document.getElementById('calc-match-select').value;
+  if (!matchId) { UI.toast('Select a match first', 'warn'); return; }
+  var btn = document.getElementById('calc-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spin"></span> Calculating…';
+  document.getElementById('calc-log').innerHTML = '';
+  addLog('Starting for match ID: ' + matchId);
+
+  try {
+    var results = await API.calculateMatchPoints(matchId);
+    addLog('Calculated ' + results.length + ' team scores.', 'good');
+    results.forEach(function(r) {
+      var impactNote = r.breakdown && r.breakdown.impactPlayerId ? ' (⚡ Impact applied)' : '';
+      addLog('  → ' + r.fantasy_team_id.substring(0,8) + '… Squad ' + r.squad_points + ' + Pred ' + r.prediction_points + ' = ' + r.total_points + ' pts' + impactNote, 'good');
+    });
+    addLog('Leaderboard refreshed. Match locked. Done!', 'good');
+    UI.toast('Points calculated & match locked!', 'success');
+    await Promise.all([loadMatches(), loadAdminStats(), loadTeams()]);
+  } catch(e) {
+    addLog('ERROR: ' + e.message, 'error');
+    UI.toast('Calculation failed: ' + e.message, 'error');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '⚡ Calculate &amp; Lock Match';
+}
+
+function fixGrids() {
+  var narrow = window.innerWidth < 700;
+  ['matches-grid','calc-grid'].forEach(function(id){
+    var g = document.getElementById(id);
+    if (g) g.style.gridTemplateColumns = narrow ? '1fr' : '1fr 1fr';
+  });
+}
+window.addEventListener('resize', fixGrids);
+fixGrids();
+
+init();
+</script>
+</body>
+</html>
