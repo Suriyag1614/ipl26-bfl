@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leaderboard — BFL Fantasy IPL 2026</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,6 +16,7 @@
 <nav class="navbar" id="navbar"></nav>
 <div class="bottom-nav"><div class="bottom-nav-inner" id="bottom-nav-inner"></div></div>
 
+<div class="page-content-wrap" id="page-content-wrap">
 <div class="page-wrap">
 <main class="main" style="position:relative;z-index:1;">
 <div class="container">
@@ -228,5 +231,6 @@ async function loadBreakdown() {
 
 init();
 </script>
+</div>
 </body>
 </html>

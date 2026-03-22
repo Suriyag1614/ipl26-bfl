@@ -2,77 +2,38 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — BFL Fantasy IPL 2026</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    /* ── Stats saved row ── */
-    .stats-saved-row {
-      display:flex; align-items:center; gap:9px;
-      padding:9px 12px; border-radius:9px;
-      background:var(--bg3); border:1px solid var(--border);
-      margin-bottom:7px; transition:all .18s; cursor:default;
-    }
-    .stats-saved-row:hover { border-color:var(--border-h); transform:translateX(4px); box-shadow:var(--shadow); }
-
-    /* ── Section label inside stats form ── */
-    .section-label {
-      display:flex; align-items:center; gap:7px;
-      font-family:var(--f-ui); font-size:11px; font-weight:800;
-      text-transform:uppercase; letter-spacing:1.2px;
-      padding:4px 0 2px; margin:12px 0 8px;
-      grid-column: 1 / -1;
-    }
-    .section-label img { width:15px;height:15px;object-fit:contain; }
-
-    /* ── Fixture row team names flex ── */
-    .fx-teams {
-      flex:1; display:flex; align-items:center; gap:6px;
-      font-family:var(--f-ui); font-weight:800; font-size:14px;
-      overflow:hidden; min-width:0;
-    }
-    .fx-team-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100px; }
-
-    /* ── Live pts estimate bar ── */
-    .pts-estimate {
-      display:inline-flex; align-items:center; gap:8px;
-      background:var(--accent-dim); border:1px solid rgba(200,241,53,.2);
-      border-radius:9px; padding:7px 16px;
-    }
-
-    /* ── Admin match no badge ── */
-    .edit-badge {
-      display:inline-flex; align-items:center; gap:5px;
-      font-family:var(--f-ui); font-size:11px; font-weight:800;
-      text-transform:uppercase; letter-spacing:1.4px;
-      color:var(--accent); background:var(--accent-dim);
-      border:1px solid rgba(200,241,53,.2); border-radius:6px;
-      padding:3px 11px; margin-bottom:14px;
-    }
-
-    /* ── Two-col form grid ── */
-    .form-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .form-2 .span-2 { grid-column:1/-1; }
+    .form-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .form-2 .span-2{grid-column:1/-1;}
+    .fx-teams{flex:1;display:flex;align-items:center;gap:6px;font-family:var(--f-ui);font-weight:800;font-size:14px;overflow:hidden;}
+    .fx-team-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;}
+    .stats-saved-row{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;background:var(--bg2);border:1px solid var(--border);margin-bottom:7px;transition:all .18s;cursor:default;}
+    .stats-saved-row:hover{border-color:var(--border-h);transform:translateX(4px);}
+    .section-label{display:flex;align-items:center;gap:7px;font-family:var(--f-ui);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;padding:4px 0 2px;margin:12px 0 8px;grid-column:1/-1;}
+    .override-confirm{background:rgba(200,241,53,.08);border:1px solid rgba(200,241,53,.2);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--green);}
+    /* CSV name lookup chip */
+    .csv-status-ok  {color:var(--green);}
+    .csv-status-err {color:var(--red);}
   </style>
 </head>
 <body>
 <div id="toast-container"></div>
-<div class="bg-orbs">
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="orb orb-3"></div>
-</div>
+<div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
 
-<!-- ── Admin Navbar ─────────────────────────────── -->
 <nav class="navbar" style="border-bottom-color:rgba(255,77,109,.38);">
   <div class="container" style="display:flex;align-items:center;gap:12px;">
-    <a href="#" class="nav-logo" style="text-decoration:none;">
-      <span class="nav-logo-dot" style="background:var(--red);"></span>
-      BFL Admin
+    <a href="admin.html" class="nav-logo" style="text-decoration:none;">
+      <span class="nav-logo-dot" style="background:var(--red);"></span>BFL Admin
     </a>
     <div style="margin-left:auto;display:flex;gap:10px;align-items:center;">
+      <button class="btn btn-ghost btn-sm theme-toggle" onclick="UI.toggleTheme()" style="padding:6px 8px;min-width:34px;" title="Toggle theme"></button>
       <div class="nav-user">
         <div class="nav-avatar" style="background:linear-gradient(135deg,var(--red),var(--purple));">A</div>
         <span>Auctioneer</span>
@@ -82,318 +43,215 @@
   </div>
 </nav>
 
+<div class="page-content-wrap" id="page-content-wrap">
 <div class="page-wrap">
 <main class="main">
 <div class="container">
 
-  <!-- Header -->
   <div class="page-header flex-between">
-    <div>
-      <div class="page-title">Control Room</div>
-      <div class="page-sub">IPL 2026 · Manage fixtures · Enter stats · Calculate points</div>
-    </div>
+    <div><div class="page-title">Control Room</div><div class="page-sub">Fixtures · Stats · Calculate · Blogs · Override</div></div>
     <div style="display:flex;gap:8px;">
       <button class="btn btn-ghost btn-sm" onclick="loadAll()">↻ Refresh</button>
       <a href="leaderboard.html" class="btn btn-ghost btn-sm" target="_blank">Leaderboard ↗</a>
     </div>
   </div>
 
-  <!-- Quick stats -->
   <div class="stat-grid mb-24" id="admin-stats">
-    <div class="skel skel-chip"></div>
-    <div class="skel skel-chip"></div>
-    <div class="skel skel-chip"></div>
+    <div class="skel skel-chip"></div><div class="skel skel-chip"></div><div class="skel skel-chip"></div>
   </div>
 
-  <!-- Tabs -->
   <div class="tabs">
-    <button class="tab-btn active"  onclick="switchTab('matches')">Fixtures</button>
+    <button class="tab-btn active"  onclick="switchTab('fixtures')">Fixtures</button>
     <button class="tab-btn"         onclick="switchTab('stats')">Player Stats</button>
-    <button class="tab-btn"         onclick="switchTab('calc')">Calculate</button>
+    <button class="tab-btn"         onclick="switchTab('calculate')">Calculate</button>
+    <button class="tab-btn"         onclick="switchTab('override')">Override</button>
+    <button class="tab-btn"         onclick="switchTab('blogs')">Blogs</button>
     <button class="tab-btn"         onclick="switchTab('teams')">Teams</button>
   </div>
 
-  <!-- ══════════════════════════════════════
-       TAB: FIXTURES
-  ══════════════════════════════════════ -->
-  <div class="tab-panel active" id="tab-matches">
-    <div id="matches-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-
-      <!-- LEFT: Form -->
+  <!-- ════ FIXTURES ════ -->
+  <div class="tab-panel active" id="tab-fixtures">
+    <div id="fixtures-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
       <div class="card">
         <div class="card-title">Add / Edit Fixture</div>
         <input type="hidden" id="edit-match-id">
-        <div id="edit-badge-wrap" style="display:none;">
-          <div class="edit-badge" id="edit-badge-text">New Fixture</div>
-        </div>
-
-        <!-- Match Number -->
-        <div class="form-group">
-          <label class="form-label">Match Number</label>
-          <input class="form-input font-mono" type="number" id="m-no" min="1" max="74" placeholder="e.g. 1">
-        </div>
-
-        <!-- Teams — dropdowns with logo preview -->
+        <div id="edit-badge-wrap" style="display:none;margin-bottom:12px;"><span class="badge badge-accent" id="edit-badge-text">New</span></div>
+        <div class="form-group"><label class="form-label">Match Number</label><input class="form-input font-mono" type="number" id="m-no" min="1" max="74" placeholder="e.g. 1"></div>
         <div class="form-2">
-          <div class="form-group">
-            <label class="form-label">Home Team</label>
-            <div class="select-logo-wrap">
-              <img id="logo-home" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'">
-              <select class="form-select" id="m-team1" onchange="onTeamChange('home')">
-                <option value="">— Select —</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Away Team</label>
-            <div class="select-logo-wrap">
-              <img id="logo-away" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'">
-              <select class="form-select" id="m-team2" onchange="onTeamChange('away')">
-                <option value="">— Select —</option>
-              </select>
-            </div>
-          </div>
+          <div class="form-group"><label class="form-label">Home Team</label>
+            <div class="select-logo-wrap"><img id="logo-home" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'"><select class="form-select" id="m-team1" onchange="onTeamChange('home')"><option value="">— Select —</option></select></div></div>
+          <div class="form-group"><label class="form-label">Away Team</label>
+            <div class="select-logo-wrap"><img id="logo-away" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'"><select class="form-select" id="m-team2" onchange="onTeamChange('away')"><option value="">— Select —</option></select></div></div>
         </div>
-
-        <!-- Date + Time -->
         <div class="form-2">
-          <div class="form-group">
-            <label class="form-label">Match Date</label>
-            <input class="form-input" type="date" id="m-date" style="color-scheme:dark;">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Kickoff Time</label>
-            <select class="form-select" id="m-time">
-              <option value="15:30">3:30 PM</option>
-              <option value="19:30" selected>7:30 PM</option>
-            </select>
-          </div>
+          <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="m-date" style="color-scheme:dark;"></div>
+          <div class="form-group"><label class="form-label">Time</label><select class="form-select" id="m-time"><option value="15:30">3:30 PM</option><option value="19:30" selected>7:30 PM</option></select></div>
         </div>
-
-        <!-- Venue -->
-        <div class="form-group">
-          <label class="form-label">Venue</label>
-          <select class="form-select" id="m-venue">
-            <option value="">— Select Venue —</option>
-            <option>Bengaluru</option><option>Mumbai</option><option>Guwahati</option>
-            <option>New Chandigarh</option><option>Lucknow</option><option>Kolkata</option>
-            <option>Chennai</option><option>Delhi</option><option>Ahmedabad</option>
-            <option>Hyderabad</option><option>Jaipur</option><option>Dharamsala</option>
-            <option>Visakhapatnam</option><option>Ranchi</option><option>Pune</option>
-          </select>
+        <div class="form-group"><label class="form-label">Venue</label>
+          <select class="form-select" id="m-venue"><option value="">— Select Venue —</option><option>Bengaluru</option><option>Mumbai</option><option>Guwahati</option><option>New Chandigarh</option><option>Lucknow</option><option>Kolkata</option><option>Chennai</option><option>Delhi</option><option>Ahmedabad</option><option>Hyderabad</option><option>Jaipur</option><option>Dharamsala</option><option>Ranchi</option><option>Pune</option></select>
         </div>
-
-        <!-- Result (post-match) -->
-        <div class="card-title" style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px;">
-          Result (fill after match)
-        </div>
-
+        <div class="form-group"><label class="form-label">Auto-lock (mins before match)</label><input class="form-input font-mono" type="number" id="m-autolock" value="15" min="5" max="120"></div>
+        <div class="card-title" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">Result (fill after match)</div>
         <div class="form-2">
-          <div class="form-group">
-            <label class="form-label">Actual Target / Score</label>
-            <input class="form-input font-mono" id="m-target" type="number" placeholder="e.g. 185" min="50" max="500">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Winner</label>
-            <div class="select-logo-wrap">
-              <img id="logo-winner" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'">
-              <select class="form-select" id="m-winner" onchange="onTeamChange('winner')">
-                <option value="">— No Result Yet —</option>
-              </select>
-            </div>
-          </div>
+          <div class="form-group"><label class="form-label">Actual Target</label><input class="form-input font-mono" id="m-target" type="number" placeholder="e.g. 185" min="50" max="500"></div>
+          <div class="form-group"><label class="form-label">Winner</label>
+            <div class="select-logo-wrap"><img id="logo-winner" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'"><select class="form-select" id="m-winner" onchange="onTeamChange('winner')"><option value="">— No Result Yet —</option></select></div></div>
         </div>
-
-        <div class="form-group">
-          <label class="form-label">Player of Match</label>
-          <select class="form-select" id="m-pom">
-            <option value="">— Select Player —</option>
-          </select>
-        </div>
-
+        <div class="form-group"><label class="form-label">Player of Match</label><select class="form-select" id="m-pom"><option value="">— Select Player —</option></select></div>
         <div style="display:flex;gap:10px;margin-top:6px;">
           <button class="btn btn-accent" onclick="saveMatch()">Save Fixture</button>
           <button class="btn btn-ghost"  onclick="clearMatchForm()">Clear</button>
         </div>
       </div>
 
-      <!-- RIGHT: Fixture list -->
       <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;">
-        <div style="padding:18px 20px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+        <div style="padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
           <div class="card-title" style="margin:0;">All Fixtures</div>
-          <button class="btn btn-accent btn-sm" onclick="loadIPLFixtures()">
-            ⚡ Load IPL 2026
-          </button>
+          <button class="btn btn-accent btn-sm" onclick="loadIPLFixtures()">⚡ Load IPL 2026</button>
         </div>
         <div style="flex:1;overflow-y:auto;max-height:520px;" id="fixtures-scroll">
-          <div id="fixtures-list">
-            <div style="padding:14px 20px;color:var(--text3);font-size:13px;">Loading…</div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /matches-grid -->
-  </div>
-
-  <!-- ══════════════════════════════════════
-       TAB: PLAYER STATS
-  ══════════════════════════════════════ -->
-  <div class="tab-panel" id="tab-stats">
-
-    <!-- Match + Player selectors -->
-    <div class="card mb-16">
-      <div class="card-title">Select Match &amp; Player</div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:200px;">
-          <label class="form-label">Match</label>
-          <select class="form-select" id="stats-match-select" onchange="onStatsMatchChange()">
-            <option value="">— Select match —</option>
-          </select>
-        </div>
-        <div style="flex:1;min-width:200px;">
-          <label class="form-label">Player</label>
-          <div class="select-logo-wrap">
-            <img id="logo-stats-player" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'">
-            <select class="form-select" id="stats-player-select" onchange="prefillStats()">
-              <option value="">— Select player —</option>
-            </select>
-          </div>
+          <div id="fixtures-list"><div style="padding:14px 20px;color:var(--text3);font-size:13px;">Loading…</div></div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- Stats entry form -->
+  <!-- ════ PLAYER STATS ════ -->
+  <div class="tab-panel" id="tab-stats">
+    <div class="card mb-16">
+      <div class="card-title">Select Match &amp; Player</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;"><label class="form-label">Match</label><select class="form-select" id="stats-match-select" onchange="onStatsMatchChange()"><option value="">— Select match —</option></select></div>
+        <div style="flex:1;min-width:200px;"><label class="form-label">Player</label><div class="select-logo-wrap"><img id="logo-stats-player" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'"><select class="form-select" id="stats-player-select" onchange="prefillStats()"><option value="">— Select player —</option></select></div></div>
+      </div>
+
+      <!-- CSV Bulk Upload — with player name→ID lookup (Audit Fix #18) -->
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+        <div class="card-title" style="margin-bottom:6px;">Bulk Upload via CSV</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Accepts either <strong>player_id</strong> (UUID) or <strong>player_name</strong> columns. Names are auto-matched.</div>
+        <div style="font-size:12px;color:var(--text3);margin-bottom:10px;font-family:var(--f-mono);background:var(--bg3);padding:6px 10px;border-radius:6px;overflow-x:auto;white-space:nowrap;">player_id or player_name, runs, balls_faced, fours, sixes, not_out, wickets, overs_bowled, runs_conceded, maidens, catches, run_outs, stumpings</div>
+        <div class="dropzone" id="csv-dropzone" onclick="document.getElementById('csv-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="onCSVDrop(event)">
+          <input type="file" id="csv-file-input" accept=".csv" style="display:none;" onchange="onCSVFile(event)">
+          <div class="dropzone-icon">📤</div>
+          <div class="dropzone-label">Drop CSV or click to browse</div>
+          <div class="dropzone-sub">Player name or ID accepted · Max 100 rows</div>
+        </div>
+        <div id="csv-preview" style="display:none;margin-top:10px;"></div>
+      </div>
+    </div>
+
     <div class="card" id="stats-form-card" style="display:none;">
       <div class="flex-between mb-16">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <img id="stats-team-logo" style="width:36px;height:36px;object-fit:contain;display:none;" alt="" onerror="this.style.display='none'">
-          <div>
-            <div class="card-title" style="margin:0;" id="stats-player-name">Player Stats</div>
-            <div style="display:flex;gap:5px;margin-top:4px;" id="stats-player-chips"></div>
-          </div>
+          <div><div class="card-title" style="margin:0;" id="stats-player-name">Player Stats</div><div style="display:flex;gap:5px;margin-top:4px;" id="stats-player-chips"></div></div>
         </div>
-        <div class="pts-estimate">
-          <span style="font-size:12px;color:var(--text2);font-family:var(--f-ui);font-weight:700;text-transform:uppercase;letter-spacing:.8px;">Est. Pts</span>
-          <span id="live-pts" style="font-family:var(--f-display);font-weight:900;color:var(--accent);font-size:22px;">0</span>
+        <div style="background:var(--accent-dim);border:1px solid rgba(200,241,53,.2);border-radius:9px;padding:7px 14px;">
+          <span style="font-size:11px;color:var(--text2);font-family:var(--f-ui);font-weight:700;text-transform:uppercase;letter-spacing:.8px;">Est. Pts</span>
+          <span id="live-pts" style="font-family:var(--f-display);font-weight:900;color:var(--accent);font-size:22px;margin-left:6px;">0</span>
         </div>
       </div>
-
-      <input type="hidden" id="stat-match-id">
-      <input type="hidden" id="stat-player-id">
-
+      <input type="hidden" id="stat-match-id"><input type="hidden" id="stat-player-id">
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;">
-        <!-- Batting section -->
-        <div class="section-label" style="color:#f87171;">
-          <img src="images/teams-all-rounder-icon.svg" alt="" style="filter:brightness(0)saturate(100%)invert(60%)sepia(80%)saturate(400%)hue-rotate(320deg);">
-          Batting
-        </div>
+        <div class="section-label" style="color:#f87171;"><span>🏏</span> Batting</div>
         <div class="form-group"><label class="form-label">Runs</label><input class="form-input font-mono" type="number" id="s-runs" min="0" oninput="recalcLive()"></div>
         <div class="form-group"><label class="form-label">Balls Faced</label><input class="form-input font-mono" type="number" id="s-balls" min="0" oninput="recalcLive()"></div>
         <div class="form-group"><label class="form-label">Fours</label><input class="form-input font-mono" type="number" id="s-fours" min="0" oninput="recalcLive()"></div>
         <div class="form-group"><label class="form-label">Sixes</label><input class="form-input font-mono" type="number" id="s-sixes" min="0" oninput="recalcLive()"></div>
-        <div class="form-group">
-          <label class="form-label">Not Out?</label>
-          <select class="form-select" id="s-notout" onchange="recalcLive()">
-            <option value="">No</option><option value="true">Yes ✓</option>
-          </select>
-        </div>
-
-        <!-- Bowling section -->
-        <div class="section-label" style="color:#60a5fa;">
-          <img src="images/teams-all-rounder-icon.svg" alt="" style="filter:brightness(0)saturate(100%)invert(60%)sepia(80%)saturate(400%)hue-rotate(200deg);">
-          Bowling
-        </div>
+        <div class="form-group"><label class="form-label">Not Out?</label><select class="form-select" id="s-notout" onchange="recalcLive()"><option value="">No</option><option value="true">Yes ✓</option></select></div>
+        <div class="section-label" style="color:#60a5fa;"><span>🎳</span> Bowling</div>
         <div class="form-group"><label class="form-label">Wickets</label><input class="form-input font-mono" type="number" id="s-wickets" min="0" oninput="recalcLive()"></div>
         <div class="form-group"><label class="form-label">Overs</label><input class="form-input font-mono" type="number" id="s-overs" min="0" step="0.1" oninput="recalcLive()"></div>
         <div class="form-group"><label class="form-label">Runs Conceded</label><input class="form-input font-mono" type="number" id="s-runsc" min="0" oninput="recalcLive()"></div>
         <div class="form-group"><label class="form-label">Maidens</label><input class="form-input font-mono" type="number" id="s-maidens" min="0" oninput="recalcLive()"></div>
-
-        <!-- Fielding section -->
-        <div class="section-label" style="color:#34d399;">
-          <img src="images/teams-all-rounder-icon.svg" alt="" style="filter:brightness(0)saturate(100%)invert(60%)sepia(80%)saturate(400%)hue-rotate(110deg);">
-          Fielding
-        </div>
+        <div class="section-label" style="color:#34d399;"><span>🧤</span> Fielding</div>
         <div class="form-group"><label class="form-label">Catches</label><input class="form-input font-mono" type="number" id="s-catches" min="0" oninput="recalcLive()"></div>
         <div class="form-group"><label class="form-label">Run Outs</label><input class="form-input font-mono" type="number" id="s-runouts" min="0" oninput="recalcLive()"></div>
         <div class="form-group"><label class="form-label">Stumpings</label><input class="form-input font-mono" type="number" id="s-stumpings" min="0" oninput="recalcLive()"></div>
       </div>
-
       <div style="display:flex;gap:10px;margin-top:16px;">
         <button class="btn btn-accent" onclick="saveStats()">Save Stats</button>
         <button class="btn btn-ghost"  onclick="clearStatsForm()">Clear</button>
       </div>
     </div>
 
-    <!-- Saved stats for this match -->
     <div class="card mt-16" id="saved-stats-card" style="display:none;">
       <div class="card-title">Saved Stats for This Match</div>
       <div id="saved-stats-list"></div>
     </div>
-
   </div>
 
-  <!-- ══════════════════════════════════════
-       TAB: CALCULATE
-  ══════════════════════════════════════ -->
-  <div class="tab-panel" id="tab-calc">
+  <!-- ════ CALCULATE ════ -->
+  <div class="tab-panel" id="tab-calculate">
     <div id="calc-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
       <div class="card">
-        <div class="card-title">Calculate Points</div>
-        <div class="form-group">
-          <label class="form-label">Select Match</label>
-          <select class="form-select" id="calc-match-select">
-            <option value="">— Select match —</option>
-          </select>
+        <div class="card-title">Calculate &amp; Lock Match</div>
+        <div class="form-group"><label class="form-label">Select Match</label><select class="form-select" id="calc-match-select"><option value="">— Select —</option></select></div>
+        <div style="background:var(--bg3);border-radius:9px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.9;">
+          ✔ Score all 12 players per team<br>✔ Apply C 2× · VC 1.5× · Impact 3× multipliers<br>✔ Score predictions (target diff + winner)<br>✔ Refresh leaderboard + lock match
         </div>
-        <div style="background:var(--bg3);border-radius:9px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.85;">
-          This will:<br>
-          • Score batting / bowling / fielding for all players<br>
-          • Apply Captain 2× · VC 1.5× · Impact Player 3×<br>
-          • Score each team's target &amp; winner prediction<br>
-          • Refresh the leaderboard and <strong style="color:var(--text);">lock the match</strong>
-        </div>
-        <button class="btn btn-gold btn-full" id="calc-btn" onclick="calculatePoints()" style="font-size:16px;padding:14px;">
-          ⚡ Calculate &amp; Lock Match
-        </button>
+        <button class="btn btn-gold btn-full mb-8" id="calc-btn" onclick="calculatePoints()" style="font-size:16px;padding:14px;">⚡ Calculate &amp; Lock</button>
+        <button class="btn btn-danger btn-full" id="recalc-btn" onclick="recalculate()" style="font-size:14px;">↻ Recalculate (delete &amp; redo)</button>
       </div>
       <div class="card">
         <div class="card-title">Calculation Log</div>
-        <div class="calc-log" id="calc-log" style="min-height:220px;">
-          <div class="calc-log-line" style="color:var(--text3);">Awaiting calculation…</div>
-        </div>
+        <div class="calc-log" id="calc-log" style="min-height:240px;"><div class="calc-log-line" style="color:var(--text3);">Awaiting calculation…</div></div>
         <button class="btn btn-ghost btn-sm mt-8" onclick="document.getElementById('calc-log').innerHTML=''">Clear Log</button>
       </div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════
-       TAB: TEAMS
-  ══════════════════════════════════════ -->
+  <!-- ════ OVERRIDE ════ -->
+  <div class="tab-panel" id="tab-override">
+    <div class="card" style="max-width:600px;">
+      <div class="card-title">Manual Points Override</div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7;">Manually adjust a team's points for a specific match. Use for scoring corrections or disputes. A log entry is added to the breakdown.</div>
+      <!-- Audit Fix #17: both selects populated by loadAll() before any tab switch -->
+      <div class="form-group"><label class="form-label">Match</label><select class="form-select" id="override-match"><option value="">— Select match —</option></select></div>
+      <div class="form-group"><label class="form-label">Team</label><select class="form-select" id="override-team"><option value="">— Loading… —</option></select></div>
+      <div class="form-group"><label class="form-label">Adjustment (positive or negative)</label><input class="form-input font-mono" type="number" id="override-adj" placeholder="e.g. 50 or -25"></div>
+      <div class="form-group"><label class="form-label">Reason (required)</label><input class="form-input" id="override-reason" placeholder="e.g. Scorer error correction"></div>
+      <button class="btn btn-gold" onclick="submitOverride()">Apply Override</button>
+      <div id="override-log" style="margin-top:14px;"></div>
+    </div>
+  </div>
+
+  <!-- ════ BLOGS ════ -->
+  <div class="tab-panel" id="tab-blogs">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" id="blogs-grid">
+      <div class="card">
+        <div class="card-title">New / Edit Post</div>
+        <input type="hidden" id="blog-id">
+        <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="b-title" placeholder="Post title…"></div>
+        <div class="form-group"><label class="form-label">Excerpt</label><input class="form-input" id="b-excerpt" placeholder="One-line summary shown in the blog list…"></div>
+        <div class="form-group"><label class="form-label">Category</label>
+          <select class="form-select" id="b-category"><option value="general">General</option><option value="preview">Match Preview</option><option value="tips">Strategy Tips</option><option value="announcement">Announcement</option><option value="recap">Match Recap</option></select></div>
+        <div class="form-group"><label class="form-label">Content</label><textarea class="form-input" id="b-content" style="min-height:180px;resize:vertical;" placeholder="Write your post here…&#10;&#10;Blank lines become paragraph breaks."></textarea></div>
+        <div class="form-group" style="display:flex;align-items:center;gap:10px;"><input type="checkbox" id="b-published" style="width:16px;height:16px;accent-color:var(--accent);"><label style="font-size:14px;color:var(--text2);">Publish immediately</label></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-accent" onclick="saveBlogAdmin()">Save Post</button>
+          <button class="btn btn-danger btn-sm" id="del-blog-btn" style="display:none;" onclick="deleteBlogAdmin()">Delete</button>
+          <button class="btn btn-ghost" onclick="clearBlogForm()">Clear</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;">
+        <div style="padding:16px 20px 10px;flex-shrink:0;"><div class="card-title" style="margin:0;">All Posts</div></div>
+        <div style="flex:1;overflow-y:auto;max-height:520px;" id="blog-admin-list"><div style="padding:20px;color:var(--text3);font-size:13px;">Loading…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ TEAMS ════ -->
   <div class="tab-panel" id="tab-teams">
     <div class="card" style="padding:0;overflow:hidden;">
-      <div style="padding:18px 20px 0;"><div class="card-title">All Fantasy Teams</div></div>
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="width:40px;">#</th>
-              <th>Team</th>
-              <th>Owner</th>
-              <th style="width:90px;">Matches</th>
-              <th style="width:100px;">Total Pts</th>
-            </tr>
-          </thead>
-          <tbody id="teams-tbody">
-            <tr><td colspan="5"><div class="skel skel-row" style="margin:8px;"></div></td></tr>
-          </tbody>
-        </table>
-      </div>
+      <div style="padding:16px 20px 0;"><div class="card-title">All Fantasy Teams</div></div>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Team</th><th>Owner</th><th>Matches</th><th>Total Pts</th></tr></thead><tbody id="teams-tbody"><tr><td colspan="5"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody></table></div>
     </div>
   </div>
 
 </div><!-- /container -->
 </main>
-</div><!-- /page-wrap -->
+</div>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="js/supabase.js"></script>
@@ -402,608 +260,494 @@
 <script src="js/api.js"></script>
 <script>
 'use strict';
+UI.initTheme();
 
-/* ═══════════════════════════════════════════════
-   TEAM CONFIGURATION
-═══════════════════════════════════════════════ */
-var TEAMS = [
-  'CHENNAI SUPER KINGS', 'DELHI CAPITALS', 'GUJARAT TITANS',
-  'KOLKATA KNIGHT RIDERS', 'LUCKNOW SUPER GIANTS', 'MUMBAI INDIANS',
-  'PUNJAB KINGS', 'RAJASTHAN ROYALS', 'ROYAL CHALLENGERS BENGALURU',
-  'SUNRISERS HYDERABAD', 'SUPREME RAJAS'
+var TEAMS=['CHENNAI SUPER KINGS','DELHI CAPITALS','GUJARAT TITANS','KOLKATA KNIGHT RIDERS','LUCKNOW SUPER GIANTS','MUMBAI INDIANS','PUNJAB KINGS','RAJASTHAN ROYALS','ROYAL CHALLENGERS BENGALURU','SUNRISERS HYDERABAD','SUPREME RAJAS'];
+var CODES={CHENNAISUPERKINGS:'CSK',DELHICAPITALS:'DC',GUJARATTITANS:'GT',KOLKATAKNIGHTRIDERS:'KKR',LUCKNOWSUPERGIANTS:'LSG',MUMBAIINDIANS:'MI',PUNJABKINGS:'PBKS',RAJASTHANROYALS:'RR',ROYALCHALLENGERSBENGALURU:'RCB',SUNRISERSHYDERABAD:'SRH',SUPREMERAJAS:'SURA'};
+var TCOLS={CSK:'#fdb913',MI:'#004ba0',RCB:'#da1818',KKR:'#6a1bac',SRH:'#f26522',DC:'#004c93',PBKS:'#ed1b24',RR:'#ea1a85',GT:'#1c2c5b',LSG:'#ff002b',SURA:'#1a3a8a'};
+function tCode(n){return CODES[(n||'').toUpperCase().replace(/\s+/g,'')]||null;}
+function tLogo(n){var c=tCode(n);return c?'images/teams/'+c+'outline.png':'';}
+function tShort(n){return tCode(n)||(n||'').split(' ').map(function(w){return w[0];}).join('');}
+
+var IPL_FIXTURES=[
+  {no:1,date:'2026-03-28',time:'19:30',home:'ROYAL CHALLENGERS BENGALURU',away:'SUNRISERS HYDERABAD',venue:'Bengaluru'},
+  {no:2,date:'2026-03-29',time:'19:30',home:'MUMBAI INDIANS',away:'KOLKATA KNIGHT RIDERS',venue:'Mumbai'},
+  {no:3,date:'2026-03-30',time:'19:30',home:'RAJASTHAN ROYALS',away:'CHENNAI SUPER KINGS',venue:'Guwahati'},
+  {no:4,date:'2026-03-31',time:'19:30',home:'PUNJAB KINGS',away:'GUJARAT TITANS',venue:'New Chandigarh'},
+  {no:5,date:'2026-04-01',time:'19:30',home:'LUCKNOW SUPER GIANTS',away:'DELHI CAPITALS',venue:'Lucknow'},
+  {no:6,date:'2026-04-02',time:'19:30',home:'KOLKATA KNIGHT RIDERS',away:'SUNRISERS HYDERABAD',venue:'Kolkata'},
+  {no:7,date:'2026-04-03',time:'19:30',home:'CHENNAI SUPER KINGS',away:'PUNJAB KINGS',venue:'Chennai'},
+  {no:8,date:'2026-04-04',time:'15:30',home:'DELHI CAPITALS',away:'MUMBAI INDIANS',venue:'Delhi'},
+  {no:9,date:'2026-04-04',time:'19:30',home:'GUJARAT TITANS',away:'RAJASTHAN ROYALS',venue:'Ahmedabad'},
+  {no:10,date:'2026-04-05',time:'15:30',home:'SUNRISERS HYDERABAD',away:'LUCKNOW SUPER GIANTS',venue:'Hyderabad'},
+  {no:11,date:'2026-04-05',time:'19:30',home:'ROYAL CHALLENGERS BENGALURU',away:'CHENNAI SUPER KINGS',venue:'Bengaluru'},
+  {no:12,date:'2026-04-06',time:'19:30',home:'KOLKATA KNIGHT RIDERS',away:'PUNJAB KINGS',venue:'Kolkata'},
+  {no:13,date:'2026-04-07',time:'19:30',home:'RAJASTHAN ROYALS',away:'MUMBAI INDIANS',venue:'Guwahati'},
+  {no:14,date:'2026-04-08',time:'19:30',home:'DELHI CAPITALS',away:'GUJARAT TITANS',venue:'Delhi'},
+  {no:15,date:'2026-04-09',time:'19:30',home:'KOLKATA KNIGHT RIDERS',away:'LUCKNOW SUPER GIANTS',venue:'Kolkata'},
+  {no:16,date:'2026-04-10',time:'19:30',home:'RAJASTHAN ROYALS',away:'ROYAL CHALLENGERS BENGALURU',venue:'Guwahati'},
+  {no:17,date:'2026-04-11',time:'15:30',home:'PUNJAB KINGS',away:'SUNRISERS HYDERABAD',venue:'New Chandigarh'},
+  {no:18,date:'2026-04-11',time:'19:30',home:'CHENNAI SUPER KINGS',away:'DELHI CAPITALS',venue:'Chennai'},
+  {no:19,date:'2026-04-12',time:'15:30',home:'LUCKNOW SUPER GIANTS',away:'GUJARAT TITANS',venue:'Lucknow'},
+  {no:20,date:'2026-04-12',time:'19:30',home:'MUMBAI INDIANS',away:'ROYAL CHALLENGERS BENGALURU',venue:'Mumbai'}
 ];
 
-var TEAM_CODES = {
-  'CHENNAI SUPER KINGS':          'CSK',
-  'DELHI CAPITALS':               'DC',
-  'GUJARAT TITANS':               'GT',
-  'KOLKATA KNIGHT RIDERS':        'KKR',
-  'LUCKNOW SUPER GIANTS':         'LSG',
-  'MUMBAI INDIANS':               'MI',
-  'PUNJAB KINGS':                 'PBKS',
-  'RAJASTHAN ROYALS':             'RR',
-  'ROYAL CHALLENGERS BENGALURU':  'RCB',
-  'SUNRISERS HYDERABAD':          'SRH',
-  'SUPREME RAJAS':                'SURA'
-};
+var _allPlayers=[], _allMatches=[], _allTeamsData=[];
 
-var TEAM_COLORS = {
-  CSK:'#fdb913', MI:'#004ba0', RCB:'#da1818', KKR:'#6a1bac',
-  SRH:'#f26522', DC:'#004c93', PBKS:'#ed1b24', RR:'#ea1a85',
-  GT:'#1c2c5b',  LSG:'#ff002b', SURA:'#1a3a8a'
-};
+async function doLogout(){await Auth.signOut();}
 
-function teamCode(name) { return TEAM_CODES[(name||'').toUpperCase()] || null; }
-function teamLogo(name) { var c = teamCode(name); return c ? 'images/' + c + 'outline.png' : ''; }
-function shortName(name) { return teamCode(name) || (name || '').split(' ').map(function(w){return w[0];}).join(''); }
-
-/* ═══════════════════════════════════════════════
-   IPL 2026 FIXTURE DATA (all 20 from PDF)
-═══════════════════════════════════════════════ */
-var IPL_FIXTURES = [
-  { no:1,  date:'2026-03-28', time:'19:30', home:'ROYAL CHALLENGERS BENGALURU', away:'SUNRISERS HYDERABAD',        venue:'Bengaluru' },
-  { no:2,  date:'2026-03-29', time:'19:30', home:'MUMBAI INDIANS',               away:'KOLKATA KNIGHT RIDERS',      venue:'Mumbai' },
-  { no:3,  date:'2026-03-30', time:'19:30', home:'RAJASTHAN ROYALS',             away:'CHENNAI SUPER KINGS',        venue:'Guwahati' },
-  { no:4,  date:'2026-03-31', time:'19:30', home:'PUNJAB KINGS',                 away:'GUJARAT TITANS',             venue:'New Chandigarh' },
-  { no:5,  date:'2026-04-01', time:'19:30', home:'LUCKNOW SUPER GIANTS',         away:'DELHI CAPITALS',             venue:'Lucknow' },
-  { no:6,  date:'2026-04-02', time:'19:30', home:'KOLKATA KNIGHT RIDERS',        away:'SUNRISERS HYDERABAD',        venue:'Kolkata' },
-  { no:7,  date:'2026-04-03', time:'19:30', home:'CHENNAI SUPER KINGS',          away:'PUNJAB KINGS',               venue:'Chennai' },
-  { no:8,  date:'2026-04-04', time:'15:30', home:'DELHI CAPITALS',               away:'MUMBAI INDIANS',             venue:'Delhi' },
-  { no:9,  date:'2026-04-04', time:'19:30', home:'GUJARAT TITANS',               away:'RAJASTHAN ROYALS',           venue:'Ahmedabad' },
-  { no:10, date:'2026-04-05', time:'15:30', home:'SUNRISERS HYDERABAD',          away:'LUCKNOW SUPER GIANTS',       venue:'Hyderabad' },
-  { no:11, date:'2026-04-05', time:'19:30', home:'ROYAL CHALLENGERS BENGALURU',  away:'CHENNAI SUPER KINGS',        venue:'Bengaluru' },
-  { no:12, date:'2026-04-06', time:'19:30', home:'KOLKATA KNIGHT RIDERS',        away:'PUNJAB KINGS',               venue:'Kolkata' },
-  { no:13, date:'2026-04-07', time:'19:30', home:'RAJASTHAN ROYALS',             away:'MUMBAI INDIANS',             venue:'Guwahati' },
-  { no:14, date:'2026-04-08', time:'19:30', home:'DELHI CAPITALS',               away:'GUJARAT TITANS',             venue:'Delhi' },
-  { no:15, date:'2026-04-09', time:'19:30', home:'KOLKATA KNIGHT RIDERS',        away:'LUCKNOW SUPER GIANTS',       venue:'Kolkata' },
-  { no:16, date:'2026-04-10', time:'19:30', home:'RAJASTHAN ROYALS',             away:'ROYAL CHALLENGERS BENGALURU',venue:'Guwahati' },
-  { no:17, date:'2026-04-11', time:'15:30', home:'PUNJAB KINGS',                 away:'SUNRISERS HYDERABAD',        venue:'New Chandigarh' },
-  { no:18, date:'2026-04-11', time:'19:30', home:'CHENNAI SUPER KINGS',          away:'DELHI CAPITALS',             venue:'Chennai' },
-  { no:19, date:'2026-04-12', time:'15:30', home:'LUCKNOW SUPER GIANTS',         away:'GUJARAT TITANS',             venue:'Lucknow' },
-  { no:20, date:'2026-04-12', time:'19:30', home:'MUMBAI INDIANS',               away:'ROYAL CHALLENGERS BENGALURU',venue:'Mumbai' }
-];
-
-/* ═══════════════════════════════════════════════
-   STATE
-═══════════════════════════════════════════════ */
-var _allPlayers = [], _allMatches = [];
-
-/* ═══════════════════════════════════════════════
-   INIT
-═══════════════════════════════════════════════ */
-async function doLogout() { await Auth.signOut(); }
-
-async function init() {
-  var sess = await Auth.getSession();
-  if (!sess) { window.location.href = 'index.html'; return; }
-  if (!Auth.isAdmin(sess.user)) { window.location.href = 'dashboard.html'; return; }
+async function init(){
+  var sess=await Auth.getSession();
+  if(!sess){window.location.href='index.html';return;}
+  if(!Auth.isAdmin(sess.user)){window.location.href='dashboard.html';return;}
   buildTeamDropdowns();
   await loadAll();
-  fixGrids();
 }
 
-async function loadAll() {
-  await Promise.all([loadPlayers(), loadMatches(), loadTeams(), loadAdminStats()]);
+// Audit Fix #17: loadAll populates override dropdowns immediately on page load
+async function loadAll(){
+  await Promise.all([loadPlayers(),loadMatches(),loadTeams(),loadAdminStats()]);
 }
 
-/* ── Build all team dropdowns ─────────────────── */
-function buildTeamDropdowns() {
-  var opts = '<option value="">— Select —</option>' +
-    TEAMS.map(function(t) {
-      return '<option value="' + t + '">' + t + '</option>';
-    }).join('');
-  ['m-team1', 'm-team2'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.innerHTML = opts;
-  });
-  // Winner defaults to no result
-  document.getElementById('m-winner').innerHTML = '<option value="">— No Result Yet —</option>' +
-    TEAMS.map(function(t) { return '<option value="' + t + '">' + t + '</option>'; }).join('');
+function buildTeamDropdowns(){
+  var opts='<option value="">— Select —</option>'+TEAMS.map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join('');
+  ['m-team1','m-team2'].forEach(function(id){var e=document.getElementById(id);if(e)e.innerHTML=opts;});
+  document.getElementById('m-winner').innerHTML='<option value="">— No Result Yet —</option>'+TEAMS.map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join('');
 }
 
-/* ── Logo preview in selects ──────────────────── */
-function onTeamChange(which) {
-  var idMap = { home:['m-team1','logo-home'], away:['m-team2','logo-away'], winner:['m-winner','logo-winner'] };
-  var pair  = idMap[which];
-  var sel   = document.getElementById(pair[0]);
-  var img   = document.getElementById(pair[1]);
-  var name  = sel ? sel.value : '';
-  var logo  = teamLogo(name);
-  if (logo && name) {
-    img.src = logo; img.style.display = '';
-    sel.classList.add('has-logo');
-  } else {
-    img.style.display = 'none';
-    sel.classList.remove('has-logo');
-  }
-  // Sync winner dropdown to the two chosen teams
-  if (which === 'home' || which === 'away') syncWinnerDropdown();
+function onTeamChange(which){
+  var map={home:['m-team1','logo-home'],away:['m-team2','logo-away'],winner:['m-winner','logo-winner']};
+  var pair=map[which]; var sel=document.getElementById(pair[0]); var img=document.getElementById(pair[1]);
+  var name=sel?sel.value:''; var logo=tLogo(name);
+  if(logo&&name){img.src=logo;img.style.display='';sel.classList.add('has-logo');}
+  else{img.style.display='none';sel.classList.remove('has-logo');}
+  if(which==='home'||which==='away') syncWinnerDropdown();
 }
 
-function syncWinnerDropdown() {
-  var t1   = document.getElementById('m-team1').value;
-  var t2   = document.getElementById('m-team2').value;
-  var cur  = document.getElementById('m-winner').value;
-  var winSel = document.getElementById('m-winner');
-  var opts = '<option value="">— No Result Yet —</option>';
-  if (t1) opts += '<option value="' + t1 + '">' + t1 + '</option>';
-  if (t2) opts += '<option value="' + t2 + '">' + t2 + '</option>';
-  // If neither team is set, show all teams
-  if (!t1 && !t2) opts = '<option value="">— No Result Yet —</option>' +
-    TEAMS.map(function(t) { return '<option value="' + t + '">' + t + '</option>'; }).join('');
-  winSel.innerHTML = opts;
-  if (cur) winSel.value = cur;
+function syncWinnerDropdown(){
+  var t1=document.getElementById('m-team1').value, t2=document.getElementById('m-team2').value;
+  var cur=document.getElementById('m-winner').value;
+  var opts='<option value="">— No Result Yet —</option>';
+  if(t1) opts+='<option value="'+t1+'">'+t1+'</option>';
+  if(t2) opts+='<option value="'+t2+'">'+t2+'</option>';
+  if(!t1&&!t2) opts='<option value="">— No Result Yet —</option>'+TEAMS.map(function(t){return '<option value="'+t+'">'+t+'</option>';}).join('');
+  document.getElementById('m-winner').innerHTML=opts;
+  document.getElementById('m-winner').value=cur;
   onTeamChange('winner');
 }
 
-/* ═══════════════════════════════════════════════
-   ADMIN STATS CHIPS
-═══════════════════════════════════════════════ */
-async function loadAdminStats() {
-  try {
-    var [lb, matches] = await Promise.all([API.fetchLeaderboard(), API.fetchMatches()]);
-    var locked = matches.filter(function(m) { return m.is_locked; }).length;
-    document.getElementById('admin-stats').innerHTML =
-      '<div class="stat-chip" style="animation-delay:0s"><div class="stat-chip-val">' + matches.length + '</div><div class="stat-chip-lbl">Fixtures</div></div>' +
-      '<div class="stat-chip gold" style="animation-delay:.07s"><div class="stat-chip-val" style="color:var(--gold);">' + locked + '</div><div class="stat-chip-lbl">Completed</div></div>' +
-      '<div class="stat-chip cyan" style="animation-delay:.14s"><div class="stat-chip-val" style="color:var(--cyan);">' + lb.length + '</div><div class="stat-chip-lbl">Teams Active</div></div>';
-  } catch(e) {}
+async function loadAdminStats(){
+  try{
+    var matches=await API.fetchMatches({limit:74});
+    var locked=matches.filter(function(m){return m.is_locked;}).length;
+    var lb=await API.fetchLeaderboard();
+    document.getElementById('admin-stats').innerHTML=
+      '<div class="stat-chip" style="animation-delay:0s"><div class="stat-chip-val">'+matches.length+'</div><div class="stat-chip-lbl">Fixtures</div></div>'+
+      '<div class="stat-chip gold" style="animation-delay:.07s"><div class="stat-chip-val" style="color:var(--gold);">'+locked+'</div><div class="stat-chip-lbl">Completed</div></div>'+
+      '<div class="stat-chip cyan" style="animation-delay:.14s"><div class="stat-chip-val" style="color:var(--cyan);">'+lb.length+'</div><div class="stat-chip-lbl">Teams</div></div>';
+  }catch(e){}
 }
 
-/* ═══════════════════════════════════════════════
-   PLAYERS
-═══════════════════════════════════════════════ */
-async function loadPlayers() {
-  _allPlayers = await API.fetchAllPlayers();
-
-  // PoM dropdown
-  var pomSel = document.getElementById('m-pom');
-  if (pomSel) {
-    pomSel.innerHTML = '<option value="">— Select Player —</option>' +
-      _allPlayers.map(function(p) {
-        return '<option value="' + p.id + '">' + p.name + ' · ' + (p.ipl_team || '?') + '</option>';
-      }).join('');
-  }
-  // Stats player dropdown
-  var statSel = document.getElementById('stats-player-select');
-  if (statSel) {
-    statSel.innerHTML = '<option value="">— Select player —</option>' +
-      _allPlayers.map(function(p) {
-        var os = p.is_overseas ? ' 🌏' : '';
-        return '<option value="' + p.id + '">' + p.name + ' · ' + (p.ipl_team || '?') + os + '</option>';
-      }).join('');
-  }
+async function loadPlayers(){
+  _allPlayers=await API.fetchAllPlayers();
+  var pomSel=document.getElementById('m-pom');
+  if(pomSel) pomSel.innerHTML='<option value="">— Select Player —</option>'+_allPlayers.map(function(p){return '<option value="'+p.id+'">'+p.name+' · '+(p.ipl_team||'?')+'</option>';}).join('');
+  var statSel=document.getElementById('stats-player-select');
+  if(statSel) statSel.innerHTML='<option value="">— Select player —</option>'+_allPlayers.map(function(p){return '<option value="'+p.id+'">'+p.name+' · '+(p.ipl_team||'?')+(p.is_overseas?' 🌏':'')+'</option>';}).join('');
 }
 
-/* ═══════════════════════════════════════════════
-   MATCHES / FIXTURES
-═══════════════════════════════════════════════ */
-async function loadMatches() {
-  _allMatches = await API.fetchMatches();
+async function loadMatches(){
+  _allMatches=await API.fetchMatches({limit:74});
   renderFixtureList();
-  // Sync dropdowns in stats + calc tabs
-  ['stats-match-select', 'calc-match-select'].forEach(function(id) {
-    var sel = document.getElementById(id);
-    if (!sel) return;
-    var cur = sel.value;
-    sel.innerHTML = '<option value="">— Select match —</option>' +
-      _allMatches.map(function(m) {
-        var label = 'M' + (m.match_no || '') + ' · ' + shortName(m.team1) + ' vs ' + shortName(m.team2) + ' · ' + UI.shortDate(m.match_date);
-        return '<option value="' + m.id + '">' + UI.esc(label) + '</option>';
-      }).join('');
-    if (cur) sel.value = cur;
+  // Populate all match dropdowns including override-match (Audit Fix #17)
+  ['stats-match-select','calc-match-select','override-match'].forEach(function(id){
+    var sel=document.getElementById(id); if(!sel) return;
+    var cur=sel.value;
+    sel.innerHTML='<option value="">— Select match —</option>'+_allMatches.map(function(m){
+      return '<option value="'+m.id+'">M'+(m.match_no||'')+'  · '+UI.esc(tShort(m.team1)+' vs '+tShort(m.team2))+' · '+UI.shortDate(m.match_date)+'</option>';
+    }).join('');
+    if(cur) sel.value=cur;
   });
 }
 
-/* ── Render fixture list with logos + hover ───── */
-function renderFixtureList() {
-  var cont = document.getElementById('fixtures-list');
-  if (!_allMatches.length) {
-    cont.innerHTML = '<div style="padding:22px;text-align:center;color:var(--text3);font-size:13px;">No fixtures yet — click ⚡ Load IPL 2026 above</div>';
-    return;
-  }
-  var html = '';
-  _allMatches.forEach(function(m, i) {
-    var logo1 = teamLogo(m.team1), logo2 = teamLogo(m.team2);
-    var c1    = teamCode(m.team1), c2 = teamCode(m.team2);
-    var col1  = c1 && TEAM_COLORS[c1] ? TEAM_COLORS[c1] : 'var(--text2)';
-    var col2  = c2 && TEAM_COLORS[c2] ? TEAM_COLORS[c2] : 'var(--text2)';
-    var dateStr = m.match_date ? new Date(m.match_date).toLocaleDateString('en-IN', { day:'2-digit', month:'short' }) : '—';
-    var timeStr = m.match_date ? new Date(m.match_date).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }) : '';
-    var statusCls = m.is_locked ? (m.winner ? 'status-done' : 'status-locked') : 'status-open';
-    var statusTxt = m.is_locked ? (m.winner ? 'Done' : 'Locked') : 'Open';
-
-    html += '<div class="fixture-row" onclick="editMatch(\'' + m.id + '\')" style="animation:row-in .25s ease ' + (i * .025) + 's both;">' +
-      '<span class="fixture-num">' + (m.match_no || i + 1) + '</span>' +
-      '<div class="fx-teams">' +
-        (logo1 ? '<img src="' + logo1 + '" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;" onerror="this.style.display=\'none\'">' : '') +
-        '<span class="fx-team-name" style="color:' + col1 + ';">' + UI.esc(shortName(m.team1)) + '</span>' +
-        '<span class="fixture-vs">VS</span>' +
-        '<span class="fx-team-name" style="color:' + col2 + ';">' + UI.esc(shortName(m.team2)) + '</span>' +
-        (logo2 ? '<img src="' + logo2 + '" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;" onerror="this.style.display=\'none\'">' : '') +
-      '</div>' +
-      '<span class="fixture-date">' + dateStr + (timeStr ? ' · ' + timeStr : '') + '</span>' +
-      (m.venue ? '<span class="fixture-venue">' + UI.esc(m.venue) + '</span>' : '') +
-      '<span class="match-status ' + statusCls + '">' + statusTxt + '</span>' +
-      '<button class="btn btn-ghost btn-sm fixture-edit" onclick="event.stopPropagation();editMatch(\'' + m.id + '\')">Edit</button>' +
+function renderFixtureList(){
+  var cont=document.getElementById('fixtures-list');
+  if(!_allMatches.length){cont.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px;">No fixtures — click ⚡ Load IPL 2026</div>';return;}
+  cont.innerHTML=_allMatches.map(function(m,i){
+    var c1=tCode(m.team1),c2=tCode(m.team2);
+    var col1=c1&&TCOLS[c1]?TCOLS[c1]:'var(--text2)', col2=c2&&TCOLS[c2]?TCOLS[c2]:'var(--text2)';
+    var l1=tLogo(m.team1),l2=tLogo(m.team2);
+    var dateStr=m.match_date?new Date(m.match_date).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}):'—';
+    var sCls=m.is_locked?(m.winner?'status-done':'status-locked'):'status-open';
+    var sTxt=m.is_locked?(m.winner?'Done':'Locked'):'Open';
+    return '<div class="fixture-row" onclick="editMatch(\''+m.id+'\')" style="animation:row-in .22s ease '+(.025*i)+'s both;">'+
+      '<span class="fixture-num">'+(m.match_no||i+1)+'</span>'+
+      '<div class="fx-teams">'+
+        (l1?'<img src="'+l1+'" style="width:16px;height:16px;object-fit:contain;flex-shrink:0;" onerror="this.style.display=\'none\'">':'')+
+        '<span class="fx-team-name" style="color:'+col1+';">'+UI.esc(tShort(m.team1))+'</span>'+
+        '<span class="fixture-vs">VS</span>'+
+        '<span class="fx-team-name" style="color:'+col2+';">'+UI.esc(tShort(m.team2))+'</span>'+
+        (l2?'<img src="'+l2+'" style="width:16px;height:16px;object-fit:contain;flex-shrink:0;" onerror="this.style.display=\'none\'">':'')+
+      '</div>'+
+      '<span class="fixture-date">'+dateStr+'</span>'+
+      (m.venue?'<span class="fixture-venue">'+UI.esc(m.venue)+'</span>':'')+
+      '<span class="match-status '+sCls+'" style="font-size:11px;">'+sTxt+'</span>'+
+      '<button class="btn btn-ghost btn-sm fixture-edit" onclick="event.stopPropagation();editMatch(\''+m.id+'\')" style="font-size:11px;padding:3px 8px;">Edit</button>'+
     '</div>';
-  });
-  cont.innerHTML = html;
-}
-
-/* ═══════════════════════════════════════════════
-   LOAD ALL 20 IPL 2026 FIXTURES
-═══════════════════════════════════════════════ */
-async function loadIPLFixtures() {
-  if (!confirm('Insert all 20 IPL 2026 Part 1 fixtures?\nExisting fixtures with same match_no will be skipped.')) return;
-  var btn = event.target;
-  if (btn._busy) return;
-  btn._busy = true; btn.disabled = true;
-  btn.innerHTML = '<span class="btn-spin"></span> Loading…';
-
-  var loaded = 0, skipped = 0;
-  try {
-    for (var i = 0; i < IPL_FIXTURES.length; i++) {
-      var f = IPL_FIXTURES[i];
-      // Skip if already exists for this match_no
-      var exists = _allMatches.find(function(m) { return m.match_no === f.no; });
-      if (exists) { skipped++; continue; }
-      var isoDate = new Date(f.date + 'T' + f.time + ':00+05:30').toISOString();
-      var match = {
-        match_title: 'Match ' + f.no + ' · ' + shortName(f.home) + ' vs ' + shortName(f.away),
-        match_no:    f.no,
-        team1:       f.home,
-        team2:       f.away,
-        venue:       f.venue,
-        match_date:  isoDate,
-        is_locked:   false,
-      };
-      await API.upsertMatch(match);
-      loaded++;
-    }
-    UI.toast('✓ Loaded ' + loaded + ' fixtures' + (skipped ? ' · ' + skipped + ' skipped' : ''), 'success', 5000);
-    await loadMatches();
-    await loadAdminStats();
-  } catch(e) {
-    UI.toast('Load failed: ' + e.message, 'error');
-  }
-  btn._busy = false; btn.disabled = false;
-  btn.innerHTML = '⚡ Load IPL 2026';
-}
-
-/* ═══════════════════════════════════════════════
-   MATCH FORM
-═══════════════════════════════════════════════ */
-function clearMatchForm() {
-  document.getElementById('edit-match-id').value = '';
-  document.getElementById('edit-badge-wrap').style.display = 'none';
-  document.getElementById('m-no').value = '';
-  document.getElementById('m-date').value = '';
-  document.getElementById('m-time').value = '19:30';
-  document.getElementById('m-target').value = '';
-  ['m-team1', 'm-team2', 'm-winner', 'm-venue', 'm-pom'].forEach(function(id) {
-    var e = document.getElementById(id); if (e) e.value = '';
-  });
-  ['logo-home', 'logo-away', 'logo-winner'].forEach(function(id) {
-    var e = document.getElementById(id); if (e) { e.style.display = 'none'; }
-  });
-  ['m-team1', 'm-team2', 'm-winner'].forEach(function(id) {
-    var e = document.getElementById(id); if (e) e.classList.remove('has-logo');
-  });
-  buildTeamDropdowns();
-}
-
-function editMatch(matchId) {
-  var m = _allMatches.find(function(x) { return x.id === matchId; });
-  if (!m) return;
-
-  document.getElementById('edit-match-id').value = m.id;
-  document.getElementById('edit-badge-wrap').style.display = '';
-  document.getElementById('edit-badge-text').textContent = 'Editing: Match ' + (m.match_no || '');
-  document.getElementById('m-no').value = m.match_no || '';
-
-  // Set team dropdowns (rebuild options first to ensure values exist)
-  buildTeamDropdowns();
-  var t1El = document.getElementById('m-team1');
-  var t2El = document.getElementById('m-team2');
-  if (t1El) t1El.value = m.team1 || '';
-  if (t2El) t2El.value = m.team2 || '';
-
-  // Date / time
-  if (m.match_date) {
-    var dt = new Date(m.match_date);
-    document.getElementById('m-date').value = dt.toLocaleDateString('sv', { timeZone:'Asia/Kolkata' });
-    var hh = String(dt.getHours()).padStart(2, '0');
-    var mm = String(dt.getMinutes()).padStart(2, '0');
-    document.getElementById('m-time').value = hh + ':' + mm;
-  }
-  document.getElementById('m-venue').value = m.venue || '';
-  document.getElementById('m-target').value = m.actual_target || '';
-
-  // Sync winner options to these teams, then set value
-  syncWinnerDropdown();
-  document.getElementById('m-winner').value = m.winner || '';
-  onTeamChange('winner');
-
-  // Player of Match
-  var pomEl = document.getElementById('m-pom');
-  if (pomEl && m.player_of_match) {
-    var pomP = _allPlayers.find(function(p) { return p.id === m.player_of_match; });
-    if (pomP) pomEl.value = pomP.id;
-  }
-
-  // Logo previews
-  onTeamChange('home'); onTeamChange('away');
-
-  // Scroll to form
-  document.getElementById('m-no').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-async function saveMatch() {
-  var id     = document.getElementById('edit-match-id').value;
-  var team1  = document.getElementById('m-team1').value;
-  var team2  = document.getElementById('m-team2').value;
-  var date   = document.getElementById('m-date').value;
-  var time   = document.getElementById('m-time').value || '19:30';
-  var venue  = document.getElementById('m-venue').value;
-  var no     = parseInt(document.getElementById('m-no').value || '0') || null;
-  var target = parseInt(document.getElementById('m-target').value || '0') || null;
-  var winner = document.getElementById('m-winner').value || null;
-  var pomId  = document.getElementById('m-pom').value || null;
-
-  if (!team1 || !team2) { UI.toast('Select both teams', 'warn'); return; }
-
-  var match = {
-    match_title: 'Match ' + (no || '') + ' · ' + shortName(team1) + ' vs ' + shortName(team2),
-    match_no:    no, team1, team2, venue,
-    match_date:  date ? new Date(date + 'T' + time + ':00+05:30').toISOString() : null,
-    actual_target:   target,
-    winner,
-    player_of_match: pomId,
-    is_locked:       !!winner,
-  };
-  if (id) match.id = id;
-
-  try {
-    await API.upsertMatch(match);
-    UI.toast('Fixture saved!', 'success');
-    clearMatchForm();
-    await loadMatches();
-    await loadAdminStats();
-  } catch(e) { UI.toast('Save failed: ' + e.message, 'error'); }
-}
-
-/* ═══════════════════════════════════════════════
-   TEAMS TAB
-═══════════════════════════════════════════════ */
-async function loadTeams() {
-  var lb    = await API.fetchLeaderboard();
-  var tbody = document.getElementById('teams-tbody');
-  if (!lb.length) {
-    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">🏏</div><div class="empty-state-text">No teams yet</div></div></td></tr>';
-    return;
-  }
-  tbody.innerHTML = lb.map(function(r) {
-    var logo = teamLogo(r.team ? r.team.team_name : '');
-    var code = teamCode(r.team ? r.team.team_name : '');
-    var col  = code && TEAM_COLORS[code] ? TEAM_COLORS[code] : 'var(--text)';
-    return '<tr>' +
-      '<td class="rank">' + r.rank + '</td>' +
-      '<td>' +
-        '<div style="display:flex;align-items:center;gap:9px;">' +
-          (logo ? '<img src="' + logo + '" style="width:24px;height:24px;object-fit:contain;transition:transform .18s;" onmouseover="this.style.transform=\'scale(1.2) rotate(-5deg)\'" onmouseout="this.style.transform=\'\'" onerror="this.style.display=\'none\'">' : '') +
-          '<span style="font-family:var(--f-ui);font-weight:800;font-size:14px;color:' + col + ';">' + UI.esc(r.team ? r.team.team_name : '—') + '</span>' +
-        '</div>' +
-      '</td>' +
-      '<td style="color:var(--text2);">' + UI.esc(r.team ? (r.team.owner_name || '—') : '—') + '</td>' +
-      '<td>' + r.matches_played + '</td>' +
-      '<td class="pts">' + r.total_points + '</td>' +
-    '</tr>';
   }).join('');
 }
 
-/* ═══════════════════════════════════════════════
-   TAB SWITCHER
-═══════════════════════════════════════════════ */
-function switchTab(tab) {
-  var order = ['matches', 'stats', 'calc', 'teams'];
-  document.querySelectorAll('.tab-btn').forEach(function(b, i) {
-    b.classList.toggle('active', order[i] === tab);
-  });
-  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
-  document.getElementById('tab-' + tab).classList.add('active');
+async function loadIPLFixtures(){
+  if(!confirm('Insert all 20 IPL 2026 Part 1 fixtures?\nExisting fixtures with same match_no will be skipped.')) return;
+  var btn=event.target; if(btn._busy) return; btn._busy=true; btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span> Loading…';
+  var loaded=0, skipped=0;
+  try{
+    for(var i=0;i<IPL_FIXTURES.length;i++){
+      var f=IPL_FIXTURES[i];
+      if(_allMatches.find(function(m){return m.match_no===f.no;})){skipped++;continue;}
+      var isoDate=new Date(f.date+'T'+f.time+':00+05:30').toISOString();
+      await API.upsertMatch({match_title:'Match '+f.no+' · '+tShort(f.home)+' vs '+tShort(f.away),match_no:f.no,team1:f.home,team2:f.away,venue:f.venue,match_date:isoDate,is_locked:false});
+      loaded++;
+    }
+    UI.toast('Loaded '+loaded+' fixtures'+(skipped?' · '+skipped+' skipped':''),'success');
+    await loadMatches(); await loadAdminStats();
+  }catch(e){UI.toast('Load failed: '+e.message,'error');}
+  btn._busy=false; btn.disabled=false; btn.innerHTML='⚡ Load IPL 2026';
 }
 
-/* ═══════════════════════════════════════════════
-   PLAYER STATS FORM
-═══════════════════════════════════════════════ */
-async function onStatsMatchChange() {
-  var matchId = document.getElementById('stats-match-select').value;
-  document.getElementById('stats-form-card').style.display = 'none';
-  if (!matchId) return;
+function clearMatchForm(){
+  document.getElementById('edit-match-id').value=''; document.getElementById('edit-badge-wrap').style.display='none';
+  ['m-no','m-target'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  ['m-team1','m-team2','m-winner','m-venue','m-pom'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('m-date').value=''; document.getElementById('m-time').value='19:30'; document.getElementById('m-autolock').value='15';
+  ['logo-home','logo-away','logo-winner'].forEach(function(id){var e=document.getElementById(id);if(e){e.style.display='none';e.parentElement&&e.parentElement.querySelector&&e.parentElement.querySelector('.form-select')&&e.parentElement.querySelector('.form-select').classList.remove('has-logo');}});
+  buildTeamDropdowns();
+}
+
+function editMatch(matchId){
+  var m=_allMatches.find(function(x){return x.id===matchId;}); if(!m) return;
+  document.getElementById('edit-match-id').value=m.id;
+  document.getElementById('edit-badge-wrap').style.display=''; document.getElementById('edit-badge-text').textContent='Editing M'+(m.match_no||'');
+  document.getElementById('m-no').value=m.match_no||'';
+  buildTeamDropdowns();
+  document.getElementById('m-team1').value=m.team1||''; document.getElementById('m-team2').value=m.team2||'';
+  if(m.match_date){
+    var dt=new Date(m.match_date);
+    document.getElementById('m-date').value=dt.toLocaleDateString('sv',{timeZone:'Asia/Kolkata'});
+    document.getElementById('m-time').value=String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
+  }
+  document.getElementById('m-venue').value=m.venue||''; document.getElementById('m-target').value=m.actual_target||'';
+  document.getElementById('m-autolock').value=m.auto_lock_mins||15;
+  syncWinnerDropdown(); document.getElementById('m-winner').value=m.winner||''; onTeamChange('winner');
+  var pom=document.getElementById('m-pom'); if(pom&&m.player_of_match) pom.value=m.player_of_match;
+  onTeamChange('home'); onTeamChange('away');
+  document.getElementById('m-no').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+async function saveMatch(){
+  var id=document.getElementById('edit-match-id').value, team1=document.getElementById('m-team1').value, team2=document.getElementById('m-team2').value;
+  if(!team1||!team2){UI.toast('Select both teams','warn');return;}
+  var date=document.getElementById('m-date').value, time=document.getElementById('m-time').value||'19:30', no=parseInt(document.getElementById('m-no').value||0)||null;
+  var match={
+    match_title:'Match '+(no||'')+' · '+tShort(team1)+' vs '+tShort(team2), match_no:no, team1:team1, team2:team2,
+    venue:document.getElementById('m-venue').value, auto_lock_mins:parseInt(document.getElementById('m-autolock').value||15),
+    match_date:date?new Date(date+'T'+time+':00+05:30').toISOString():null,
+    actual_target:parseInt(document.getElementById('m-target').value||0)||null, winner:document.getElementById('m-winner').value||null,
+    player_of_match:document.getElementById('m-pom').value||null, is_locked:!!document.getElementById('m-winner').value,
+  };
+  if(id) match.id=id;
+  try{await API.upsertMatch(match); UI.toast('Fixture saved!','success'); clearMatchForm(); await loadMatches(); await loadAdminStats();}
+  catch(e){UI.toast('Save failed: '+e.message,'error');}
+}
+
+// Audit Fix #17: loadTeams populates override-team select on every loadAll() call
+async function loadTeams(){
+  var lb=await API.fetchLeaderboard(); _allTeamsData=lb;
+  // Populate override select immediately — works regardless of which tab is active
+  var overrideSel=document.getElementById('override-team');
+  if(overrideSel) overrideSel.innerHTML='<option value="">— Select team —</option>'+lb.map(function(r){return '<option value="'+r.fantasy_team_id+'">'+UI.esc(r.team?r.team.team_name:'—')+'</option>';}).join('');
+  var tbody=document.getElementById('teams-tbody');
+  if(!tbody) return;
+  if(!lb.length){tbody.innerHTML='<tr><td colspan="5" class="empty-state">No teams yet</td></tr>';return;}
+  tbody.innerHTML=lb.map(function(r){
+    var logo=tLogo(r.team?r.team.team_name:''); var code=tCode(r.team?r.team.team_name:''); var col=code&&TCOLS[code]?TCOLS[code]:'var(--text)';
+    return '<tr><td class="rank">'+r.rank+'</td>'+
+      '<td><div style="display:flex;align-items:center;gap:9px;">'+(logo?'<img src="'+logo+'" style="width:22px;height:22px;object-fit:contain;" onerror="this.style.display=\'none\'">':'')+
+      '<span style="font-family:var(--f-ui);font-weight:800;font-size:14px;color:'+col+';">'+UI.esc(r.team?r.team.team_name:'—')+'</span></div></td>'+
+      '<td style="color:var(--text2);">'+UI.esc(r.team?r.team.owner_name||'—':'—')+'</td>'+
+      '<td>'+r.matches_played+'</td><td class="pts">'+r.total_points+'</td></tr>';
+  }).join('');
+}
+
+function switchTab(tab){
+  var order=['fixtures','stats','calculate','override','blogs','teams'];
+  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',order[i]===tab);});
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('tab-'+tab).classList.add('active');
+  if(tab==='blogs') loadBlogList();
+}
+
+// ── Stats ──────────────────────────────────────────────────────
+async function onStatsMatchChange(){
+  var matchId=document.getElementById('stats-match-select').value;
+  document.getElementById('stats-form-card').style.display='none';
+  if(!matchId) return;
   await loadSavedStats(matchId);
 }
 
-async function loadSavedStats(matchId) {
-  var card = document.getElementById('saved-stats-card');
-  var list = document.getElementById('saved-stats-list');
-  card.style.display = 'none';
-  try {
-    var stats = await API.fetchPlayerStats(matchId);
-    if (!stats.length) return;
-    card.style.display = '';
-    list.innerHTML = stats.map(function(s) {
-      var p    = s.player || {};
-      var est  = API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s);
-      var logo = teamLogo(p.ipl_team || '');
-      var code = teamCode(p.ipl_team || '');
-      var col  = code && TEAM_COLORS[code] ? TEAM_COLORS[code] : 'var(--text2)';
-      return '<div class="stats-saved-row">' +
-        (logo ? '<img src="' + logo + '" style="width:24px;height:24px;object-fit:contain;flex-shrink:0;" onerror="this.style.display=\'none\'">' : '') +
-        '<div style="flex:1;min-width:0;">' +
-          '<div style="font-family:var(--f-ui);font-weight:800;font-size:14px;color:' + col + ';">' + UI.esc(p.name || '—') + '</div>' +
-          '<div style="display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;">' +
-            roleTag(p.role) + (p.is_overseas ? osTag() : '') +
-          '</div>' +
-        '</div>' +
-        '<div style="font-size:12px;color:var(--text2);font-family:var(--f-mono);text-align:right;">' +
-          'R:' + (s.runs||0) + '  W:' + (s.wickets||0) + '  C:' + (s.catches||0) +
-        '</div>' +
-        '<div style="font-family:var(--f-display);font-weight:900;font-size:18px;color:var(--accent);min-width:44px;text-align:right;">' + Math.round(est) + '</div>' +
+async function loadSavedStats(matchId){
+  var card=document.getElementById('saved-stats-card'), list=document.getElementById('saved-stats-list');
+  card.style.display='none';
+  try{
+    var stats=await API.fetchPlayerStats(matchId); if(!stats.length) return;
+    card.style.display='';
+    list.innerHTML=stats.map(function(s){
+      var p=s.player||{}, est=API.calcBattingPoints(s)+API.calcBowlingPoints(s)+API.calcFieldingPoints(s);
+      var logo=tLogo(p.ipl_team||''); var code=tCode(p.ipl_team||''); var col=code&&TCOLS[code]?TCOLS[code]:'var(--text)';
+      return '<div class="stats-saved-row">'+
+        (logo?'<img src="'+logo+'" style="width:22px;height:22px;object-fit:contain;" onerror="this.style.display=\'none\'">':'')+
+        '<div style="flex:1;"><div style="font-family:var(--f-ui);font-weight:800;font-size:14px;color:'+col+';">'+UI.esc(p.name||'—')+'</div></div>'+
+        '<div style="font-size:12px;color:var(--text2);font-family:var(--f-mono);">R:'+(s.runs||0)+' W:'+(s.wickets||0)+' C:'+(s.catches||0)+'</div>'+
+        '<div style="font-family:var(--f-display);font-weight:900;font-size:18px;color:var(--accent);min-width:44px;text-align:right;">'+Math.round(est)+'</div>'+
       '</div>';
     }).join('');
-  } catch(e) {}
+  }catch(e){}
 }
 
-function roleTag(role) {
-  var map = { 'Batter':'rt-bat BAT','Bowler':'rt-bowl BOWL','All-Rounder':'rt-ar AR','Wicket-Keeper':'rt-wk WK' };
-  var parts = (map[role] || '').split(' ');
-  if (!parts[0]) return '';
-  return '<span class="role-tag ' + parts[0] + '">' +
-    '<img src="images/teams-all-rounder-icon.svg" alt="" style="filter:brightness(0)invert(1);opacity:.8;">' +
-    parts[1] + '</span>';
+function prefillStats(){
+  var pid=document.getElementById('stats-player-select').value;
+  if(!pid){document.getElementById('stats-form-card').style.display='none';return;}
+  var player=_allPlayers.find(function(p){return p.id===pid;});
+  var logo=player?tLogo(player.ipl_team||''):''; var code=player?tCode(player.ipl_team||''):''; var col=code&&TCOLS[code]?TCOLS[code]:'var(--text)';
+  var logoEl=document.getElementById('stats-team-logo');
+  if(logoEl&&logo){logoEl.src=logo;logoEl.style.display='';}else if(logoEl) logoEl.style.display='none';
+  var spl=document.getElementById('logo-stats-player');
+  if(spl&&logo){spl.src=logo;spl.style.display='';document.getElementById('stats-player-select').classList.add('has-logo');}
+  document.getElementById('stats-player-name').textContent=player?player.name:'—';
+  document.getElementById('stats-player-name').style.color=col;
+  document.getElementById('stats-player-chips').innerHTML=(player?UI.roleBadge(player.role):'')+(player&&player.is_overseas?'<span class="role-tag rt-os" style="font-size:10px;margin-left:4px;">OS</span>':'');
+  document.getElementById('stat-match-id').value=document.getElementById('stats-match-select').value;
+  document.getElementById('stat-player-id').value=pid;
+  clearStatsForm(false); document.getElementById('stats-form-card').style.display='';
 }
 
-function osTag() {
-  return '<span class="role-tag rt-os">' +
-    '<img src="images/teams-foreign-player-icon.svg" alt="" style="filter:brightness(0)invert(1);opacity:.8;">' +
-    'OS</span>';
-}
-
-function prefillStats() {
-  var playerId = document.getElementById('stats-player-select').value;
-  if (!playerId) { document.getElementById('stats-form-card').style.display = 'none'; return; }
-  var player = _allPlayers.find(function(p) { return p.id === playerId; });
-
-  // Player logo
-  var logoEl = document.getElementById('stats-team-logo');
-  if (logoEl && player) {
-    var lg = teamLogo(player.ipl_team || '');
-    if (lg) { logoEl.src = lg; logoEl.style.display = ''; } else logoEl.style.display = 'none';
-  }
-  // Update stats-player-select logo preview
-  var spl = document.getElementById('logo-stats-player');
-  if (spl && player) {
-    var slg = teamLogo(player.ipl_team || '');
-    if (slg) { spl.src = slg; spl.style.display = ''; document.getElementById('stats-player-select').classList.add('has-logo'); }
-    else { spl.style.display = 'none'; document.getElementById('stats-player-select').classList.remove('has-logo'); }
-  }
-
-  // Player name + chips
-  var code = teamCode(player ? (player.ipl_team || '') : '');
-  var col  = code && TEAM_COLORS[code] ? TEAM_COLORS[code] : 'var(--text)';
-  document.getElementById('stats-player-name').textContent = player ? player.name : '—';
-  document.getElementById('stats-player-name').style.color = col;
-  var chipsEl = document.getElementById('stats-player-chips');
-  if (chipsEl && player) {
-    chipsEl.innerHTML = roleTag(player.role) + (player.is_overseas ? osTag() : '');
-  }
-
-  document.getElementById('stat-match-id').value  = document.getElementById('stats-match-select').value;
-  document.getElementById('stat-player-id').value = playerId;
-  clearStatsForm(false);
-  document.getElementById('stats-form-card').style.display = '';
-}
-
-function clearStatsForm(hide) {
-  if (hide === undefined) hide = true;
-  ['s-runs','s-balls','s-fours','s-sixes','s-wickets','s-overs','s-runsc','s-maidens','s-catches','s-runouts','s-stumpings'].forEach(function(id) {
-    var e = document.getElementById(id); if (e) e.value = '';
-  });
-  document.getElementById('s-notout').value = '';
-  if (hide) document.getElementById('stats-form-card').style.display = 'none';
+function clearStatsForm(hide){
+  if(hide===undefined) hide=true;
+  ['s-runs','s-balls','s-fours','s-sixes','s-wickets','s-overs','s-runsc','s-maidens','s-catches','s-runouts','s-stumpings'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('s-notout').value='';
+  if(hide) document.getElementById('stats-form-card').style.display='none';
   recalcLive();
 }
 
-function getStatsObj() {
-  return {
-    runs:          parseInt(document.getElementById('s-runs').value     || 0),
-    balls_faced:   parseInt(document.getElementById('s-balls').value    || 0),
-    fours:         parseInt(document.getElementById('s-fours').value    || 0),
-    sixes:         parseInt(document.getElementById('s-sixes').value    || 0),
-    not_out:       document.getElementById('s-notout').value === 'true',
-    wickets:       parseInt(document.getElementById('s-wickets').value  || 0),
-    overs_bowled:  parseFloat(document.getElementById('s-overs').value  || 0),
-    runs_conceded: parseInt(document.getElementById('s-runsc').value    || 0),
-    maidens:       parseInt(document.getElementById('s-maidens').value  || 0),
-    catches:       parseInt(document.getElementById('s-catches').value  || 0),
-    run_outs:      parseInt(document.getElementById('s-runouts').value  || 0),
-    stumpings:     parseInt(document.getElementById('s-stumpings').value|| 0),
+function getStatsObj(){
+  return{
+    runs:parseInt(UI.el('s-runs')&&UI.el('s-runs').value||0),
+    balls_faced:parseInt(UI.el('s-balls')&&UI.el('s-balls').value||0),
+    fours:parseInt(UI.el('s-fours')&&UI.el('s-fours').value||0),
+    sixes:parseInt(UI.el('s-sixes')&&UI.el('s-sixes').value||0),
+    not_out:UI.el('s-notout')&&UI.el('s-notout').value==='true',
+    wickets:parseInt(UI.el('s-wickets')&&UI.el('s-wickets').value||0),
+    overs_bowled:parseFloat(UI.el('s-overs')&&UI.el('s-overs').value||0),
+    runs_conceded:parseInt(UI.el('s-runsc')&&UI.el('s-runsc').value||0),
+    maidens:parseInt(UI.el('s-maidens')&&UI.el('s-maidens').value||0),
+    catches:parseInt(UI.el('s-catches')&&UI.el('s-catches').value||0),
+    run_outs:parseInt(UI.el('s-runouts')&&UI.el('s-runouts').value||0),
+    stumpings:parseInt(UI.el('s-stumpings')&&UI.el('s-stumpings').value||0)
   };
 }
-
-function recalcLive() {
-  var s   = getStatsObj();
-  var pts = API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s);
-  var el  = document.getElementById('live-pts');
-  if (el) el.textContent = Math.round(pts);
+function recalcLive(){
+  var s=getStatsObj(); var pts=API.calcBattingPoints(s)+API.calcBowlingPoints(s)+API.calcFieldingPoints(s);
+  var el=UI.el('live-pts'); if(el) el.textContent=Math.round(pts);
+}
+async function saveStats(){
+  var matchId=UI.el('stat-match-id').value, playerId=UI.el('stat-player-id').value;
+  if(!matchId||!playerId){UI.toast('Select match and player first','warn');return;}
+  var s=getStatsObj(); s.match_id=matchId; s.player_id=playerId;
+  try{await API.upsertPlayerStats(s);UI.toast('Stats saved!','success');await loadSavedStats(matchId);}
+  catch(e){UI.toast('Save failed: '+e.message,'error');}
 }
 
-async function saveStats() {
-  var matchId  = document.getElementById('stat-match-id').value;
-  var playerId = document.getElementById('stat-player-id').value;
-  if (!matchId || !playerId) { UI.toast('Select match and player first', 'warn'); return; }
-  var s = getStatsObj();
-  s.match_id = matchId; s.player_id = playerId;
-  try {
-    await API.upsertPlayerStats(s);
-    UI.toast('Stats saved!', 'success');
-    await loadSavedStats(matchId);
-  } catch(e) { UI.toast('Save failed: ' + e.message, 'error'); }
-}
+// ── CSV Upload — Audit Fix #18: player_name → UUID lookup ─────
+function onCSVDrop(event){event.preventDefault();event.currentTarget.classList.remove('drag-over');var file=event.dataTransfer.files[0];if(file)processCSVFile(file);}
+function onCSVFile(event){var file=event.target.files[0];if(file)processCSVFile(file);}
 
-/* ═══════════════════════════════════════════════
-   CALCULATE
-═══════════════════════════════════════════════ */
-function addLog(msg, type) {
-  var log  = document.getElementById('calc-log');
-  var line = document.createElement('div');
-  line.className = 'calc-log-line ' + (type || '');
-  line.textContent = '[' + new Date().toLocaleTimeString('en-IN') + '] ' + msg;
-  log.appendChild(line);
-  log.scrollTop = log.scrollHeight;
-}
-
-async function calculatePoints() {
-  var matchId = document.getElementById('calc-match-select').value;
-  if (!matchId) { UI.toast('Select a match first', 'warn'); return; }
-  var btn = document.getElementById('calc-btn');
-  if (btn._busy) return;
-  btn._busy = true; btn.disabled = true;
-  btn.innerHTML = '<span class="btn-spin"></span> Calculating…';
-  document.getElementById('calc-log').innerHTML = '';
-  addLog('Starting for match ID: ' + matchId.substring(0, 8) + '…');
-  try {
-    var results = await API.calculateMatchPoints(matchId);
-    addLog('Calculated ' + results.length + ' team scores.', 'good');
-    results.forEach(function(r) {
-      var imp = r.breakdown && r.breakdown.impactPlayerId ? ' ⚡ Impact' : '';
-      addLog('  → Squad ' + r.squad_points + ' + Pred ' + r.prediction_points + ' = ' + r.total_points + imp, 'good');
+async function processCSVFile(file){
+  var matchId=UI.el('stats-match-select').value;
+  if(!matchId){UI.toast('Select a match first','warn');return;}
+  var text=await file.text();
+  var preview=document.getElementById('csv-preview');
+  try{
+    var rawRows=API.parseStatsCsv(text,matchId);
+    // Resolve player names to IDs where player_id is missing/empty
+    var resolved=[], errors=[];
+    for(var i=0;i<rawRows.length;i++){
+      var r=rawRows[i];
+      if(!r.player_id&&r.player_name){
+        // Fuzzy match: case-insensitive includes
+        var name=(r.player_name||'').trim().toLowerCase();
+        var match=_allPlayers.find(function(p){return p.name.toLowerCase()===name;})
+                ||_allPlayers.find(function(p){return p.name.toLowerCase().includes(name)||name.includes(p.name.toLowerCase().split(' ').pop());});
+        if(match){r.player_id=match.id; r._resolved_name=match.name;}
+        else{errors.push('Row '+(i+2)+': could not find player "'+r.player_name+'"');}
+      }
+      if(r.player_id) resolved.push(r);
+    }
+    // Clean up helper columns
+    resolved.forEach(function(r){delete r.player_name; delete r._resolved_name;});
+    // Validate UUIDs
+    var uuidRe=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    resolved=resolved.filter(function(r){
+      if(!uuidRe.test(r.player_id)){errors.push('Invalid UUID skipped: '+r.player_id);return false;}
+      return true;
     });
-    addLog('Leaderboard refreshed · Match locked ✓', 'good');
-    UI.toast('Points calculated & match locked!', 'success');
-    await Promise.all([loadMatches(), loadAdminStats(), loadTeams()]);
-  } catch(e) {
-    addLog('ERROR: ' + e.message, 'error');
-    UI.toast('Calculation failed: ' + e.message, 'error');
-  }
-  btn._busy = false; btn.disabled = false;
-  btn.innerHTML = '⚡ Calculate &amp; Lock Match';
+
+    preview.style.display='';
+    preview.innerHTML=
+      (errors.length?'<div class="csv-status-err" style="font-size:12px;margin-bottom:8px;background:var(--red-dim);border:1px solid rgba(255,77,109,.25);border-radius:6px;padding:8px 12px;">⚠ '+errors.length+' row(s) skipped:<br>'+errors.map(UI.esc).join('<br>')+'</div>':'')+
+      '<div style="font-size:13px;color:var(--text2);margin-bottom:8px;">Ready to upload <strong>'+resolved.length+'</strong> rows.</div>'+
+      '<div class="table-wrap" style="max-height:180px;overflow-y:auto;"><table class="data-table"><thead><tr><th>Player</th><th>R</th><th>W</th><th>C</th></tr></thead><tbody>'+
+      resolved.slice(0,6).map(function(r){
+        var p=_allPlayers.find(function(p){return p.id===r.player_id;});
+        return '<tr><td style="font-size:12px;">'+(p?UI.esc(p.name):UI.esc(String(r.player_id).substring(0,8))+'…')+'</td><td>'+r.runs+'</td><td>'+r.wickets+'</td><td>'+r.catches+'</td></tr>';
+      }).join('')+
+      '</tbody></table></div>'+
+      (resolved.length?'<button class="btn btn-accent btn-sm" style="margin-top:10px;" onclick="uploadCSVStats('+JSON.stringify(resolved).replace(/</g,'\\u003c')+')">Upload '+resolved.length+' rows</button>':'');
+  }catch(e){UI.toast('CSV parse failed: '+e.message,'error');}
 }
 
-/* ═══════════════════════════════════════════════
-   RESPONSIVE GRID
-═══════════════════════════════════════════════ */
-function fixGrids() {
-  var narrow = window.innerWidth < 720;
-  ['matches-grid', 'calc-grid'].forEach(function(id) {
-    var g = document.getElementById(id);
-    if (g) g.style.gridTemplateColumns = narrow ? '1fr' : '1fr 1fr';
-  });
+async function uploadCSVStats(rows){
+  try{
+    await API.bulkUpsertPlayerStats(rows);
+    UI.toast('Uploaded '+rows.length+' stat rows!','success');
+    document.getElementById('csv-preview').style.display='none';
+    document.getElementById('csv-file-input').value='';
+    await loadSavedStats(UI.el('stats-match-select').value);
+  }catch(e){UI.toast('Upload failed: '+e.message,'error');}
 }
-window.addEventListener('resize', fixGrids);
+
+// ── Calculate ──────────────────────────────────────────────────
+function addLog(msg,type){
+  var log=UI.el('calc-log'); if(!log) return;
+  var line=document.createElement('div'); line.className='calc-log-line '+(type||'');
+  line.textContent='['+new Date().toLocaleTimeString('en-IN')+'] '+msg;
+  log.appendChild(line); log.scrollTop=log.scrollHeight;
+}
+
+async function calculatePoints(){
+  var matchId=UI.el('calc-match-select').value; if(!matchId){UI.toast('Select a match first','warn');return;}
+  // Audit Fix #19: show what will be calculated before proceeding
+  var match=_allMatches.find(function(m){return m.id===matchId;});
+  var teamCount=_allTeamsData.length||'all';
+  if(!confirm('Calculate points for '+UI.esc(match?(match.team1+' vs '+match.team2):matchId)+'?\n\nThis will score '+teamCount+' team(s) and lock the match.')) return;
+  var btn=UI.el('calc-btn'); if(btn._busy) return; btn._busy=true; btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span> Calculating…';
+  UI.el('calc-log').innerHTML=''; addLog('Starting calculation…');
+  try{
+    var results=await API.calculateMatchPoints(matchId,addLog);
+    addLog('Calculated '+results.length+' teams.','good'); addLog('Leaderboard refreshed · Match locked ✓','good');
+    UI.toast('Points calculated & match locked!','success');
+    await Promise.all([loadMatches(),loadAdminStats(),loadTeams()]);
+  }catch(e){addLog('ERROR: '+e.message,'error');UI.toast('Calculation failed: '+e.message,'error');}
+  btn._busy=false; btn.disabled=false; btn.innerHTML='⚡ Calculate &amp; Lock';
+}
+
+async function recalculate(){
+  var matchId=UI.el('calc-match-select').value; if(!matchId){UI.toast('Select a match first','warn');return;}
+  var match=_allMatches.find(function(m){return m.id===matchId;});
+  var teamCount=_allTeamsData.length||'all';
+  if(!confirm('RECALCULATE: '+UI.esc(match?(match.team1+' vs '+match.team2):matchId)+'?\n\nThis will DELETE existing points for '+teamCount+' team(s) then recalculate from scratch.\n\nThis cannot be undone.')) return;
+  var btn=UI.el('recalc-btn'); if(btn._busy) return; btn._busy=true; btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span> Recalculating…';
+  UI.el('calc-log').innerHTML=''; addLog('Deleting existing points…');
+  try{
+    var results=await API.recalculateMatch(matchId,addLog);
+    addLog('Done — '+results.length+' teams recalculated.','good');
+    UI.toast('Recalculation complete!','success');
+    await Promise.all([loadMatches(),loadAdminStats(),loadTeams()]);
+  }catch(e){addLog('ERROR: '+e.message,'error');UI.toast('Recalculation failed: '+e.message,'error');}
+  btn._busy=false; btn.disabled=false; btn.innerHTML='↻ Recalculate (delete &amp; redo)';
+}
+
+// ── Override ──────────────────────────────────────────────────
+async function submitOverride(){
+  var matchId=UI.el('override-match').value, teamId=UI.el('override-team').value;
+  var adj=parseInt(UI.el('override-adj').value||0), reason=UI.el('override-reason').value.trim();
+  if(!matchId||!teamId){UI.toast('Select match and team','warn');return;}
+  if(!adj){UI.toast('Enter a non-zero adjustment','warn');return;}
+  if(!reason){UI.toast('Enter a reason','warn');return;}
+  var matchName=_allMatches.find(function(m){return m.id===matchId;}); var matchLabel=matchName?(matchName.team1+' vs '+matchName.team2):matchId;
+  var teamName=_allTeamsData.find(function(r){return r.fantasy_team_id===teamId;}); var teamLabel=teamName&&teamName.team?teamName.team.team_name:teamId;
+  if(!confirm('Apply override?\n\nTeam: '+teamLabel+'\nMatch: '+matchLabel+'\nAdjustment: '+(adj>0?'+':'')+adj+' pts\nReason: '+reason)) return;
+  try{
+    await API.overridePoints(matchId,teamId,adj,reason);
+    document.getElementById('override-log').innerHTML='<div class="override-confirm mt-8">✓ Override applied: '+(adj>0?'+':'')+adj+' pts to '+UI.esc(teamLabel)+' · "'+UI.esc(reason)+'"</div>';
+    UI.toast('Override applied!','success');
+    UI.el('override-adj').value=''; UI.el('override-reason').value='';
+    await loadTeams();
+  }catch(e){UI.toast('Override failed: '+e.message,'error');}
+}
+
+// ── Blogs admin (admin uses isAdmin=true to skip view count) ───
+async function loadBlogList(){
+  var cont=document.getElementById('blog-admin-list');
+  try{
+    var blogs=await API.fetchBlogs({limit:50,publishedOnly:false});
+    if(!blogs.length){cont.innerHTML='<div style="padding:20px;color:var(--text3);font-size:13px;">No posts yet — create one!</div>';return;}
+    var catColors={preview:'#38d9f5',tips:'#c8f135',announcement:'#f5c842',recap:'#a78bfa',general:'#94a3b8'};
+    cont.innerHTML=blogs.map(function(b,i){
+      var col=catColors[b.category]||'#94a3b8';
+      return '<div class="fixture-row" onclick="editBlogAdmin(\''+b.id+'\')" style="animation:row-in .22s ease '+(.04*i)+'s both;">'+
+        '<div style="flex:1;min-width:0;"><div style="font-family:var(--f-ui);font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+UI.esc(b.title)+'</div>'+
+        '<div style="display:flex;gap:8px;margin-top:2px;"><span style="background:'+col+'22;color:'+col+';font-family:var(--f-ui);font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;">'+UI.esc(b.category)+'</span>'+
+        (!b.is_published?'<span class="badge badge-red" style="font-size:10px;">Draft</span>':'')+
+        '<span style="font-size:11px;color:var(--text3);">'+UI.shortDate(b.created_at)+'</span>'+
+        '<span style="font-size:11px;color:var(--text3);">'+b.views+' views</span></div></div>'+
+        '<button class="btn btn-ghost btn-sm fixture-edit" onclick="event.stopPropagation();editBlogAdmin(\''+b.id+'\')" style="font-size:11px;padding:3px 8px;">Edit</button>'+
+      '</div>';
+    }).join('');
+  }catch(e){cont.innerHTML='<div style="padding:14px;color:var(--red);font-size:13px;">'+UI.esc(e.message)+'</div>';}
+}
+
+function clearBlogForm(){
+  UI.el('blog-id').value=''; UI.el('b-title').value=''; UI.el('b-excerpt').value='';
+  UI.el('b-category').value='general'; UI.el('b-content').value=''; UI.el('b-published').checked=false;
+  var del=UI.el('del-blog-btn'); if(del) del.style.display='none';
+}
+
+async function editBlogAdmin(blogId){
+  try{
+    // Pass isAdmin=true so view count is NOT incremented (Audit Fix #16)
+    var b=await API.fetchBlog(blogId, true); if(!b) return;
+    UI.el('blog-id').value=b.id; UI.el('b-title').value=b.title;
+    UI.el('b-excerpt').value=b.excerpt||''; UI.el('b-category').value=b.category||'general';
+    UI.el('b-content').value=b.content; UI.el('b-published').checked=!!b.is_published;
+    var del=UI.el('del-blog-btn'); if(del) del.style.display='';
+  }catch(e){UI.toast('Load failed: '+e.message,'error');}
+}
+
+async function saveBlogAdmin(){
+  var id=UI.el('blog-id').value, title=UI.el('b-title').value.trim(), content=UI.el('b-content').value.trim();
+  if(!title||!content){UI.toast('Title and content required','warn');return;}
+  var blog={title:title,content:content,excerpt:UI.el('b-excerpt').value.trim()||null,category:UI.el('b-category').value,is_published:UI.el('b-published').checked};
+  if(id) blog.id=id;
+  try{await API.upsertBlog(blog);UI.toast('Post saved!','success');clearBlogForm();await loadBlogList();}
+  catch(e){UI.toast('Save failed: '+e.message,'error');}
+}
+
+async function deleteBlogAdmin(){
+  var id=UI.el('blog-id').value; if(!id) return;
+  if(!confirm('Delete this post permanently?')) return;
+  try{await API.deleteBlog(id);UI.toast('Post deleted','warn');clearBlogForm();await loadBlogList();}
+  catch(e){UI.toast('Delete failed: '+e.message,'error');}
+}
+
+// ── Responsive ────────────────────────────────────────────────
+function fixGrids(){
+  var narrow=window.innerWidth<720;
+  ['fixtures-grid','calc-grid','blogs-grid'].forEach(function(id){var g=document.getElementById(id);if(g)g.style.gridTemplateColumns=narrow?'1fr':'1fr 1fr';});
+}
+window.addEventListener('resize',fixGrids); fixGrids();
 
 init();
 </script>
+</div>
 </body>
 </html>

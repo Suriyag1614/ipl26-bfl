@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Match Center — BFL Fantasy IPL 2026</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,6 +35,7 @@
 <nav class="navbar" id="navbar"></nav>
 <div class="bottom-nav"><div class="bottom-nav-inner" id="bottom-nav-inner"></div></div>
 
+<div class="page-content-wrap" id="page-content-wrap">
 <div class="page-wrap">
 <main class="main">
 <div class="container">
@@ -113,7 +116,7 @@ var _myTeamId = null, _selectedMatch = null;
 async function init() {
   var sess = await Auth.requireAuth();
   if (!sess) return;
-  await initNavbar('leaderboard');
+  await initNavbar('match-center');
   var team = await Auth.fetchTeam(sess.user.id);
   if (team) _myTeamId = team.id;
   await loadMatchPills();
@@ -253,5 +256,6 @@ function renderAllPredictions(mc) {
 
 init();
 </script>
+</div>
 </body>
 </html>

@@ -14,7 +14,9 @@ const API = {
       .select('id,is_captain,is_vc,player:players(id,name,ipl_team,role,image_url,is_overseas)')
       .eq('fantasy_team_id', teamId).order('is_captain', { ascending: false });
     if (error) throw error;
-    return data || [];
+    // Always return array — guards against PostgREST returning single object
+    if (!data) return [];
+    return Array.isArray(data) ? data : [data];
   },
 
   async fetchAllPlayers() {
@@ -75,8 +77,12 @@ const API = {
     return Math.floor((new Date(match.deadline_time) - new Date()) / 1000);
   },
 
+  // Graceful fallback if migration_v2.sql not yet run (Audit Fix #11)
   async serverAutoLock() {
-    try { await sb.rpc('lock_due_matches'); } catch(_) {}
+    try {
+      const { error } = await sb.rpc('lock_due_matches');
+      if (error && error.code === 'PGRST202') return;
+    } catch(_) {}
   },
 
   // ════════════════════════════════════════════════════════════
@@ -508,11 +514,14 @@ const API = {
     return data||[];
   },
 
-  async fetchBlog(slugOrId) {
+  // Only increments views for non-admin readers (Audit Fix #16)
+  async fetchBlog(slugOrId, isAdmin) {
     const { data, error } = await sb.from('blogs').select('*')
       .or(`slug.eq.${slugOrId},id.eq.${slugOrId}`).maybeSingle();
     if (error) throw error;
-    if (data) await sb.from('blogs').update({views:(data.views||0)+1}).eq('id',data.id).then(()=>{});
+    if (data && !isAdmin) {
+      await sb.from('blogs').update({views:(data.views||0)+1}).eq('id',data.id).then(()=>{});
+    }
     return data;
   },
 

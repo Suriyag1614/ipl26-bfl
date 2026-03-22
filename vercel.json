@@ -6,8 +6,31 @@
       "source": "/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
-        { "key": "X-Content-Type-Options", "value": "nosniff" }
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" }
       ]
+    },
+    {
+      "source": "/css/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
+    },
+    {
+      "source": "/js/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=3600" }]
+    },
+    {
+      "source": "/images/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
     }
+  ],
+  "rewrites": [
+    { "source": "/dashboard",    "destination": "/dashboard.html" },
+    { "source": "/squad",        "destination": "/squad.html" },
+    { "source": "/predictions",  "destination": "/predictions.html" },
+    { "source": "/leaderboard",  "destination": "/leaderboard.html" },
+    { "source": "/analytics",    "destination": "/analytics.html" },
+    { "source": "/blogs",        "destination": "/blogs.html" },
+    { "source": "/match-center", "destination": "/match-center.html" },
+    { "source": "/admin",        "destination": "/admin.html" }
   ]
 }
