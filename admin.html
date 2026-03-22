@@ -5,17 +5,73 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — BFL Fantasy IPL 2026</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* ── Stats saved row ── */
+    .stats-saved-row {
+      display:flex; align-items:center; gap:9px;
+      padding:9px 12px; border-radius:9px;
+      background:var(--bg3); border:1px solid var(--border);
+      margin-bottom:7px; transition:all .18s; cursor:default;
+    }
+    .stats-saved-row:hover { border-color:var(--border-h); transform:translateX(4px); box-shadow:var(--shadow); }
+
+    /* ── Section label inside stats form ── */
+    .section-label {
+      display:flex; align-items:center; gap:7px;
+      font-family:var(--f-ui); font-size:11px; font-weight:800;
+      text-transform:uppercase; letter-spacing:1.2px;
+      padding:4px 0 2px; margin:12px 0 8px;
+      grid-column: 1 / -1;
+    }
+    .section-label img { width:15px;height:15px;object-fit:contain; }
+
+    /* ── Fixture row team names flex ── */
+    .fx-teams {
+      flex:1; display:flex; align-items:center; gap:6px;
+      font-family:var(--f-ui); font-weight:800; font-size:14px;
+      overflow:hidden; min-width:0;
+    }
+    .fx-team-name { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100px; }
+
+    /* ── Live pts estimate bar ── */
+    .pts-estimate {
+      display:inline-flex; align-items:center; gap:8px;
+      background:var(--accent-dim); border:1px solid rgba(200,241,53,.2);
+      border-radius:9px; padding:7px 16px;
+    }
+
+    /* ── Admin match no badge ── */
+    .edit-badge {
+      display:inline-flex; align-items:center; gap:5px;
+      font-family:var(--f-ui); font-size:11px; font-weight:800;
+      text-transform:uppercase; letter-spacing:1.4px;
+      color:var(--accent); background:var(--accent-dim);
+      border:1px solid rgba(200,241,53,.2); border-radius:6px;
+      padding:3px 11px; margin-bottom:14px;
+    }
+
+    /* ── Two-col form grid ── */
+    .form-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .form-2 .span-2 { grid-column:1/-1; }
+  </style>
 </head>
 <body>
 <div id="toast-container"></div>
-<div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
 
-<!-- Admin navbar (red accent) -->
-<nav class="navbar" style="border-bottom-color:rgba(255,77,109,0.45);">
+<!-- ── Admin Navbar ─────────────────────────────── -->
+<nav class="navbar" style="border-bottom-color:rgba(255,77,109,.38);">
   <div class="container" style="display:flex;align-items:center;gap:12px;">
-    <div class="nav-logo"><span class="nav-logo-dot" style="background:var(--red);"></span>BFL Admin</div>
+    <a href="#" class="nav-logo" style="text-decoration:none;">
+      <span class="nav-logo-dot" style="background:var(--red);"></span>
+      BFL Admin
+    </a>
     <div style="margin-left:auto;display:flex;gap:10px;align-items:center;">
       <div class="nav-user">
         <div class="nav-avatar" style="background:linear-gradient(135deg,var(--red),var(--purple));">A</div>
@@ -27,185 +83,317 @@
 </nav>
 
 <div class="page-wrap">
-  <main class="main" style="position:relative;z-index:1;">
-    <div class="container">
+<main class="main">
+<div class="container">
 
-      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:14px;">
-        <div>
-          <div class="page-title">Admin Control Room</div>
-          <div class="page-sub">Manage matches · Enter stats · Calculate points</div>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-ghost btn-sm" onclick="loadAll()">↻ Refresh</button>
-          <a href="leaderboard.html" class="btn btn-ghost btn-sm" target="_blank">View Leaderboard ↗</a>
-        </div>
-      </div>
-
-      <!-- Quick stats -->
-      <div class="stat-grid" style="margin-bottom:24px;" id="admin-stats">
-        <div class="skel skel-chip"></div>
-        <div class="skel skel-chip"></div>
-        <div class="skel skel-chip"></div>
-      </div>
-
-      <!-- Tabs -->
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('matches')">Matches</button>
-        <button class="tab-btn" onclick="switchTab('stats')">Player Stats</button>
-        <button class="tab-btn" onclick="switchTab('calc')">Calculate Points</button>
-        <button class="tab-btn" onclick="switchTab('teams')">Teams</button>
-      </div>
-
-      <!-- ═══ MATCHES ═══ -->
-      <div class="tab-panel active" id="tab-matches">
-        <div id="matches-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-          <div class="card">
-            <div class="card-title">Add / Edit Match</div>
-            <input type="hidden" id="edit-match-id">
-            <div class="form-group">
-              <label class="form-label">Match Title</label>
-              <input class="form-input" id="m-title" placeholder="e.g. CSK vs MI — Match 1">
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              <div class="form-group"><label class="form-label">Team 1</label><input class="form-input" id="m-team1" placeholder="CSK"></div>
-              <div class="form-group"><label class="form-label">Team 2</label><input class="form-input" id="m-team2" placeholder="MI"></div>
-            </div>
-            <div class="form-group"><label class="form-label">Match Date & Time</label><input class="form-input" type="datetime-local" id="m-date" style="color-scheme:dark;"></div>
-            <div class="form-group"><label class="form-label">Venue</label><input class="form-input" id="m-venue" placeholder="Wankhede Stadium, Mumbai"></div>
-            <div class="card-title" style="margin-top:16px;font-size:11px;">Result (fill after match)</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              <div class="form-group"><label class="form-label">Actual Target</label><input class="form-input font-mono" id="m-target" type="number" placeholder="185"></div>
-              <div class="form-group"><label class="form-label">Winner (exact)</label><input class="form-input" id="m-winner" placeholder="CSK"></div>
-            </div>
-            <div class="form-group"><label class="form-label">Player of Match (exact name)</label><input class="form-input" id="m-pom" placeholder="e.g. Virat Kohli"></div>
-            <div style="display:flex;gap:10px;">
-              <button class="btn btn-accent" onclick="saveMatch()">Save Match</button>
-              <button class="btn btn-ghost" onclick="clearMatchForm()">Clear</button>
-            </div>
-          </div>
-
-          <div class="card" style="padding:0;overflow:hidden;">
-            <div style="padding:18px 20px 0;"><div class="card-title">All Matches</div></div>
-            <div class="table-wrap" style="max-height:480px;overflow-y:auto;">
-              <table class="data-table">
-                <thead><tr><th>Match</th><th>Date</th><th>Status</th><th></th></tr></thead>
-                <tbody id="matches-tbody"><tr><td colspan="4"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ PLAYER STATS ═══ -->
-      <div class="tab-panel" id="tab-stats">
-        <div class="card" style="margin-bottom:16px;">
-          <div class="card-title">Select Match &amp; Player</div>
-          <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <div style="flex:1;min-width:200px;">
-              <label class="form-label">Match</label>
-              <select class="form-select" id="stats-match-select" onchange="loadStatsForm()">
-                <option value="">— Select match —</option>
-              </select>
-            </div>
-            <div style="flex:1;min-width:200px;">
-              <label class="form-label">Player</label>
-              <select class="form-select" id="stats-player-select" onchange="prefillStats()">
-                <option value="">— Select player —</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="card" id="stats-form-card" style="display:none;">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
-            <div class="card-title" style="margin:0;" id="stats-player-name">Player Stats</div>
-            <div style="background:var(--accent-dim);border:1px solid rgba(200,241,53,0.2);border-radius:8px;padding:7px 14px;">
-              <span style="font-size:11px;color:var(--text2);">Estimated Pts: </span>
-              <span id="live-pts" style="font-family:'Syne',sans-serif;font-weight:800;color:var(--accent);font-size:18px;">0</span>
-            </div>
-          </div>
-          <input type="hidden" id="stat-match-id">
-          <input type="hidden" id="stat-player-id">
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;">
-            <div style="grid-column:1/-1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f87171;">Batting</div>
-            <div class="form-group"><label class="form-label">Runs</label><input class="form-input font-mono" type="number" id="s-runs" min="0" oninput="recalcLive()"></div>
-            <div class="form-group"><label class="form-label">Balls Faced</label><input class="form-input font-mono" type="number" id="s-balls" min="0" oninput="recalcLive()"></div>
-            <div class="form-group"><label class="form-label">Fours</label><input class="form-input font-mono" type="number" id="s-fours" min="0" oninput="recalcLive()"></div>
-            <div class="form-group"><label class="form-label">Sixes</label><input class="form-input font-mono" type="number" id="s-sixes" min="0" oninput="recalcLive()"></div>
-            <div class="form-group"><label class="form-label">Not Out?</label><select class="form-select" id="s-notout" onchange="recalcLive()"><option value="">No</option><option value="true">Yes</option></select></div>
-            <div style="grid-column:1/-1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#60a5fa;margin-top:4px;">Bowling</div>
-            <div class="form-group"><label class="form-label">Wickets</label><input class="form-input font-mono" type="number" id="s-wickets" min="0" oninput="recalcLive()"></div>
-            <div class="form-group"><label class="form-label">Overs</label><input class="form-input font-mono" type="number" id="s-overs" min="0" step="0.1" oninput="recalcLive()"></div>
-            <div class="form-group"><label class="form-label">Runs Conceded</label><input class="form-input font-mono" type="number" id="s-runsc" min="0" oninput="recalcLive()"></div>
-            <div class="form-group"><label class="form-label">Maidens</label><input class="form-input font-mono" type="number" id="s-maidens" min="0" oninput="recalcLive()"></div>
-            <div style="grid-column:1/-1;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#34d399;margin-top:4px;">Fielding</div>
-            <div class="form-group"><label class="form-label">Catches</label><input class="form-input font-mono" type="number" id="s-catches" min="0" oninput="recalcLive()"></div>
-            <div class="form-group"><label class="form-label">Run Outs</label><input class="form-input font-mono" type="number" id="s-runouts" min="0" oninput="recalcLive()"></div>
-            <div class="form-group"><label class="form-label">Stumpings</label><input class="form-input font-mono" type="number" id="s-stumpings" min="0" oninput="recalcLive()"></div>
-          </div>
-          <div style="display:flex;gap:10px;margin-top:16px;">
-            <button class="btn btn-accent" onclick="saveStats()">Save Stats</button>
-            <button class="btn btn-ghost" onclick="clearStatsForm()">Clear</button>
-          </div>
-        </div>
-
-        <div class="card" id="saved-stats-card" style="display:none;margin-top:16px;">
-          <div class="card-title">Saved Stats for This Match</div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Player</th><th>Runs</th><th>Wkts</th><th>Catches</th><th>Est. Pts</th></tr></thead>
-              <tbody id="saved-stats-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ CALCULATE ═══ -->
-      <div class="tab-panel" id="tab-calc">
-        <div id="calc-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-          <div class="card">
-            <div class="card-title">Calculate Points for Match</div>
-            <div class="form-group">
-              <label class="form-label">Select Match</label>
-              <select class="form-select" id="calc-match-select"><option value="">— Select match —</option></select>
-            </div>
-            <div style="background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.7;">
-              This will:<br>
-              • Calculate batting, bowling, fielding pts for all players<br>
-              • Apply captain (2×), VC (1.5×), Impact Player (3×)<br>
-              • Score each team's target &amp; winner prediction<br>
-              • Refresh the leaderboard &amp; lock the match
-            </div>
-            <button class="btn btn-gold btn-full" id="calc-btn" onclick="calculatePoints()" style="font-size:15px;padding:13px;">
-              ⚡ Calculate &amp; Lock Match
-            </button>
-          </div>
-          <div class="card">
-            <div class="card-title">Calculation Log</div>
-            <div class="calc-log" id="calc-log" style="min-height:200px;">
-              <div class="calc-log-line" style="color:var(--text3);">Awaiting calculation…</div>
-            </div>
-            <button class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="document.getElementById('calc-log').innerHTML=''">Clear Log</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ TEAMS ═══ -->
-      <div class="tab-panel" id="tab-teams">
-        <div class="card" style="padding:0;overflow:hidden;">
-          <div style="padding:18px 20px 0;"><div class="card-title">All Fantasy Teams</div></div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>#</th><th>Team Name</th><th>Owner</th><th>Matches</th><th>Total Pts</th></tr></thead>
-              <tbody id="teams-tbody"><tr><td colspan="5"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
+  <!-- Header -->
+  <div class="page-header flex-between">
+    <div>
+      <div class="page-title">Control Room</div>
+      <div class="page-sub">IPL 2026 · Manage fixtures · Enter stats · Calculate points</div>
     </div>
-  </main>
-</div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-ghost btn-sm" onclick="loadAll()">↻ Refresh</button>
+      <a href="leaderboard.html" class="btn btn-ghost btn-sm" target="_blank">Leaderboard ↗</a>
+    </div>
+  </div>
+
+  <!-- Quick stats -->
+  <div class="stat-grid mb-24" id="admin-stats">
+    <div class="skel skel-chip"></div>
+    <div class="skel skel-chip"></div>
+    <div class="skel skel-chip"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active"  onclick="switchTab('matches')">Fixtures</button>
+    <button class="tab-btn"         onclick="switchTab('stats')">Player Stats</button>
+    <button class="tab-btn"         onclick="switchTab('calc')">Calculate</button>
+    <button class="tab-btn"         onclick="switchTab('teams')">Teams</button>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB: FIXTURES
+  ══════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-matches">
+    <div id="matches-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+      <!-- LEFT: Form -->
+      <div class="card">
+        <div class="card-title">Add / Edit Fixture</div>
+        <input type="hidden" id="edit-match-id">
+        <div id="edit-badge-wrap" style="display:none;">
+          <div class="edit-badge" id="edit-badge-text">New Fixture</div>
+        </div>
+
+        <!-- Match Number -->
+        <div class="form-group">
+          <label class="form-label">Match Number</label>
+          <input class="form-input font-mono" type="number" id="m-no" min="1" max="74" placeholder="e.g. 1">
+        </div>
+
+        <!-- Teams — dropdowns with logo preview -->
+        <div class="form-2">
+          <div class="form-group">
+            <label class="form-label">Home Team</label>
+            <div class="select-logo-wrap">
+              <img id="logo-home" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'">
+              <select class="form-select" id="m-team1" onchange="onTeamChange('home')">
+                <option value="">— Select —</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Away Team</label>
+            <div class="select-logo-wrap">
+              <img id="logo-away" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'">
+              <select class="form-select" id="m-team2" onchange="onTeamChange('away')">
+                <option value="">— Select —</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Date + Time -->
+        <div class="form-2">
+          <div class="form-group">
+            <label class="form-label">Match Date</label>
+            <input class="form-input" type="date" id="m-date" style="color-scheme:dark;">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Kickoff Time</label>
+            <select class="form-select" id="m-time">
+              <option value="15:30">3:30 PM</option>
+              <option value="19:30" selected>7:30 PM</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Venue -->
+        <div class="form-group">
+          <label class="form-label">Venue</label>
+          <select class="form-select" id="m-venue">
+            <option value="">— Select Venue —</option>
+            <option>Bengaluru</option><option>Mumbai</option><option>Guwahati</option>
+            <option>New Chandigarh</option><option>Lucknow</option><option>Kolkata</option>
+            <option>Chennai</option><option>Delhi</option><option>Ahmedabad</option>
+            <option>Hyderabad</option><option>Jaipur</option><option>Dharamsala</option>
+            <option>Visakhapatnam</option><option>Ranchi</option><option>Pune</option>
+          </select>
+        </div>
+
+        <!-- Result (post-match) -->
+        <div class="card-title" style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px;">
+          Result (fill after match)
+        </div>
+
+        <div class="form-2">
+          <div class="form-group">
+            <label class="form-label">Actual Target / Score</label>
+            <input class="form-input font-mono" id="m-target" type="number" placeholder="e.g. 185" min="50" max="500">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Winner</label>
+            <div class="select-logo-wrap">
+              <img id="logo-winner" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'">
+              <select class="form-select" id="m-winner" onchange="onTeamChange('winner')">
+                <option value="">— No Result Yet —</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Player of Match</label>
+          <select class="form-select" id="m-pom">
+            <option value="">— Select Player —</option>
+          </select>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:6px;">
+          <button class="btn btn-accent" onclick="saveMatch()">Save Fixture</button>
+          <button class="btn btn-ghost"  onclick="clearMatchForm()">Clear</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Fixture list -->
+      <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;">
+        <div style="padding:18px 20px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+          <div class="card-title" style="margin:0;">All Fixtures</div>
+          <button class="btn btn-accent btn-sm" onclick="loadIPLFixtures()">
+            ⚡ Load IPL 2026
+          </button>
+        </div>
+        <div style="flex:1;overflow-y:auto;max-height:520px;" id="fixtures-scroll">
+          <div id="fixtures-list">
+            <div style="padding:14px 20px;color:var(--text3);font-size:13px;">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /matches-grid -->
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB: PLAYER STATS
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-stats">
+
+    <!-- Match + Player selectors -->
+    <div class="card mb-16">
+      <div class="card-title">Select Match &amp; Player</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;">
+          <label class="form-label">Match</label>
+          <select class="form-select" id="stats-match-select" onchange="onStatsMatchChange()">
+            <option value="">— Select match —</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <label class="form-label">Player</label>
+          <div class="select-logo-wrap">
+            <img id="logo-stats-player" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'">
+            <select class="form-select" id="stats-player-select" onchange="prefillStats()">
+              <option value="">— Select player —</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats entry form -->
+    <div class="card" id="stats-form-card" style="display:none;">
+      <div class="flex-between mb-16">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <img id="stats-team-logo" style="width:36px;height:36px;object-fit:contain;display:none;" alt="" onerror="this.style.display='none'">
+          <div>
+            <div class="card-title" style="margin:0;" id="stats-player-name">Player Stats</div>
+            <div style="display:flex;gap:5px;margin-top:4px;" id="stats-player-chips"></div>
+          </div>
+        </div>
+        <div class="pts-estimate">
+          <span style="font-size:12px;color:var(--text2);font-family:var(--f-ui);font-weight:700;text-transform:uppercase;letter-spacing:.8px;">Est. Pts</span>
+          <span id="live-pts" style="font-family:var(--f-display);font-weight:900;color:var(--accent);font-size:22px;">0</span>
+        </div>
+      </div>
+
+      <input type="hidden" id="stat-match-id">
+      <input type="hidden" id="stat-player-id">
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;">
+        <!-- Batting section -->
+        <div class="section-label" style="color:#f87171;">
+          <img src="images/teams-all-rounder-icon.svg" alt="" style="filter:brightness(0)saturate(100%)invert(60%)sepia(80%)saturate(400%)hue-rotate(320deg);">
+          Batting
+        </div>
+        <div class="form-group"><label class="form-label">Runs</label><input class="form-input font-mono" type="number" id="s-runs" min="0" oninput="recalcLive()"></div>
+        <div class="form-group"><label class="form-label">Balls Faced</label><input class="form-input font-mono" type="number" id="s-balls" min="0" oninput="recalcLive()"></div>
+        <div class="form-group"><label class="form-label">Fours</label><input class="form-input font-mono" type="number" id="s-fours" min="0" oninput="recalcLive()"></div>
+        <div class="form-group"><label class="form-label">Sixes</label><input class="form-input font-mono" type="number" id="s-sixes" min="0" oninput="recalcLive()"></div>
+        <div class="form-group">
+          <label class="form-label">Not Out?</label>
+          <select class="form-select" id="s-notout" onchange="recalcLive()">
+            <option value="">No</option><option value="true">Yes ✓</option>
+          </select>
+        </div>
+
+        <!-- Bowling section -->
+        <div class="section-label" style="color:#60a5fa;">
+          <img src="images/teams-all-rounder-icon.svg" alt="" style="filter:brightness(0)saturate(100%)invert(60%)sepia(80%)saturate(400%)hue-rotate(200deg);">
+          Bowling
+        </div>
+        <div class="form-group"><label class="form-label">Wickets</label><input class="form-input font-mono" type="number" id="s-wickets" min="0" oninput="recalcLive()"></div>
+        <div class="form-group"><label class="form-label">Overs</label><input class="form-input font-mono" type="number" id="s-overs" min="0" step="0.1" oninput="recalcLive()"></div>
+        <div class="form-group"><label class="form-label">Runs Conceded</label><input class="form-input font-mono" type="number" id="s-runsc" min="0" oninput="recalcLive()"></div>
+        <div class="form-group"><label class="form-label">Maidens</label><input class="form-input font-mono" type="number" id="s-maidens" min="0" oninput="recalcLive()"></div>
+
+        <!-- Fielding section -->
+        <div class="section-label" style="color:#34d399;">
+          <img src="images/teams-all-rounder-icon.svg" alt="" style="filter:brightness(0)saturate(100%)invert(60%)sepia(80%)saturate(400%)hue-rotate(110deg);">
+          Fielding
+        </div>
+        <div class="form-group"><label class="form-label">Catches</label><input class="form-input font-mono" type="number" id="s-catches" min="0" oninput="recalcLive()"></div>
+        <div class="form-group"><label class="form-label">Run Outs</label><input class="form-input font-mono" type="number" id="s-runouts" min="0" oninput="recalcLive()"></div>
+        <div class="form-group"><label class="form-label">Stumpings</label><input class="form-input font-mono" type="number" id="s-stumpings" min="0" oninput="recalcLive()"></div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn btn-accent" onclick="saveStats()">Save Stats</button>
+        <button class="btn btn-ghost"  onclick="clearStatsForm()">Clear</button>
+      </div>
+    </div>
+
+    <!-- Saved stats for this match -->
+    <div class="card mt-16" id="saved-stats-card" style="display:none;">
+      <div class="card-title">Saved Stats for This Match</div>
+      <div id="saved-stats-list"></div>
+    </div>
+
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB: CALCULATE
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-calc">
+    <div id="calc-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div class="card">
+        <div class="card-title">Calculate Points</div>
+        <div class="form-group">
+          <label class="form-label">Select Match</label>
+          <select class="form-select" id="calc-match-select">
+            <option value="">— Select match —</option>
+          </select>
+        </div>
+        <div style="background:var(--bg3);border-radius:9px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.85;">
+          This will:<br>
+          • Score batting / bowling / fielding for all players<br>
+          • Apply Captain 2× · VC 1.5× · Impact Player 3×<br>
+          • Score each team's target &amp; winner prediction<br>
+          • Refresh the leaderboard and <strong style="color:var(--text);">lock the match</strong>
+        </div>
+        <button class="btn btn-gold btn-full" id="calc-btn" onclick="calculatePoints()" style="font-size:16px;padding:14px;">
+          ⚡ Calculate &amp; Lock Match
+        </button>
+      </div>
+      <div class="card">
+        <div class="card-title">Calculation Log</div>
+        <div class="calc-log" id="calc-log" style="min-height:220px;">
+          <div class="calc-log-line" style="color:var(--text3);">Awaiting calculation…</div>
+        </div>
+        <button class="btn btn-ghost btn-sm mt-8" onclick="document.getElementById('calc-log').innerHTML=''">Clear Log</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       TAB: TEAMS
+  ══════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-teams">
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="padding:18px 20px 0;"><div class="card-title">All Fantasy Teams</div></div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Team</th>
+              <th>Owner</th>
+              <th style="width:90px;">Matches</th>
+              <th style="width:100px;">Total Pts</th>
+            </tr>
+          </thead>
+          <tbody id="teams-tbody">
+            <tr><td colspan="5"><div class="skel skel-row" style="margin:8px;"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+</main>
+</div><!-- /page-wrap -->
 
 <script src="https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="js/supabase.js"></script>
@@ -214,147 +402,422 @@
 <script src="js/api.js"></script>
 <script>
 'use strict';
+
+/* ═══════════════════════════════════════════════
+   TEAM CONFIGURATION
+═══════════════════════════════════════════════ */
+var TEAMS = [
+  'CHENNAI SUPER KINGS', 'DELHI CAPITALS', 'GUJARAT TITANS',
+  'KOLKATA KNIGHT RIDERS', 'LUCKNOW SUPER GIANTS', 'MUMBAI INDIANS',
+  'PUNJAB KINGS', 'RAJASTHAN ROYALS', 'ROYAL CHALLENGERS BENGALURU',
+  'SUNRISERS HYDERABAD', 'SUPREME RAJAS'
+];
+
+var TEAM_CODES = {
+  'CHENNAI SUPER KINGS':          'CSK',
+  'DELHI CAPITALS':               'DC',
+  'GUJARAT TITANS':               'GT',
+  'KOLKATA KNIGHT RIDERS':        'KKR',
+  'LUCKNOW SUPER GIANTS':         'LSG',
+  'MUMBAI INDIANS':               'MI',
+  'PUNJAB KINGS':                 'PBKS',
+  'RAJASTHAN ROYALS':             'RR',
+  'ROYAL CHALLENGERS BENGALURU':  'RCB',
+  'SUNRISERS HYDERABAD':          'SRH',
+  'SUPREME RAJAS':                'SURA'
+};
+
+var TEAM_COLORS = {
+  CSK:'#fdb913', MI:'#004ba0', RCB:'#da1818', KKR:'#6a1bac',
+  SRH:'#f26522', DC:'#004c93', PBKS:'#ed1b24', RR:'#ea1a85',
+  GT:'#1c2c5b',  LSG:'#ff002b', SURA:'#1a3a8a'
+};
+
+function teamCode(name) { return TEAM_CODES[(name||'').toUpperCase()] || null; }
+function teamLogo(name) { var c = teamCode(name); return c ? 'images/' + c + 'outline.png' : ''; }
+function shortName(name) { return teamCode(name) || (name || '').split(' ').map(function(w){return w[0];}).join(''); }
+
+/* ═══════════════════════════════════════════════
+   IPL 2026 FIXTURE DATA (all 20 from PDF)
+═══════════════════════════════════════════════ */
+var IPL_FIXTURES = [
+  { no:1,  date:'2026-03-28', time:'19:30', home:'ROYAL CHALLENGERS BENGALURU', away:'SUNRISERS HYDERABAD',        venue:'Bengaluru' },
+  { no:2,  date:'2026-03-29', time:'19:30', home:'MUMBAI INDIANS',               away:'KOLKATA KNIGHT RIDERS',      venue:'Mumbai' },
+  { no:3,  date:'2026-03-30', time:'19:30', home:'RAJASTHAN ROYALS',             away:'CHENNAI SUPER KINGS',        venue:'Guwahati' },
+  { no:4,  date:'2026-03-31', time:'19:30', home:'PUNJAB KINGS',                 away:'GUJARAT TITANS',             venue:'New Chandigarh' },
+  { no:5,  date:'2026-04-01', time:'19:30', home:'LUCKNOW SUPER GIANTS',         away:'DELHI CAPITALS',             venue:'Lucknow' },
+  { no:6,  date:'2026-04-02', time:'19:30', home:'KOLKATA KNIGHT RIDERS',        away:'SUNRISERS HYDERABAD',        venue:'Kolkata' },
+  { no:7,  date:'2026-04-03', time:'19:30', home:'CHENNAI SUPER KINGS',          away:'PUNJAB KINGS',               venue:'Chennai' },
+  { no:8,  date:'2026-04-04', time:'15:30', home:'DELHI CAPITALS',               away:'MUMBAI INDIANS',             venue:'Delhi' },
+  { no:9,  date:'2026-04-04', time:'19:30', home:'GUJARAT TITANS',               away:'RAJASTHAN ROYALS',           venue:'Ahmedabad' },
+  { no:10, date:'2026-04-05', time:'15:30', home:'SUNRISERS HYDERABAD',          away:'LUCKNOW SUPER GIANTS',       venue:'Hyderabad' },
+  { no:11, date:'2026-04-05', time:'19:30', home:'ROYAL CHALLENGERS BENGALURU',  away:'CHENNAI SUPER KINGS',        venue:'Bengaluru' },
+  { no:12, date:'2026-04-06', time:'19:30', home:'KOLKATA KNIGHT RIDERS',        away:'PUNJAB KINGS',               venue:'Kolkata' },
+  { no:13, date:'2026-04-07', time:'19:30', home:'RAJASTHAN ROYALS',             away:'MUMBAI INDIANS',             venue:'Guwahati' },
+  { no:14, date:'2026-04-08', time:'19:30', home:'DELHI CAPITALS',               away:'GUJARAT TITANS',             venue:'Delhi' },
+  { no:15, date:'2026-04-09', time:'19:30', home:'KOLKATA KNIGHT RIDERS',        away:'LUCKNOW SUPER GIANTS',       venue:'Kolkata' },
+  { no:16, date:'2026-04-10', time:'19:30', home:'RAJASTHAN ROYALS',             away:'ROYAL CHALLENGERS BENGALURU',venue:'Guwahati' },
+  { no:17, date:'2026-04-11', time:'15:30', home:'PUNJAB KINGS',                 away:'SUNRISERS HYDERABAD',        venue:'New Chandigarh' },
+  { no:18, date:'2026-04-11', time:'19:30', home:'CHENNAI SUPER KINGS',          away:'DELHI CAPITALS',             venue:'Chennai' },
+  { no:19, date:'2026-04-12', time:'15:30', home:'LUCKNOW SUPER GIANTS',         away:'GUJARAT TITANS',             venue:'Lucknow' },
+  { no:20, date:'2026-04-12', time:'19:30', home:'MUMBAI INDIANS',               away:'ROYAL CHALLENGERS BENGALURU',venue:'Mumbai' }
+];
+
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
 var _allPlayers = [], _allMatches = [];
 
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
 async function doLogout() { await Auth.signOut(); }
 
 async function init() {
   var sess = await Auth.getSession();
   if (!sess) { window.location.href = 'index.html'; return; }
   if (!Auth.isAdmin(sess.user)) { window.location.href = 'dashboard.html'; return; }
+  buildTeamDropdowns();
   await loadAll();
+  fixGrids();
 }
 
 async function loadAll() {
   await Promise.all([loadPlayers(), loadMatches(), loadTeams(), loadAdminStats()]);
 }
 
+/* ── Build all team dropdowns ─────────────────── */
+function buildTeamDropdowns() {
+  var opts = '<option value="">— Select —</option>' +
+    TEAMS.map(function(t) {
+      return '<option value="' + t + '">' + t + '</option>';
+    }).join('');
+  ['m-team1', 'm-team2'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.innerHTML = opts;
+  });
+  // Winner defaults to no result
+  document.getElementById('m-winner').innerHTML = '<option value="">— No Result Yet —</option>' +
+    TEAMS.map(function(t) { return '<option value="' + t + '">' + t + '</option>'; }).join('');
+}
+
+/* ── Logo preview in selects ──────────────────── */
+function onTeamChange(which) {
+  var idMap = { home:['m-team1','logo-home'], away:['m-team2','logo-away'], winner:['m-winner','logo-winner'] };
+  var pair  = idMap[which];
+  var sel   = document.getElementById(pair[0]);
+  var img   = document.getElementById(pair[1]);
+  var name  = sel ? sel.value : '';
+  var logo  = teamLogo(name);
+  if (logo && name) {
+    img.src = logo; img.style.display = '';
+    sel.classList.add('has-logo');
+  } else {
+    img.style.display = 'none';
+    sel.classList.remove('has-logo');
+  }
+  // Sync winner dropdown to the two chosen teams
+  if (which === 'home' || which === 'away') syncWinnerDropdown();
+}
+
+function syncWinnerDropdown() {
+  var t1   = document.getElementById('m-team1').value;
+  var t2   = document.getElementById('m-team2').value;
+  var cur  = document.getElementById('m-winner').value;
+  var winSel = document.getElementById('m-winner');
+  var opts = '<option value="">— No Result Yet —</option>';
+  if (t1) opts += '<option value="' + t1 + '">' + t1 + '</option>';
+  if (t2) opts += '<option value="' + t2 + '">' + t2 + '</option>';
+  // If neither team is set, show all teams
+  if (!t1 && !t2) opts = '<option value="">— No Result Yet —</option>' +
+    TEAMS.map(function(t) { return '<option value="' + t + '">' + t + '</option>'; }).join('');
+  winSel.innerHTML = opts;
+  if (cur) winSel.value = cur;
+  onTeamChange('winner');
+}
+
+/* ═══════════════════════════════════════════════
+   ADMIN STATS CHIPS
+═══════════════════════════════════════════════ */
 async function loadAdminStats() {
   try {
     var [lb, matches] = await Promise.all([API.fetchLeaderboard(), API.fetchMatches()]);
-    var locked = matches.filter(function(m){ return m.is_locked; }).length;
+    var locked = matches.filter(function(m) { return m.is_locked; }).length;
     document.getElementById('admin-stats').innerHTML =
-      '<div class="stat-chip" style="animation:fade-up 0.3s ease both;"><div class="stat-chip-val">' + matches.length + '</div><div class="stat-chip-lbl">Total Matches</div></div>' +
-      '<div class="stat-chip gold" style="animation:fade-up 0.3s 0.07s ease both;"><div class="stat-chip-val" style="color:var(--gold);">' + locked + '</div><div class="stat-chip-lbl">Completed</div></div>' +
-      '<div class="stat-chip cyan" style="animation:fade-up 0.3s 0.14s ease both;"><div class="stat-chip-val" style="color:var(--cyan);">' + lb.length + '</div><div class="stat-chip-lbl">Teams Active</div></div>';
+      '<div class="stat-chip" style="animation-delay:0s"><div class="stat-chip-val">' + matches.length + '</div><div class="stat-chip-lbl">Fixtures</div></div>' +
+      '<div class="stat-chip gold" style="animation-delay:.07s"><div class="stat-chip-val" style="color:var(--gold);">' + locked + '</div><div class="stat-chip-lbl">Completed</div></div>' +
+      '<div class="stat-chip cyan" style="animation-delay:.14s"><div class="stat-chip-val" style="color:var(--cyan);">' + lb.length + '</div><div class="stat-chip-lbl">Teams Active</div></div>';
   } catch(e) {}
 }
 
+/* ═══════════════════════════════════════════════
+   PLAYERS
+═══════════════════════════════════════════════ */
 async function loadPlayers() {
   _allPlayers = await API.fetchAllPlayers();
-  var sel = document.getElementById('stats-player-select');
-  if (sel) {
-    sel.innerHTML = '<option value="">— Select player —</option>' +
-      _allPlayers.map(function(p){ return '<option value="' + p.id + '">' + p.name + ' (' + (p.ipl_team||'?') + ')</option>'; }).join('');
+
+  // PoM dropdown
+  var pomSel = document.getElementById('m-pom');
+  if (pomSel) {
+    pomSel.innerHTML = '<option value="">— Select Player —</option>' +
+      _allPlayers.map(function(p) {
+        return '<option value="' + p.id + '">' + p.name + ' · ' + (p.ipl_team || '?') + '</option>';
+      }).join('');
+  }
+  // Stats player dropdown
+  var statSel = document.getElementById('stats-player-select');
+  if (statSel) {
+    statSel.innerHTML = '<option value="">— Select player —</option>' +
+      _allPlayers.map(function(p) {
+        var os = p.is_overseas ? ' 🌏' : '';
+        return '<option value="' + p.id + '">' + p.name + ' · ' + (p.ipl_team || '?') + os + '</option>';
+      }).join('');
   }
 }
 
+/* ═══════════════════════════════════════════════
+   MATCHES / FIXTURES
+═══════════════════════════════════════════════ */
 async function loadMatches() {
   _allMatches = await API.fetchMatches();
-  renderMatchesList();
-  ['stats-match-select','calc-match-select'].forEach(function(id) {
-    var sel = document.getElementById(id); if (!sel) return;
+  renderFixtureList();
+  // Sync dropdowns in stats + calc tabs
+  ['stats-match-select', 'calc-match-select'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
     var cur = sel.value;
     sel.innerHTML = '<option value="">— Select match —</option>' +
-      _allMatches.map(function(m){ return '<option value="' + m.id + '">' + UI.esc(m.match_title || m.team1 + ' vs ' + m.team2) + ' · ' + UI.shortDate(m.match_date) + '</option>'; }).join('');
+      _allMatches.map(function(m) {
+        var label = 'M' + (m.match_no || '') + ' · ' + shortName(m.team1) + ' vs ' + shortName(m.team2) + ' · ' + UI.shortDate(m.match_date);
+        return '<option value="' + m.id + '">' + UI.esc(label) + '</option>';
+      }).join('');
     if (cur) sel.value = cur;
   });
 }
 
-async function loadTeams() {
-  var lb    = await API.fetchLeaderboard();
-  var tbody = document.getElementById('teams-tbody');
-  if (!lb.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No teams yet</td></tr>'; return; }
-  tbody.innerHTML = lb.map(function(r) {
-    return '<tr><td class="rank">' + r.rank + '</td>' +
-      '<td style="font-weight:700;">' + UI.esc(r.team ? r.team.team_name : '—') + '</td>' +
-      '<td style="color:var(--text2);">' + UI.esc(r.team ? (r.team.owner_name||'—') : '—') + '</td>' +
-      '<td>' + r.matches_played + '</td><td class="pts">' + r.total_points + '</td></tr>';
-  }).join('');
+/* ── Render fixture list with logos + hover ───── */
+function renderFixtureList() {
+  var cont = document.getElementById('fixtures-list');
+  if (!_allMatches.length) {
+    cont.innerHTML = '<div style="padding:22px;text-align:center;color:var(--text3);font-size:13px;">No fixtures yet — click ⚡ Load IPL 2026 above</div>';
+    return;
+  }
+  var html = '';
+  _allMatches.forEach(function(m, i) {
+    var logo1 = teamLogo(m.team1), logo2 = teamLogo(m.team2);
+    var c1    = teamCode(m.team1), c2 = teamCode(m.team2);
+    var col1  = c1 && TEAM_COLORS[c1] ? TEAM_COLORS[c1] : 'var(--text2)';
+    var col2  = c2 && TEAM_COLORS[c2] ? TEAM_COLORS[c2] : 'var(--text2)';
+    var dateStr = m.match_date ? new Date(m.match_date).toLocaleDateString('en-IN', { day:'2-digit', month:'short' }) : '—';
+    var timeStr = m.match_date ? new Date(m.match_date).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true }) : '';
+    var statusCls = m.is_locked ? (m.winner ? 'status-done' : 'status-locked') : 'status-open';
+    var statusTxt = m.is_locked ? (m.winner ? 'Done' : 'Locked') : 'Open';
+
+    html += '<div class="fixture-row" onclick="editMatch(\'' + m.id + '\')" style="animation:row-in .25s ease ' + (i * .025) + 's both;">' +
+      '<span class="fixture-num">' + (m.match_no || i + 1) + '</span>' +
+      '<div class="fx-teams">' +
+        (logo1 ? '<img src="' + logo1 + '" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;" onerror="this.style.display=\'none\'">' : '') +
+        '<span class="fx-team-name" style="color:' + col1 + ';">' + UI.esc(shortName(m.team1)) + '</span>' +
+        '<span class="fixture-vs">VS</span>' +
+        '<span class="fx-team-name" style="color:' + col2 + ';">' + UI.esc(shortName(m.team2)) + '</span>' +
+        (logo2 ? '<img src="' + logo2 + '" style="width:18px;height:18px;object-fit:contain;flex-shrink:0;" onerror="this.style.display=\'none\'">' : '') +
+      '</div>' +
+      '<span class="fixture-date">' + dateStr + (timeStr ? ' · ' + timeStr : '') + '</span>' +
+      (m.venue ? '<span class="fixture-venue">' + UI.esc(m.venue) + '</span>' : '') +
+      '<span class="match-status ' + statusCls + '">' + statusTxt + '</span>' +
+      '<button class="btn btn-ghost btn-sm fixture-edit" onclick="event.stopPropagation();editMatch(\'' + m.id + '\')">Edit</button>' +
+    '</div>';
+  });
+  cont.innerHTML = html;
 }
 
-function renderMatchesList() {
-  var tbody = document.getElementById('matches-tbody');
-  if (!_allMatches.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No matches yet</td></tr>'; return; }
-  tbody.innerHTML = _allMatches.map(function(m) {
-    return '<tr>' +
-      '<td style="font-weight:600;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + UI.esc(m.match_title || m.team1 + ' vs ' + m.team2) + '</td>' +
-      '<td style="color:var(--text2);font-size:13px;white-space:nowrap;">' + UI.shortDate(m.match_date) + '</td>' +
-      '<td><span class="match-status ' + (m.is_locked ? (m.winner ? 'status-done' : 'status-locked') : 'status-open') + '">' + (m.is_locked ? (m.winner ? 'Done' : 'Locked') : 'Open') + '</span></td>' +
-      '<td><button class="btn btn-ghost btn-sm" onclick="editMatch(\'' + m.id + '\')">Edit</button></td>' +
-      '</tr>';
-  }).join('');
+/* ═══════════════════════════════════════════════
+   LOAD ALL 20 IPL 2026 FIXTURES
+═══════════════════════════════════════════════ */
+async function loadIPLFixtures() {
+  if (!confirm('Insert all 20 IPL 2026 Part 1 fixtures?\nExisting fixtures with same match_no will be skipped.')) return;
+  var btn = event.target;
+  if (btn._busy) return;
+  btn._busy = true; btn.disabled = true;
+  btn.innerHTML = '<span class="btn-spin"></span> Loading…';
+
+  var loaded = 0, skipped = 0;
+  try {
+    for (var i = 0; i < IPL_FIXTURES.length; i++) {
+      var f = IPL_FIXTURES[i];
+      // Skip if already exists for this match_no
+      var exists = _allMatches.find(function(m) { return m.match_no === f.no; });
+      if (exists) { skipped++; continue; }
+      var isoDate = new Date(f.date + 'T' + f.time + ':00+05:30').toISOString();
+      var match = {
+        match_title: 'Match ' + f.no + ' · ' + shortName(f.home) + ' vs ' + shortName(f.away),
+        match_no:    f.no,
+        team1:       f.home,
+        team2:       f.away,
+        venue:       f.venue,
+        match_date:  isoDate,
+        is_locked:   false,
+      };
+      await API.upsertMatch(match);
+      loaded++;
+    }
+    UI.toast('✓ Loaded ' + loaded + ' fixtures' + (skipped ? ' · ' + skipped + ' skipped' : ''), 'success', 5000);
+    await loadMatches();
+    await loadAdminStats();
+  } catch(e) {
+    UI.toast('Load failed: ' + e.message, 'error');
+  }
+  btn._busy = false; btn.disabled = false;
+  btn.innerHTML = '⚡ Load IPL 2026';
 }
 
-function switchTab(tab) {
-  var tabs = ['matches','stats','calc','teams'];
-  document.querySelectorAll('.tab-btn').forEach(function(b, i){ b.classList.toggle('active', tabs[i] === tab); });
-  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
-  document.getElementById('tab-' + tab).classList.add('active');
-}
-
+/* ═══════════════════════════════════════════════
+   MATCH FORM
+═══════════════════════════════════════════════ */
 function clearMatchForm() {
-  ['edit-match-id','m-title','m-team1','m-team2','m-venue','m-winner','m-pom'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
+  document.getElementById('edit-match-id').value = '';
+  document.getElementById('edit-badge-wrap').style.display = 'none';
+  document.getElementById('m-no').value = '';
+  document.getElementById('m-date').value = '';
+  document.getElementById('m-time').value = '19:30';
   document.getElementById('m-target').value = '';
-  document.getElementById('m-date').value   = '';
+  ['m-team1', 'm-team2', 'm-winner', 'm-venue', 'm-pom'].forEach(function(id) {
+    var e = document.getElementById(id); if (e) e.value = '';
+  });
+  ['logo-home', 'logo-away', 'logo-winner'].forEach(function(id) {
+    var e = document.getElementById(id); if (e) { e.style.display = 'none'; }
+  });
+  ['m-team1', 'm-team2', 'm-winner'].forEach(function(id) {
+    var e = document.getElementById(id); if (e) e.classList.remove('has-logo');
+  });
+  buildTeamDropdowns();
 }
 
 function editMatch(matchId) {
-  var m = _allMatches.find(function(x){ return x.id === matchId; }); if (!m) return;
+  var m = _allMatches.find(function(x) { return x.id === matchId; });
+  if (!m) return;
+
   document.getElementById('edit-match-id').value = m.id;
-  document.getElementById('m-title').value  = m.match_title || '';
-  document.getElementById('m-team1').value  = m.team1 || '';
-  document.getElementById('m-team2').value  = m.team2 || '';
-  document.getElementById('m-date').value   = m.match_date ? m.match_date.substring(0,16) : '';
-  document.getElementById('m-venue').value  = m.venue || '';
+  document.getElementById('edit-badge-wrap').style.display = '';
+  document.getElementById('edit-badge-text').textContent = 'Editing: Match ' + (m.match_no || '');
+  document.getElementById('m-no').value = m.match_no || '';
+
+  // Set team dropdowns (rebuild options first to ensure values exist)
+  buildTeamDropdowns();
+  var t1El = document.getElementById('m-team1');
+  var t2El = document.getElementById('m-team2');
+  if (t1El) t1El.value = m.team1 || '';
+  if (t2El) t2El.value = m.team2 || '';
+
+  // Date / time
+  if (m.match_date) {
+    var dt = new Date(m.match_date);
+    document.getElementById('m-date').value = dt.toLocaleDateString('sv', { timeZone:'Asia/Kolkata' });
+    var hh = String(dt.getHours()).padStart(2, '0');
+    var mm = String(dt.getMinutes()).padStart(2, '0');
+    document.getElementById('m-time').value = hh + ':' + mm;
+  }
+  document.getElementById('m-venue').value = m.venue || '';
   document.getElementById('m-target').value = m.actual_target || '';
+
+  // Sync winner options to these teams, then set value
+  syncWinnerDropdown();
   document.getElementById('m-winner').value = m.winner || '';
-  // Find player name for PoM id
-  var pomPlayer = m.player_of_match ? _allPlayers.find(function(p){ return p.id === m.player_of_match; }) : null;
-  document.getElementById('m-pom').value = pomPlayer ? pomPlayer.name : '';
-  switchTab('matches');
-  document.getElementById('m-title').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  onTeamChange('winner');
+
+  // Player of Match
+  var pomEl = document.getElementById('m-pom');
+  if (pomEl && m.player_of_match) {
+    var pomP = _allPlayers.find(function(p) { return p.id === m.player_of_match; });
+    if (pomP) pomEl.value = pomP.id;
+  }
+
+  // Logo previews
+  onTeamChange('home'); onTeamChange('away');
+
+  // Scroll to form
+  document.getElementById('m-no').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 async function saveMatch() {
   var id     = document.getElementById('edit-match-id').value;
-  var team1  = document.getElementById('m-team1').value.trim();
-  var team2  = document.getElementById('m-team2').value.trim();
+  var team1  = document.getElementById('m-team1').value;
+  var team2  = document.getElementById('m-team2').value;
   var date   = document.getElementById('m-date').value;
+  var time   = document.getElementById('m-time').value || '19:30';
+  var venue  = document.getElementById('m-venue').value;
+  var no     = parseInt(document.getElementById('m-no').value || '0') || null;
   var target = parseInt(document.getElementById('m-target').value || '0') || null;
-  var winner = document.getElementById('m-winner').value.trim() || null;
-  var pom    = document.getElementById('m-pom').value.trim() || null;
-  if (!team1 || !team2) { UI.toast('Enter both team names', 'warn'); return; }
+  var winner = document.getElementById('m-winner').value || null;
+  var pomId  = document.getElementById('m-pom').value || null;
 
-  var pomPlayerId = null;
-  if (pom) {
-    var pomPlayer = _allPlayers.find(function(p){ return p.name.toLowerCase() === pom.toLowerCase(); });
-    if (pomPlayer) pomPlayerId = pomPlayer.id;
-    else UI.toast('Player of Match "' + pom + '" not found in players table', 'warn');
-  }
+  if (!team1 || !team2) { UI.toast('Select both teams', 'warn'); return; }
 
   var match = {
-    match_title:     document.getElementById('m-title').value.trim() || (team1 + ' vs ' + team2),
-    team1, team2,
-    venue:           document.getElementById('m-venue').value.trim(),
-    match_date:      date ? new Date(date).toISOString() : null,
+    match_title: 'Match ' + (no || '') + ' · ' + shortName(team1) + ' vs ' + shortName(team2),
+    match_no:    no, team1, team2, venue,
+    match_date:  date ? new Date(date + 'T' + time + ':00+05:30').toISOString() : null,
     actual_target:   target,
     winner,
-    player_of_match: pomPlayerId,
+    player_of_match: pomId,
     is_locked:       !!winner,
   };
   if (id) match.id = id;
 
   try {
     await API.upsertMatch(match);
-    UI.toast('Match saved!', 'success');
+    UI.toast('Fixture saved!', 'success');
     clearMatchForm();
     await loadMatches();
+    await loadAdminStats();
   } catch(e) { UI.toast('Save failed: ' + e.message, 'error'); }
 }
 
-// Stats
-async function loadStatsForm() {
+/* ═══════════════════════════════════════════════
+   TEAMS TAB
+═══════════════════════════════════════════════ */
+async function loadTeams() {
+  var lb    = await API.fetchLeaderboard();
+  var tbody = document.getElementById('teams-tbody');
+  if (!lb.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">🏏</div><div class="empty-state-text">No teams yet</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = lb.map(function(r) {
+    var logo = teamLogo(r.team ? r.team.team_name : '');
+    var code = teamCode(r.team ? r.team.team_name : '');
+    var col  = code && TEAM_COLORS[code] ? TEAM_COLORS[code] : 'var(--text)';
+    return '<tr>' +
+      '<td class="rank">' + r.rank + '</td>' +
+      '<td>' +
+        '<div style="display:flex;align-items:center;gap:9px;">' +
+          (logo ? '<img src="' + logo + '" style="width:24px;height:24px;object-fit:contain;transition:transform .18s;" onmouseover="this.style.transform=\'scale(1.2) rotate(-5deg)\'" onmouseout="this.style.transform=\'\'" onerror="this.style.display=\'none\'">' : '') +
+          '<span style="font-family:var(--f-ui);font-weight:800;font-size:14px;color:' + col + ';">' + UI.esc(r.team ? r.team.team_name : '—') + '</span>' +
+        '</div>' +
+      '</td>' +
+      '<td style="color:var(--text2);">' + UI.esc(r.team ? (r.team.owner_name || '—') : '—') + '</td>' +
+      '<td>' + r.matches_played + '</td>' +
+      '<td class="pts">' + r.total_points + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   TAB SWITCHER
+═══════════════════════════════════════════════ */
+function switchTab(tab) {
+  var order = ['matches', 'stats', 'calc', 'teams'];
+  document.querySelectorAll('.tab-btn').forEach(function(b, i) {
+    b.classList.toggle('active', order[i] === tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.getElementById('tab-' + tab).classList.add('active');
+}
+
+/* ═══════════════════════════════════════════════
+   PLAYER STATS FORM
+═══════════════════════════════════════════════ */
+async function onStatsMatchChange() {
   var matchId = document.getElementById('stats-match-select').value;
   document.getElementById('stats-form-card').style.display = 'none';
   if (!matchId) return;
@@ -362,41 +825,93 @@ async function loadStatsForm() {
 }
 
 async function loadSavedStats(matchId) {
-  var card  = document.getElementById('saved-stats-card');
-  var tbody = document.getElementById('saved-stats-tbody');
+  var card = document.getElementById('saved-stats-card');
+  var list = document.getElementById('saved-stats-list');
   card.style.display = 'none';
   try {
     var stats = await API.fetchPlayerStats(matchId);
     if (!stats.length) return;
     card.style.display = '';
-    tbody.innerHTML = stats.map(function(s) {
-      var est = API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s);
-      return '<tr>' +
-        '<td style="font-weight:600;">' + UI.esc(s.player ? s.player.name : '—') + '</td>' +
-        '<td class="font-mono">' + (s.runs||0) + '</td>' +
-        '<td class="font-mono">' + (s.wickets||0) + '</td>' +
-        '<td class="font-mono">' + (s.catches||0) + '</td>' +
-        '<td class="pts">' + Math.round(est) + '</td></tr>';
+    list.innerHTML = stats.map(function(s) {
+      var p    = s.player || {};
+      var est  = API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s);
+      var logo = teamLogo(p.ipl_team || '');
+      var code = teamCode(p.ipl_team || '');
+      var col  = code && TEAM_COLORS[code] ? TEAM_COLORS[code] : 'var(--text2)';
+      return '<div class="stats-saved-row">' +
+        (logo ? '<img src="' + logo + '" style="width:24px;height:24px;object-fit:contain;flex-shrink:0;" onerror="this.style.display=\'none\'">' : '') +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-family:var(--f-ui);font-weight:800;font-size:14px;color:' + col + ';">' + UI.esc(p.name || '—') + '</div>' +
+          '<div style="display:flex;gap:5px;margin-top:3px;flex-wrap:wrap;">' +
+            roleTag(p.role) + (p.is_overseas ? osTag() : '') +
+          '</div>' +
+        '</div>' +
+        '<div style="font-size:12px;color:var(--text2);font-family:var(--f-mono);text-align:right;">' +
+          'R:' + (s.runs||0) + '  W:' + (s.wickets||0) + '  C:' + (s.catches||0) +
+        '</div>' +
+        '<div style="font-family:var(--f-display);font-weight:900;font-size:18px;color:var(--accent);min-width:44px;text-align:right;">' + Math.round(est) + '</div>' +
+      '</div>';
     }).join('');
   } catch(e) {}
+}
+
+function roleTag(role) {
+  var map = { 'Batter':'rt-bat BAT','Bowler':'rt-bowl BOWL','All-Rounder':'rt-ar AR','Wicket-Keeper':'rt-wk WK' };
+  var parts = (map[role] || '').split(' ');
+  if (!parts[0]) return '';
+  return '<span class="role-tag ' + parts[0] + '">' +
+    '<img src="images/teams-all-rounder-icon.svg" alt="" style="filter:brightness(0)invert(1);opacity:.8;">' +
+    parts[1] + '</span>';
+}
+
+function osTag() {
+  return '<span class="role-tag rt-os">' +
+    '<img src="images/teams-foreign-player-icon.svg" alt="" style="filter:brightness(0)invert(1);opacity:.8;">' +
+    'OS</span>';
 }
 
 function prefillStats() {
   var playerId = document.getElementById('stats-player-select').value;
   if (!playerId) { document.getElementById('stats-form-card').style.display = 'none'; return; }
-  var player = _allPlayers.find(function(p){ return p.id === playerId; });
-  document.getElementById('stats-player-name').textContent = player ? player.name : 'Player Stats';
+  var player = _allPlayers.find(function(p) { return p.id === playerId; });
+
+  // Player logo
+  var logoEl = document.getElementById('stats-team-logo');
+  if (logoEl && player) {
+    var lg = teamLogo(player.ipl_team || '');
+    if (lg) { logoEl.src = lg; logoEl.style.display = ''; } else logoEl.style.display = 'none';
+  }
+  // Update stats-player-select logo preview
+  var spl = document.getElementById('logo-stats-player');
+  if (spl && player) {
+    var slg = teamLogo(player.ipl_team || '');
+    if (slg) { spl.src = slg; spl.style.display = ''; document.getElementById('stats-player-select').classList.add('has-logo'); }
+    else { spl.style.display = 'none'; document.getElementById('stats-player-select').classList.remove('has-logo'); }
+  }
+
+  // Player name + chips
+  var code = teamCode(player ? (player.ipl_team || '') : '');
+  var col  = code && TEAM_COLORS[code] ? TEAM_COLORS[code] : 'var(--text)';
+  document.getElementById('stats-player-name').textContent = player ? player.name : '—';
+  document.getElementById('stats-player-name').style.color = col;
+  var chipsEl = document.getElementById('stats-player-chips');
+  if (chipsEl && player) {
+    chipsEl.innerHTML = roleTag(player.role) + (player.is_overseas ? osTag() : '');
+  }
+
   document.getElementById('stat-match-id').value  = document.getElementById('stats-match-select').value;
   document.getElementById('stat-player-id').value = playerId;
   clearStatsForm(false);
   document.getElementById('stats-form-card').style.display = '';
 }
 
-function clearStatsForm(hideCard) {
-  if (hideCard === undefined) hideCard = true;
-  ['s-runs','s-balls','s-fours','s-sixes','s-wickets','s-overs','s-runsc','s-maidens','s-catches','s-runouts','s-stumpings'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=''; });
+function clearStatsForm(hide) {
+  if (hide === undefined) hide = true;
+  ['s-runs','s-balls','s-fours','s-sixes','s-wickets','s-overs','s-runsc','s-maidens','s-catches','s-runouts','s-stumpings'].forEach(function(id) {
+    var e = document.getElementById(id); if (e) e.value = '';
+  });
   document.getElementById('s-notout').value = '';
-  if (hideCard) document.getElementById('stats-form-card').style.display = 'none';
+  if (hide) document.getElementById('stats-form-card').style.display = 'none';
   recalcLive();
 }
 
@@ -429,8 +944,7 @@ async function saveStats() {
   var playerId = document.getElementById('stat-player-id').value;
   if (!matchId || !playerId) { UI.toast('Select match and player first', 'warn'); return; }
   var s = getStatsObj();
-  s.match_id  = matchId;
-  s.player_id = playerId;
+  s.match_id = matchId; s.player_id = playerId;
   try {
     await API.upsertPlayerStats(s);
     UI.toast('Stats saved!', 'success');
@@ -438,7 +952,9 @@ async function saveStats() {
   } catch(e) { UI.toast('Save failed: ' + e.message, 'error'); }
 }
 
-// Calculate
+/* ═══════════════════════════════════════════════
+   CALCULATE
+═══════════════════════════════════════════════ */
 function addLog(msg, type) {
   var log  = document.getElementById('calc-log');
   var line = document.createElement('div');
@@ -452,38 +968,40 @@ async function calculatePoints() {
   var matchId = document.getElementById('calc-match-select').value;
   if (!matchId) { UI.toast('Select a match first', 'warn'); return; }
   var btn = document.getElementById('calc-btn');
-  btn.disabled = true;
+  if (btn._busy) return;
+  btn._busy = true; btn.disabled = true;
   btn.innerHTML = '<span class="btn-spin"></span> Calculating…';
   document.getElementById('calc-log').innerHTML = '';
-  addLog('Starting for match ID: ' + matchId);
-
+  addLog('Starting for match ID: ' + matchId.substring(0, 8) + '…');
   try {
     var results = await API.calculateMatchPoints(matchId);
     addLog('Calculated ' + results.length + ' team scores.', 'good');
     results.forEach(function(r) {
-      var impactNote = r.breakdown && r.breakdown.impactPlayerId ? ' (⚡ Impact applied)' : '';
-      addLog('  → ' + r.fantasy_team_id.substring(0,8) + '… Squad ' + r.squad_points + ' + Pred ' + r.prediction_points + ' = ' + r.total_points + ' pts' + impactNote, 'good');
+      var imp = r.breakdown && r.breakdown.impactPlayerId ? ' ⚡ Impact' : '';
+      addLog('  → Squad ' + r.squad_points + ' + Pred ' + r.prediction_points + ' = ' + r.total_points + imp, 'good');
     });
-    addLog('Leaderboard refreshed. Match locked. Done!', 'good');
+    addLog('Leaderboard refreshed · Match locked ✓', 'good');
     UI.toast('Points calculated & match locked!', 'success');
     await Promise.all([loadMatches(), loadAdminStats(), loadTeams()]);
   } catch(e) {
     addLog('ERROR: ' + e.message, 'error');
     UI.toast('Calculation failed: ' + e.message, 'error');
   }
-  btn.disabled = false;
+  btn._busy = false; btn.disabled = false;
   btn.innerHTML = '⚡ Calculate &amp; Lock Match';
 }
 
+/* ═══════════════════════════════════════════════
+   RESPONSIVE GRID
+═══════════════════════════════════════════════ */
 function fixGrids() {
-  var narrow = window.innerWidth < 700;
-  ['matches-grid','calc-grid'].forEach(function(id){
+  var narrow = window.innerWidth < 720;
+  ['matches-grid', 'calc-grid'].forEach(function(id) {
     var g = document.getElementById(id);
     if (g) g.style.gridTemplateColumns = narrow ? '1fr' : '1fr 1fr';
   });
 }
 window.addEventListener('resize', fixGrids);
-fixGrids();
 
 init();
 </script>

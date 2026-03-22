@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics — BFL Fantasy IPL 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Analytics-specific */
+    .analytics-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:20px; }
+    .chart-wrap { position:relative; }
+    .chart-wrap canvas { width:100% !important; display:block; border-radius:8px; }
+    .chart-label { font-family:var(--f-ui); font-size:12px; color:var(--text3); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+    .metric-row { display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-bottom:1px solid var(--border); }
+    .metric-row:last-child { border-bottom:none; }
+    .metric-label { font-size:13px; color:var(--text2); }
+    .metric-val { font-family:var(--f-display); font-weight:800; font-size:18px; }
+    .player-pts-bar { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+    .player-pts-bar:last-child { border-bottom:none; }
+    .player-pts-name { flex:1; font-weight:600; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bar-track { flex:2; height:6px; background:var(--bg3); border-radius:3px; overflow:hidden; }
+    .bar-fill  { height:100%; border-radius:3px; background:var(--accent); transition:width 1s cubic-bezier(0.34,1.1,0.64,1); }
+    .bar-pts   { font-family:var(--f-display); font-weight:800; font-size:14px; color:var(--accent); min-width:36px; text-align:right; }
+    .badge-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px; }
+    .badge-card {
+      background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px 12px;
+      text-align:center; transition:all var(--t); cursor:default; position:relative; overflow:hidden;
+    }
+    .badge-card::before { content:''; position:absolute; inset:0; opacity:0; background:radial-gradient(circle at 50% 0%,var(--badge-color,var(--accent)) 0%,transparent 70%); transition:opacity var(--t); }
+    .badge-card:hover { border-color:var(--badge-color,var(--accent)); transform:translateY(-3px); box-shadow:var(--shadow); }
+    .badge-card:hover::before { opacity:.12; }
+    .badge-card.locked { opacity:.38; filter:grayscale(1); }
+    .badge-icon { font-size:30px; margin-bottom:8px; display:block; }
+    .badge-name { font-family:var(--f-ui); font-weight:800; font-size:13px; margin-bottom:4px; }
+    .badge-desc { font-size:11px; color:var(--text3); line-height:1.4; }
+    .streak-card { display:flex; align-items:center; gap:14px; padding:14px; background:var(--bg3); border-radius:var(--radius); border:1px solid var(--border); }
+    .streak-num { font-family:var(--f-display); font-weight:900; font-size:42px; line-height:1; }
+    .streak-label { font-size:13px; color:var(--text2); margin-top:2px; }
+    .pts-breakdown { display:flex; gap:4px; height:8px; border-radius:4px; overflow:hidden; margin-top:6px; }
+    .pts-breakdown div { transition:flex .8s ease; }
+    .impact-pick-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+    .impact-pick-row:last-child { border-bottom:none; }
+    [data-theme="light"] .bar-track { background:rgba(0,0,0,0.07); }
+    [data-theme="light"] .badge-card { background:var(--bg2); }
+    [data-theme="light"] .streak-card { background:var(--bg2); }
+    .countdown { font-family:var(--f-mono); font-size:12px; color:var(--accent); }
+    .countdown-urgent { color:var(--red); animation:blink-dot 0.8s infinite; }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+<nav class="navbar" id="navbar"></nav>
+<div class="bottom-nav"><div class="bottom-nav-inner" id="bottom-nav-inner"></div></div>
+
+<div class="page-wrap">
+<main class="main">
+<div class="container">
+
+  <div class="page-header flex-between">
+    <div>
+      <div class="page-title">My Analytics</div>
+      <div class="page-sub">Performance insights · Prediction accuracy · Streaks &amp; badges</div>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="loadAnalytics()">↻ Refresh</button>
+  </div>
+
+  <!-- Summary chips -->
+  <div class="stat-grid mb-24" id="analytics-stats">
+    <div class="skel skel-chip"></div>
+    <div class="skel skel-chip"></div>
+    <div class="skel skel-chip"></div>
+    <div class="skel skel-chip"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+    <button class="tab-btn" onclick="switchTab('players')">Players</button>
+    <button class="tab-btn" onclick="switchTab('predictions')">Predictions</button>
+    <button class="tab-btn" onclick="switchTab('impact')">Impact Player</button>
+    <button class="tab-btn" onclick="switchTab('badges')">Badges</button>
+  </div>
+
+  <!-- ════ OVERVIEW ════ -->
+  <div class="tab-panel active" id="tab-overview">
+    <div class="analytics-grid">
+
+      <!-- Points over time -->
+      <div class="card">
+        <div class="card-title">Points Per Match</div>
+        <div class="chart-wrap">
+          <canvas id="chart-pts-per-match" style="height:180px;"></canvas>
+        </div>
+      </div>
+
+      <!-- Cumulative points -->
+      <div class="card">
+        <div class="card-title">Cumulative Score</div>
+        <div class="chart-wrap">
+          <canvas id="chart-cumulative" style="height:180px;"></canvas>
+        </div>
+      </div>
+
+      <!-- Points breakdown donut -->
+      <div class="card">
+        <div class="card-title">Points Breakdown</div>
+        <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+          <canvas id="chart-donut" style="width:160px;height:160px;flex-shrink:0;"></canvas>
+          <div id="donut-legend" style="flex:1;min-width:120px;"></div>
+        </div>
+      </div>
+
+      <!-- Streaks -->
+      <div class="card">
+        <div class="card-title">Streaks</div>
+        <div style="display:flex;flex-direction:column;gap:10px;" id="streaks-wrap">
+          <div class="skel skel-row"></div>
+          <div class="skel skel-row"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════ PLAYERS ════ -->
+  <div class="tab-panel" id="tab-players">
+    <div class="analytics-grid">
+      <div class="card">
+        <div class="card-title">Top Scorers in My Squad</div>
+        <div id="top-players-list"><div class="skel skel-row"></div><div class="skel skel-row" style="width:80%;"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Underperformers</div>
+        <div id="worst-players-list"><div class="skel skel-row"></div></div>
+      </div>
+      <div class="card" style="grid-column:1/-1;">
+        <div class="card-title">All Squad Players — Season Points</div>
+        <div class="chart-wrap">
+          <canvas id="chart-all-players" style="height:200px;"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PREDICTIONS ════ -->
+  <div class="tab-panel" id="tab-predictions">
+    <div class="analytics-grid">
+      <div class="card">
+        <div class="card-title">Prediction Accuracy</div>
+        <div id="pred-stats-wrap"><div class="skel skel-row"></div><div class="skel skel-row"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Target Accuracy (Difference)</div>
+        <div class="chart-wrap">
+          <canvas id="chart-pred-diff" style="height:180px;"></canvas>
+        </div>
+      </div>
+      <div class="card" style="grid-column:1/-1;">
+        <div class="card-title">Prediction History</div>
+        <div class="table-wrap" style="max-height:320px;overflow-y:auto;">
+          <table class="data-table">
+            <thead><tr><th>Match</th><th>My Target</th><th>Actual</th><th>Diff</th><th>My Winner</th><th>Result</th><th>Pts</th></tr></thead>
+            <tbody id="pred-history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ IMPACT PLAYER ════ -->
+  <div class="tab-panel" id="tab-impact">
+    <div class="analytics-grid">
+      <div class="card">
+        <div class="card-title">Impact Usage Summary</div>
+        <div id="impact-summary-wrap"><div class="skel skel-row"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Best Impact Picks</div>
+        <div id="impact-picks-list"><div class="skel skel-row"></div></div>
+      </div>
+      <div class="card" style="grid-column:1/-1;">
+        <div class="card-title">All Impact Player Uses</div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Match</th><th>Player</th><th>Role</th><th>Team</th><th>Pts Gained</th></tr></thead>
+            <tbody id="impact-history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ BADGES ════ -->
+  <div class="tab-panel" id="tab-badges">
+    <div class="card mb-16" id="badges-progress">
+      <div class="skel skel-row"></div>
+    </div>
+    <div class="badge-grid" id="badges-grid">
+      <div class="skel skel-card"></div><div class="skel skel-card"></div><div class="skel skel-card"></div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+</main>
+</div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/api.js"></script>
+<script src="js/navbar.js"></script>
+<script>
+'use strict';
+var _myTeamId = null, _analytics = null;
+
+async function init() {
+  var sess = await Auth.requireAuth();
+  if (!sess) return;
+  if (Auth.isAdmin(sess.user)) { window.location.href='admin.html'; return; }
+  await initNavbar('analytics');
+  var team = await Auth.fetchTeam(sess.user.id);
+  if (!team) return;
+  _myTeamId = team.id;
+  await loadAnalytics();
+  await API.checkAndAwardBadges(_myTeamId);
+}
+
+async function loadAnalytics() {
+  try {
+    _analytics = await API.fetchAnalytics(_myTeamId);
+    renderStats();
+    renderCharts();
+    renderStreaks();
+    renderPlayers();
+    renderPredictions();
+    renderImpact();
+    renderBadges();
+  } catch(e) { UI.toast('Analytics error: ' + e.message, 'error'); }
+}
+
+function renderStats() {
+  var a = _analytics;
+  var totalPts = a.breakdown.reduce(function(s,l){return s+(l.total_points||0);},0);
+  var avgPts   = a.breakdown.length ? Math.round(totalPts/a.breakdown.length) : 0;
+  var lb = [];
+  document.getElementById('analytics-stats').innerHTML =
+    '<div class="stat-chip" style="animation-delay:0s"><div class="stat-chip-val">' + totalPts + '</div><div class="stat-chip-lbl">Season Pts</div></div>' +
+    '<div class="stat-chip gold" style="animation-delay:.07s"><div class="stat-chip-val" style="color:var(--gold);">' + avgPts + '</div><div class="stat-chip-lbl">Avg / Match</div></div>' +
+    '<div class="stat-chip cyan" style="animation-delay:.14s"><div class="stat-chip-val" style="color:var(--cyan);">' + a.predStats.winner_pct + '%</div><div class="stat-chip-lbl">Winner Acc.</div></div>' +
+    '<div class="stat-chip" style="animation-delay:.21s"><div class="stat-chip-val" style="color:var(--purple);">' + a.impactStats.uses + '/8</div><div class="stat-chip-lbl">Impact Used</div></div>';
+}
+
+function renderCharts() {
+  var a = _analytics;
+  if (!a.rankHistory.length) return;
+
+  // Points per match (bar)
+  setTimeout(function() {
+    UI.drawBarChart('chart-pts-per-match', a.rankHistory.map(function(r){return {label:r.label,value:r.pts};}),{height:180});
+  },100);
+
+  // Cumulative (line)
+  setTimeout(function() {
+    UI.drawLineChart('chart-cumulative', a.rankHistory.map(function(r){return {label:r.label,value:r.cumPts};}),{height:180,color:'#38d9f5'});
+  },120);
+
+  // Donut: bat/bowl/fld/pred breakdown totals
+  var totBat=0,totBowl=0,totFld=0,totPred=0;
+  a.breakdown.forEach(function(l){totBat+=l.batting_pts||0;totBowl+=l.bowling_pts||0;totFld+=l.fielding_pts||0;totPred+=l.prediction_points||0;});
+  var slices = [{label:'Batting',value:totBat,color:'#f87171'},{label:'Bowling',value:totBowl,color:'#60a5fa'},{label:'Fielding',value:totFld,color:'#34d399'},{label:'Prediction',value:totPred,color:'#fbbf24'}];
+  var total  = totBat+totBowl+totFld+totPred||1;
+  setTimeout(function() {
+    UI.drawDonutChart('chart-donut',slices,{size:160,centerLabel:total+'pts'});
+    var legend=document.getElementById('donut-legend');
+    if(legend) legend.innerHTML=slices.map(function(s){return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;"><div style="width:12px;height:12px;border-radius:3px;background:'+s.color+';flex-shrink:0;"></div><div style="flex:1;font-size:13px;color:var(--text2);">'+s.label+'</div><div style="font-family:var(--f-display);font-weight:800;font-size:14px;">'+s.value+'</div></div>';}).join('');
+  },140);
+}
+
+function renderStreaks() {
+  var s = _analytics.streaks;
+  var p = _analytics.predStats;
+  document.getElementById('streaks-wrap').innerHTML =
+    '<div class="streak-card"><div class="streak-num" style="color:var(--accent);">'+s.current+'</div><div><div style="font-family:var(--f-ui);font-weight:800;font-size:15px;">Current Correct Streak</div><div class="streak-label">Consecutive correct winner picks</div></div></div>' +
+    '<div class="streak-card" style="animation-delay:.07s"><div class="streak-num" style="color:var(--gold);">'+s.max+'</div><div><div style="font-family:var(--f-ui);font-weight:800;font-size:15px;">Best Streak Ever</div><div class="streak-label">Max consecutive correct picks</div></div></div>' +
+    '<div class="streak-card" style="animation-delay:.14s"><div class="streak-num" style="color:var(--cyan);">'+p.exact+'</div><div><div style="font-family:var(--f-ui);font-weight:800;font-size:15px;">Exact Targets</div><div class="streak-label">Predicted exact score</div></div></div>';
+}
+
+function renderPlayers() {
+  var ps = _analytics.playerStats;
+  var all = ps.all;
+  var maxPts = all.length ? all[0].total : 1;
+  var topEl   = document.getElementById('top-players-list');
+  var worstEl = document.getElementById('worst-players-list');
+  if (topEl) topEl.innerHTML = all.slice(0,5).map(function(p){
+    var pct = Math.round((p.total/maxPts)*100);
+    return '<div class="player-pts-bar"><div class="player-pts-name">'+UI.esc(p.name)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;"></div></div><div class="bar-pts">'+p.total+'</div></div>';
+  }).join('') || '<div class="empty-state" style="padding:24px;"><div class="empty-state-text">No data yet</div></div>';
+  if (worstEl) worstEl.innerHTML = ps.worst.map(function(p){
+    var pct = Math.round((p.total/maxPts)*100)||2;
+    return '<div class="player-pts-bar"><div class="player-pts-name">'+UI.esc(p.name)+'</div><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:var(--red);"></div></div><div class="bar-pts" style="color:var(--red);">'+p.total+'</div></div>';
+  }).join('') || '<div style="padding:12px;color:var(--text3);font-size:13px;">Not enough matches yet</div>';
+  // All players bar chart
+  if (all.length) {
+    setTimeout(function(){
+      UI.drawBarChart('chart-all-players',all.map(function(p){return {label:p.name.split(' ')[0],value:p.total};}),
+        {height:200,colors:['#c8f135','#38d9f5','#a78bfa','#f87171','#fbbf24','#34d399','#60a5fa','#f97316']});
+    },150);
+  }
+}
+
+function renderPredictions() {
+  var ps = _analytics.predStats;
+  document.getElementById('pred-stats-wrap').innerHTML =
+    '<div class="metric-row"><span class="metric-label">Total Predictions</span><span class="metric-val">'+ps.total+'</span></div>' +
+    '<div class="metric-row"><span class="metric-label">Correct Winners</span><span class="metric-val" style="color:var(--green);">'+ps.correct+' ('+ps.winner_pct+'%)</span></div>' +
+    '<div class="metric-row"><span class="metric-label">Exact Targets</span><span class="metric-val" style="color:var(--accent);">'+ps.exact+'</span></div>' +
+    '<div class="metric-row"><span class="metric-label">Avg Target Diff</span><span class="metric-val">±'+ps.avg_diff+'</span></div>' +
+    '<div class="metric-row"><span class="metric-label">Best Streak</span><span class="metric-val" style="color:var(--gold);">'+ps.best_streak+'</span></div>';
+
+  // Prediction diff bar chart
+  var preds = _analytics.predictions.filter(function(p){return p.match&&p.match.actual_target;});
+  if (preds.length) {
+    setTimeout(function(){
+      UI.drawBarChart('chart-pred-diff',preds.map(function(p){return {label:(p.match.team1||'').substring(0,3),value:Math.abs((p.target_score||0)-(p.match.actual_target||0))};}),
+        {height:180,color:'#38d9f5'});
+    },160);
+  }
+
+  // History table
+  var tbody = document.getElementById('pred-history-tbody');
+  if (!tbody) return;
+  if (!preds.length) { tbody.innerHTML='<tr><td colspan="7" class="empty-state">No completed predictions yet</td></tr>'; return; }
+  tbody.innerHTML = _analytics.predictions.slice().reverse().map(function(p){
+    var m     = p.match||{};
+    var diff  = m.actual_target ? Math.abs((p.target_score||0)-(m.actual_target||0)) : null;
+    var corW  = m.winner && p.predicted_winner===m.winner;
+    var predPts = API.calcPredictionPoints(p,m);
+    var status  = !m.winner ? '<span class="match-status status-upcoming">Pending</span>' :
+      (corW ? '<span class="match-status status-done">✓ Correct</span>' : '<span class="match-status status-locked">✗ Wrong</span>');
+    return '<tr><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+UI.esc(m.match_title||'—')+'</td><td class="font-mono">'+(p.target_score||'—')+'</td><td class="font-mono">'+(m.actual_target||'—')+'</td><td class="font-mono" style="color:'+(diff===0?'var(--accent)':diff&&diff<=5?'var(--green)':'var(--red)')+';">'+(diff!==null?'±'+diff:'—')+'</td><td>'+UI.esc(p.predicted_winner||'—')+'</td><td>'+status+'</td><td class="pts">'+predPts+'</td></tr>';
+  }).join('');
+}
+
+function renderImpact() {
+  var is = _analytics.impactStats;
+  document.getElementById('impact-summary-wrap').innerHTML =
+    '<div class="metric-row"><span class="metric-label">Uses Remaining</span><span class="metric-val" style="color:var(--accent);">'+is.remaining+'/8</span></div>' +
+    '<div class="metric-row"><span class="metric-label">Total Pts from Impact</span><span class="metric-val" style="color:var(--gold);">'+is.total_pts+'</span></div>' +
+    '<div class="metric-row"><span class="metric-label">Times Used</span><span class="metric-val">'+is.uses+'</span></div>';
+
+  var picksEl = document.getElementById('impact-picks-list');
+  if (picksEl) picksEl.innerHTML = is.best_picks.length ? is.best_picks.map(function(p,i){
+    return '<div class="impact-pick-row"><div style="font-family:var(--f-display);font-weight:900;font-size:22px;color:var(--accent);min-width:28px;">#'+(i+1)+'</div><div style="flex:1;"><div style="font-weight:700;">'+UI.esc(p.name)+'</div><div style="font-size:12px;color:var(--text2);">'+UI.esc(p.match||'')+'</div></div><div style="font-family:var(--f-display);font-weight:900;font-size:18px;color:var(--accent);">'+p.pts+'</div></div>';
+  }).join('') : '<div style="padding:12px;color:var(--text3);font-size:13px;">No impact player picks yet</div>';
+
+  var tbody = document.getElementById('impact-history-tbody');
+  if (!tbody) return;
+  if (!_analytics.impactUsage.length) { tbody.innerHTML='<tr><td colspan="5" class="empty-state">No impact uses yet</td></tr>'; return; }
+  tbody.innerHTML = _analytics.impactUsage.map(function(u){
+    var pInLog = null;
+    _analytics.breakdown.forEach(function(l){
+      var found=(l.breakdown?.players||[]).find(function(p){return p.isImpact&&p.name===(u.player?.name);});
+      if(found) pInLog=found;
+    });
+    return '<tr><td>'+UI.esc(u.match?.match_title||'—')+'</td><td style="font-weight:700;">'+UI.esc(u.player?.name||'—')+'</td><td>'+UI.roleBadge(u.player?.role)+'</td><td style="font-size:12px;color:var(--text2);">'+UI.esc(u.player?.ipl_team||'—')+'</td><td class="pts">'+(pInLog?pInLog.final:'—')+'</td></tr>';
+  }).join('');
+}
+
+async function renderBadges() {
+  var [earned, allDefs] = await Promise.all([
+    API.fetchUserBadges(_myTeamId),
+    sb.from('badge_definitions').select('*').then(function(r){return r.data||[];})
+  ]);
+  var earnedIds = new Set(earned.map(function(b){return b.badge_id;}));
+  var progress  = document.getElementById('badges-progress');
+  if (progress) progress.innerHTML = '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;"><div><span style="font-family:var(--f-display);font-weight:900;font-size:28px;color:var(--accent);">'+earned.length+'</span><span style="font-family:var(--f-display);font-size:18px;color:var(--text3);">/'+allDefs.length+'</span></div><div style="flex:1;min-width:120px;"><div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;"><div style="height:100%;background:var(--accent);border-radius:4px;width:'+(earned.length/Math.max(allDefs.length,1)*100)+'%;transition:width 1s ease;"></div></div><div style="font-size:12px;color:var(--text2);margin-top:4px;">'+earned.length+' of '+allDefs.length+' badges earned</div></div></div>';
+  var grid = document.getElementById('badges-grid');
+  if (!grid) return;
+  grid.innerHTML = allDefs.map(function(def){
+    var isEarned = earnedIds.has(def.id);
+    var earnRow  = earned.find(function(e){return e.badge_id===def.id;});
+    return '<div class="badge-card'+(isEarned?'':' locked')+'" style="--badge-color:'+UI.esc(def.color||'#c8f135')+';">' +
+      '<span class="badge-icon">'+UI.esc(def.icon||'🏅')+'</span>' +
+      '<div class="badge-name">'+UI.esc(def.name)+'</div>' +
+      '<div class="badge-desc">'+UI.esc(def.description)+'</div>' +
+      (isEarned && earnRow ? '<div style="font-size:10px;color:var(--accent);margin-top:6px;font-family:var(--f-ui);font-weight:700;">Earned '+UI.shortDate(earnRow.earned_at)+'</div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+function switchTab(tab) {
+  var tabs=['overview','players','predictions','impact','badges'];
+  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',tabs[i]===tab);});
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.getElementById('tab-'+tab).classList.add('active');
+  // Re-render charts when tab becomes visible
+  if (tab==='overview' && _analytics) renderCharts();
+  if (tab==='players'  && _analytics) setTimeout(function(){renderPlayers();},100);
+  if (tab==='predictions' && _analytics) setTimeout(function(){renderPredictions();},100);
+}
+
+init();
+</script>
+</body>
+</html>
