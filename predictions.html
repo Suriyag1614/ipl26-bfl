@@ -421,76 +421,86 @@ function selectImpact(playerId) {
 /* ── Submit prediction ── */
 async function submitPrediction() {
   if (_submitting) return;
-  var btn   = document.getElementById('submit-btn');
   var errEl = document.getElementById('pred-error');
   if (errEl) errEl.textContent = '';
 
   var matchObj = _matches.find(function(m){ return m.id === _activeMatchId; });
   if (!matchObj) { if(errEl) errEl.textContent = 'Match not found.'; return; }
-  if (!API.isMatchOpen(matchObj)) {
-    if(errEl) errEl.textContent = 'Predictions are locked for this match.';
-    await renderMatchArea(_activeMatchId);
-    return;
-  }
-
+  
   var targetInput = document.getElementById('pred-target');
   var target = parseInt(targetInput ? targetInput.value : '0');
   if (!target || target < 50 || target > 400) { if(errEl) errEl.textContent = 'Enter a valid target score (50–400).'; return; }
   if (!_selectedWinner) { if(errEl) errEl.textContent = 'Please select a predicted winner.'; return; }
 
-  _submitting = true;
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spin"></span> Locking in…'; }
+  // ⚠️ Requirement: Confirmation Modal
+  UI.showConfirm({
+    icon: '🎯',
+    title: 'Lock In Prediction?',
+    msg: 'Target: ' + target + ' runs · Winner: ' + _selectedWinner + (_selectedImpact ? '\nImpact Player: ' + (_squad.find(s=>s.player.id===_selectedImpact)?.player.name) : ''),
+    consequence: 'Predictions cannot be changed after submission.',
+    okLabel: 'Lock In',
+    okClass: 'btn-accent',
+    onOk: async function() {
+      _submitting = true;
+      var btn = document.getElementById('submit-btn');
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spin"></span> Locking in…'; }
 
-  try {
-    await API.submitPrediction({ matchId:_activeMatchId, teamId:_myTeamId, targetScore:target, winner:_selectedWinner }, matchObj);
-
-    if (_selectedImpact) {
       try {
-        await API.submitImpactPlayer(_myTeamId, _activeMatchId, _selectedImpact);
-        var flash = document.createElement('div');
-        flash.className = 'impact-confirm-flash';
-        document.body.appendChild(flash);
-        setTimeout(function(){ flash.remove(); }, 800);
-        UI.toast('Impact Player locked — 3x multiplier active!', 'success', 5000);
-      } catch(ie) {
-        UI.toast('Prediction saved. Impact failed: ' + ie.message, 'warn', 6000);
-        _selectedImpact = null;
-      }
-    } else {
-      UI.toast('Prediction locked in!', 'success');
-    }
+        await API.submitPrediction({ matchId:_activeMatchId, teamId:_myTeamId, targetScore:target, winner:_selectedWinner }, matchObj);
 
-    await loadImpactUsage();
-    renderUsageMeter();
-    renderMatchTabs();
-    await renderMatchArea(_activeMatchId);
-  } catch(e) {
-    if (errEl) errEl.textContent = e.message || 'Submission failed. Try again.';
-    if (btn) { btn.disabled = false; btn.textContent = 'Lock In Prediction'; }
-  }
-  _submitting = false;
+        if (_selectedImpact) {
+          try {
+            await API.submitImpactPlayer(_myTeamId, _activeMatchId, _selectedImpact);
+            UI.toast('Impact Player locked — 3x multiplier active!', 'success', 5000);
+          } catch(ie) {
+            UI.toast('Prediction saved. Impact failed: ' + ie.message, 'warn', 6000);
+          }
+        } else {
+          UI.toast('Prediction locked in!', 'success');
+        }
+
+        await loadImpactUsage();
+        renderUsageMeter();
+        renderMatchTabs();
+        await renderMatchArea(_activeMatchId);
+      } catch(e) {
+        if (errEl) errEl.textContent = e.message || 'Submission failed. Try again.';
+        if (btn) { btn.disabled = false; btn.textContent = 'Lock In Prediction'; }
+      }
+      _submitting = false;
+    }
+  });
 }
 
 /* ── Submit impact only (after prediction already locked) ── */
 async function submitImpactOnly() {
   if (!_selectedImpact) { UI.toast('Select an Impact Player first', 'warn'); return; }
-  var btn = event && event.target;
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spin"></span> Locking…'; }
-  try {
-    await API.submitImpactPlayer(_myTeamId, _activeMatchId, _selectedImpact);
-    var flash = document.createElement('div');
-    flash.className = 'impact-confirm-flash';
-    document.body.appendChild(flash);
-    setTimeout(function(){ flash.remove(); }, 800);
-    UI.toast('Impact Player locked — 3x multiplier active!', 'success', 5000);
-    await loadImpactUsage();
-    renderUsageMeter();
-    renderMatchTabs();
-    await renderMatchArea(_activeMatchId);
-  } catch(e) {
-    UI.toast('Failed: ' + e.message, 'error');
-    if (btn) { btn.disabled = false; btn.innerHTML = 'Lock In Impact Player'; }
-  }
+  
+  var pName = _squad.find(s=>s.player.id===_selectedImpact)?.player.name || 'player';
+  
+  UI.showConfirm({
+    icon: '⚡',
+    title: 'Deploy Impact Player?',
+    msg: 'Lock in ' + pName + ' as your Impact Player for this match?',
+    consequence: 'This will use 1 of your 8 tournament uses. Cannot be undone.',
+    okLabel: 'Deploy 3×',
+    okClass: 'btn-gold',
+    onOk: async function() {
+      var btn = event && event.target;
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spin"></span> Locking…'; }
+      try {
+        await API.submitImpactPlayer(_myTeamId, _activeMatchId, _selectedImpact);
+        UI.toast('Impact Player locked — 3x multiplier active!', 'success', 5000);
+        await loadImpactUsage();
+        renderUsageMeter();
+        renderMatchTabs();
+        await renderMatchArea(_activeMatchId);
+      } catch(e) {
+        UI.toast('Failed: ' + e.message, 'error');
+        if (btn) { btn.disabled = false; btn.innerHTML = 'Lock In Impact Player'; }
+      }
+    }
+  });
 }
 
 init();

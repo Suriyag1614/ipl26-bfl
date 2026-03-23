@@ -257,6 +257,58 @@ const UI = {
   },
 
   // ════════════════════════════════════════════════════════════
+  //  CONFIRMATION MODAL
+  // ════════════════════════════════════════════════════════════
+  _confirmCb: null,
+  
+  showConfirm(opts) {
+    let modal = document.getElementById('confirm-modal');
+    if (!modal) {
+      document.body.insertAdjacentHTML('beforeend', `
+        <div class="modal-overlay" id="confirm-modal" style="display:none; z-index:9999;">
+          <div class="modal-box" style="text-align:center;">
+            <div class="confirm-icon" id="confirm-icon" style="font-size:42px;margin-bottom:12px;display:block;">⚠️</div>
+            <div class="modal-title" id="confirm-title" style="margin-bottom:10px;">Are you sure?</div>
+            <div id="confirm-msg" style="font-size:14px;color:var(--text2);margin-bottom:8px;"></div>
+            <div id="confirm-consequence" style="font-size:12px;color:var(--text3);font-style:italic;margin-bottom:20px;display:block;"></div>
+            <div style="display:flex;gap:10px;justify-content:center;">
+              <button class="btn btn-danger" id="confirm-ok-btn">Confirm</button>
+              <button class="btn btn-ghost" id="confirm-cancel-btn">Cancel</button>
+            </div>
+          </div>
+        </div>
+      `);
+      modal = document.getElementById('confirm-modal');
+      document.getElementById('confirm-cancel-btn').onclick = () => this.closeConfirm();
+    }
+
+    document.getElementById('confirm-icon').innerHTML = opts.icon || '⚠️';
+    document.getElementById('confirm-title').textContent = opts.title || 'Are you sure?';
+    document.getElementById('confirm-msg').textContent = opts.msg || '';
+    document.getElementById('confirm-consequence').textContent = opts.consequence || '';
+    
+    const btn = document.getElementById('confirm-ok-btn');
+    btn.textContent = opts.okLabel || 'Confirm';
+    btn.className = `btn ${opts.okClass || 'btn-danger'}`;
+    
+    this._confirmCb = opts.onOk || null;
+    btn.onclick = () => {
+      this.closeConfirm();
+      if (this._confirmCb) this._confirmCb();
+    };
+    
+    modal.style.display = 'flex';
+    // Accessibility: prevent background scroll
+    document.body.style.overflow = 'hidden';
+  },
+
+  closeConfirm() {
+    const modal = document.getElementById('confirm-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  },
+
+  // ════════════════════════════════════════════════════════════
   //  UTILITIES
   // ════════════════════════════════════════════════════════════
   fmt(n, dec = 0)  { return Number(n||0).toFixed(dec); },

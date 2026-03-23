@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="images/bfl/bfl-logo.png">
   <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin — BFL Fantasy IPL 2026</title>
@@ -397,22 +398,28 @@ function renderFixtureList(){
   }).join('');
 }
 
-async function loadIPLFixtures(){
-  if(!confirm('Insert all 20 IPL 2026 Part 1 fixtures?\nExisting fixtures with same match_no will be skipped.')) return;
-  var btn=event.target; if(btn._busy) return; btn._busy=true; btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span> Loading…';
-  var loaded=0, skipped=0;
-  try{
-    for(var i=0;i<IPL_FIXTURES.length;i++){
-      var f=IPL_FIXTURES[i];
-      if(_allMatches.find(function(m){return m.match_no===f.no;})){skipped++;continue;}
-      var isoDate=new Date(f.date+'T'+f.time+':00+05:30').toISOString();
-      await API.upsertMatch({match_title:'Match '+f.no+' · '+tShort(f.home)+' vs '+tShort(f.away),match_no:f.no,team1:f.home,team2:f.away,venue:f.venue,match_date:isoDate,is_locked:false});
-      loaded++;
+async function loadIPLFixtures(event){
+  UI.showConfirm({
+    icon: '⚡', title: 'Load IPL Fixtures?',
+    msg: 'Insert all 20 IPL 2026 Part 1 fixtures?\nExisting fixtures with same match_no will be skipped.',
+    okLabel: 'Load 20 Matches', okClass: 'btn-accent',
+    onOk: async function() {
+      var btn=event.target; if(btn._busy) return; btn._busy=true; btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span> Loading…';
+      var loaded=0, skipped=0;
+      try{
+        for(var i=0;i<IPL_FIXTURES.length;i++){
+          var f=IPL_FIXTURES[i];
+          if(_allMatches.find(function(m){return m.match_no===f.no;})){skipped++;continue;}
+          var isoDate=new Date(f.date+'T'+f.time+':00+05:30').toISOString();
+          await API.upsertMatch({match_title:'Match '+f.no+' · '+tShort(f.home)+' vs '+tShort(f.away),match_no:f.no,team1:f.home,team2:f.away,venue:f.venue,match_date:isoDate,is_locked:false});
+          loaded++;
+        }
+        UI.toast('Loaded '+loaded+' fixtures'+(skipped?' · '+skipped+' skipped':''),'success');
+        await loadMatches(); await loadAdminStats();
+      }catch(e){UI.toast('Load failed: '+e.message,'error');}
+      btn._busy=false; btn.disabled=false; btn.innerHTML='⚡ Load IPL 2026';
     }
-    UI.toast('Loaded '+loaded+' fixtures'+(skipped?' · '+skipped+' skipped':''),'success');
-    await loadMatches(); await loadAdminStats();
-  }catch(e){UI.toast('Load failed: '+e.message,'error');}
-  btn._busy=false; btn.disabled=false; btn.innerHTML='⚡ Load IPL 2026';
+  });
 }
 
 function clearMatchForm(){
@@ -635,35 +642,50 @@ function addLog(msg,type){
 
 async function calculatePoints(){
   var matchId=UI.el('calc-match-select').value; if(!matchId){UI.toast('Select a match first','warn');return;}
-  // Audit Fix #19: show what will be calculated before proceeding
   var match=_allMatches.find(function(m){return m.id===matchId;});
   var teamCount=_allTeamsData.length||'all';
-  if(!confirm('Calculate points for '+UI.esc(match?(match.team1+' vs '+match.team2):matchId)+'?\n\nThis will score '+teamCount+' team(s) and lock the match.')) return;
-  var btn=UI.el('calc-btn'); if(btn._busy) return; btn._busy=true; btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span> Calculating…';
-  UI.el('calc-log').innerHTML=''; addLog('Starting calculation…');
-  try{
-    var results=await API.calculateMatchPoints(matchId,addLog);
-    addLog('Calculated '+results.length+' teams.','good'); addLog('Leaderboard refreshed · Match locked ✓','good');
-    UI.toast('Points calculated & match locked!','success');
-    await Promise.all([loadMatches(),loadAdminStats(),loadTeams()]);
-  }catch(e){addLog('ERROR: '+e.message,'error');UI.toast('Calculation failed: '+e.message,'error');}
-  btn._busy=false; btn.disabled=false; btn.innerHTML='⚡ Calculate &amp; Lock';
+  
+  UI.showConfirm({
+    icon: '🧾', title: 'Calculate Points?',
+    msg: 'Calculate points for '+(match?(match.team1+' vs '+match.team2):matchId)+'?',
+    consequence: 'This will score '+teamCount+' team(s) and lock the match.',
+    okLabel: 'Calculate & Lock', okClass: 'btn-accent',
+    onOk: async function() {
+      var btn=UI.el('calc-btn'); if(btn._busy) return; btn._busy=true; btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span> Calculating…';
+      UI.el('calc-log').innerHTML=''; addLog('Starting calculation…');
+      try{
+        var results=await API.calculateMatchPoints(matchId,addLog);
+        addLog('Calculated '+results.length+' teams.','good'); addLog('Leaderboard refreshed · Match locked ✓','good');
+        UI.toast('Points calculated & match locked!','success');
+        await Promise.all([loadMatches(),loadAdminStats(),loadTeams()]);
+      }catch(e){addLog('ERROR: '+e.message,'error');UI.toast('Calculation failed: '+e.message,'error');}
+      btn._busy=false; btn.disabled=false; btn.innerHTML='⚡ Calculate &amp; Lock';
+    }
+  });
 }
 
 async function recalculate(){
   var matchId=UI.el('calc-match-select').value; if(!matchId){UI.toast('Select a match first','warn');return;}
   var match=_allMatches.find(function(m){return m.id===matchId;});
   var teamCount=_allTeamsData.length||'all';
-  if(!confirm('RECALCULATE: '+UI.esc(match?(match.team1+' vs '+match.team2):matchId)+'?\n\nThis will DELETE existing points for '+teamCount+' team(s) then recalculate from scratch.\n\nThis cannot be undone.')) return;
-  var btn=UI.el('recalc-btn'); if(btn._busy) return; btn._busy=true; btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span> Recalculating…';
-  UI.el('calc-log').innerHTML=''; addLog('Deleting existing points…');
-  try{
-    var results=await API.recalculateMatch(matchId,addLog);
-    addLog('Done — '+results.length+' teams recalculated.','good');
-    UI.toast('Recalculation complete!','success');
-    await Promise.all([loadMatches(),loadAdminStats(),loadTeams()]);
-  }catch(e){addLog('ERROR: '+e.message,'error');UI.toast('Recalculation failed: '+e.message,'error');}
-  btn._busy=false; btn.disabled=false; btn.innerHTML='↻ Recalculate (delete &amp; redo)';
+  
+  UI.showConfirm({
+    icon: '↻', title: 'Danger: Recalculate?',
+    msg: 'RECALCULATE: '+(match?(match.team1+' vs '+match.team2):matchId)+'?',
+    consequence: 'This will DELETE existing points for '+teamCount+' team(s) and redo from scratch. Cannot be undone.',
+    okLabel: 'Recalculate All', okClass: 'btn-danger',
+    onOk: async function() {
+      var btn=UI.el('recalc-btn'); if(btn._busy) return; btn._busy=true; btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span> Recalculating…';
+      UI.el('calc-log').innerHTML=''; addLog('Deleting existing points…');
+      try{
+        var results=await API.recalculateMatch(matchId,addLog);
+        addLog('Done — '+results.length+' teams recalculated.','good');
+        UI.toast('Recalculation complete!','success');
+        await Promise.all([loadMatches(),loadAdminStats(),loadTeams()]);
+      }catch(e){addLog('ERROR: '+e.message,'error');UI.toast('Recalculation failed: '+e.message,'error');}
+      btn._busy=false; btn.disabled=false; btn.innerHTML='↻ Recalculate (delete &amp; redo)';
+    }
+  });
 }
 
 // ── Override ──────────────────────────────────────────────────
@@ -675,31 +697,57 @@ async function submitOverride(){
   if(!reason){UI.toast('Enter a reason','warn');return;}
   var matchName=_allMatches.find(function(m){return m.id===matchId;}); var matchLabel=matchName?(matchName.team1+' vs '+matchName.team2):matchId;
   var teamName=_allTeamsData.find(function(r){return r.fantasy_team_id===teamId;}); var teamLabel=teamName&&teamName.team?teamName.team.team_name:teamId;
-  if(!confirm('Apply override?\n\nTeam: '+teamLabel+'\nMatch: '+matchLabel+'\nAdjustment: '+(adj>0?'+':'')+adj+' pts\nReason: '+reason)) return;
-  try{
-    await API.overridePoints(matchId,teamId,adj,reason);
-    document.getElementById('override-log').innerHTML='<div class="override-confirm mt-8">✓ Override applied: '+(adj>0?'+':'')+adj+' pts to '+UI.esc(teamLabel)+' · "'+UI.esc(reason)+'"</div>';
-    UI.toast('Override applied!','success');
-    UI.el('override-adj').value=''; UI.el('override-reason').value='';
-    await loadTeams();
-  }catch(e){UI.toast('Override failed: '+e.message,'error');}
+  
+  UI.showConfirm({
+    icon: '⚖️', title: 'Apply Points Override?',
+    msg: 'Team: ' + teamLabel + '\nMatch: ' + matchLabel + '\nAdjustment: ' + (adj>0?'+':'') + adj + ' pts',
+    consequence: 'Reason: ' + reason,
+    okLabel: 'Apply Override', okClass: 'btn-accent',
+    onOk: async function() {
+      try{
+        await API.overridePoints(matchId,teamId,adj,reason);
+        document.getElementById('override-log').innerHTML='<div class="override-confirm mt-8">✓ Override applied: '+(adj>0?'+':'')+adj+' pts to '+UI.esc(teamLabel)+' · "'+UI.esc(reason)+'"</div>';
+        UI.toast('Override applied!','success');
+        UI.el('override-adj').value=''; UI.el('override-reason').value='';
+        await loadTeams();
+      }catch(e){UI.toast('Override failed: '+e.message,'error');}
+    }
+  });
 }
 
-// ── Blogs admin (admin uses isAdmin=true to skip view count) ───
+// ── Blogs admin ───────────────────────────────────────────────
+var _blogFilter = 'all';
+function filterBlogList(status){
+  _blogFilter=status;
+  ['all','draft','pub'].forEach(function(s){
+    var btn=document.getElementById('bfilter-'+s);
+    if(btn) btn.className='btn btn-sm '+(status===s||(status==='published'&&s==='pub')?'btn-accent':'btn-ghost');
+  });
+  loadBlogList();
+}
+
 async function loadBlogList(){
   var cont=document.getElementById('blog-admin-list');
   try{
-    var blogs=await API.fetchBlogs({limit:50,publishedOnly:false});
-    if(!blogs.length){cont.innerHTML='<div style="padding:20px;color:var(--text3);font-size:13px;">No posts yet — create one!</div>';return;}
+    var opts={limit:50,publishedOnly:false};
+    if(_blogFilter==='draft') opts.status='draft';
+    else if(_blogFilter==='published') opts.status='published';
+    var blogs=await API.fetchBlogs(opts);
+    if(!blogs.length){cont.innerHTML='<div style="padding:20px;color:var(--text3);font-size:13px;">No posts — create one or use AI Generate!</div>';return;}
     var catColors={preview:'#38d9f5',tips:'#c8f135',announcement:'#f5c842',recap:'#a78bfa',general:'#94a3b8'};
+    var statusColors={draft:'var(--gold)',review:'var(--cyan)',published:'var(--green)'};
     cont.innerHTML=blogs.map(function(b,i){
       var col=catColors[b.category]||'#94a3b8';
-      return '<div class="fixture-row" onclick="editBlogAdmin(\''+b.id+'\')" style="animation:row-in .22s ease '+(.04*i)+'s both;">'+
-        '<div style="flex:1;min-width:0;"><div style="font-family:var(--f-ui);font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+UI.esc(b.title)+'</div>'+
-        '<div style="display:flex;gap:8px;margin-top:2px;"><span style="background:'+col+'22;color:'+col+';font-family:var(--f-ui);font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;">'+UI.esc(b.category)+'</span>'+
-        (!b.is_published?'<span class="badge badge-red" style="font-size:10px;">Draft</span>':'')+
-        '<span style="font-size:11px;color:var(--text3);">'+UI.shortDate(b.created_at)+'</span>'+
-        '<span style="font-size:11px;color:var(--text3);">'+b.views+' views</span></div></div>'+
+      var sCls='status-'+(b.status==='published'?'done':b.status==='review'?'upcoming':'locked');
+      return '<div class="fixture-row" onclick="editBlogAdmin(\'' + b.id + '\')" style="animation:row-in .22s ease '+(.04*i)+'s both;">'+
+        '<div style="flex:1;min-width:0;"><div style="font-family:var(--f-ui);font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+
+          (b.ai_generated?'🤖 ':'')+UI.esc(b.title)+'</div>'+
+        '<div style="display:flex;gap:6px;margin-top:2px;flex-wrap:wrap;">'+
+          '<span style="background:'+col+'22;color:'+col+';font-family:var(--f-ui);font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;">'+UI.esc(b.category)+'</span>'+
+          '<span class="match-status '+sCls+'" style="font-size:10px;">'+UI.esc(b.status||'draft')+'</span>'+
+          '<span style="font-size:11px;color:var(--text3);">'+UI.shortDate(b.created_at)+'</span>'+
+          '<span style="font-size:11px;color:var(--text3);">'+b.views+' views</span>'+
+        '</div></div>'+
         '<button class="btn btn-ghost btn-sm fixture-edit" onclick="event.stopPropagation();editBlogAdmin(\''+b.id+'\')" style="font-size:11px;padding:3px 8px;">Edit</button>'+
       '</div>';
     }).join('');
@@ -710,34 +758,118 @@ function clearBlogForm(){
   UI.el('blog-id').value=''; UI.el('b-title').value=''; UI.el('b-excerpt').value='';
   UI.el('b-category').value='general'; UI.el('b-content').value=''; UI.el('b-published').checked=false;
   var del=UI.el('del-blog-btn'); if(del) del.style.display='none';
+  var pub=UI.el('pub-blog-btn'); if(pub) pub.style.display='none';
 }
 
 async function editBlogAdmin(blogId){
   try{
-    // Pass isAdmin=true so view count is NOT incremented (Audit Fix #16)
-    var b=await API.fetchBlog(blogId, true); if(!b) return;
+    var b=await API.fetchBlog(blogId,true); if(!b) return;
     UI.el('blog-id').value=b.id; UI.el('b-title').value=b.title;
     UI.el('b-excerpt').value=b.excerpt||''; UI.el('b-category').value=b.category||'general';
     UI.el('b-content').value=b.content; UI.el('b-published').checked=!!b.is_published;
     var del=UI.el('del-blog-btn'); if(del) del.style.display='';
+    var pub=UI.el('pub-blog-btn');
+    if(pub) pub.style.display=(b.status!=='published'?'':'none');
   }catch(e){UI.toast('Load failed: '+e.message,'error');}
 }
 
 async function saveBlogAdmin(){
   var id=UI.el('blog-id').value, title=UI.el('b-title').value.trim(), content=UI.el('b-content').value.trim();
   if(!title||!content){UI.toast('Title and content required','warn');return;}
-  var blog={title:title,content:content,excerpt:UI.el('b-excerpt').value.trim()||null,category:UI.el('b-category').value,is_published:UI.el('b-published').checked};
+  var isPublished=UI.el('b-published').checked;
+  var blog={title,content,excerpt:UI.el('b-excerpt').value.trim()||null,category:UI.el('b-category').value,is_published:isPublished,status:isPublished?'published':'draft'};
   if(id) blog.id=id;
   try{await API.upsertBlog(blog);UI.toast('Post saved!','success');clearBlogForm();await loadBlogList();}
   catch(e){UI.toast('Save failed: '+e.message,'error');}
 }
 
+async function publishBlogAdmin(){
+  var id=UI.el('blog-id').value; if(!id) return;
+  var title=UI.el('b-title').value;
+  
+  UI.showConfirm({
+    icon: '🚀', title: 'Publish Blog Post?',
+    msg: 'Approve and publish "' + title + '"?',
+    consequence: 'This will make the post visible to all users immediately.',
+    okLabel: 'Publish Now', okClass: 'btn-accent',
+    onOk: async function() {
+      try{
+        await API.publishBlog(id,'admin');
+        UI.toast('Blog published!','success');
+        clearBlogForm(); await loadBlogList();
+      }catch(e){UI.toast('Publish failed: '+e.message,'error');}
+    }
+  });
+}
+
 async function deleteBlogAdmin(){
   var id=UI.el('blog-id').value; if(!id) return;
-  if(!confirm('Delete this post permanently?')) return;
-  try{await API.deleteBlog(id);UI.toast('Post deleted','warn');clearBlogForm();await loadBlogList();}
-  catch(e){UI.toast('Delete failed: '+e.message,'error');}
+  UI.showConfirm({
+    icon: '🗑️', title: 'Delete Blog Post?',
+    msg: 'Are you sure you want to delete this post permanently?',
+    consequence: 'This action cannot be undone.',
+    okLabel: 'Delete Forever', okClass: 'btn-danger',
+    onOk: async function() {
+      try{await API.deleteBlog(id);UI.toast('Post deleted','warn');clearBlogForm();await loadBlogList();}
+      catch(e){UI.toast('Delete failed: '+e.message,'error');}
+    }
+  });
 }
+
+function showAIGen(){
+  var panel=document.getElementById('ai-gen-panel');
+  if(panel) panel.style.display=panel.style.display==='none'?'':'none';
+}
+
+async function generateAIBlog(){
+  var title=document.getElementById('ai-title').value.trim();
+  var cat=document.getElementById('ai-category').value;
+  var ctx=document.getElementById('ai-context').value.trim();
+  if(!title){UI.toast('Enter a title / topic','warn');return;}
+  var btn=document.getElementById('ai-gen-btn');
+  var icon=document.getElementById('ai-gen-icon');
+  if(btn._busy)return; btn._busy=true; btn.disabled=true; icon.textContent='⏳';
+  try{
+    var blog=await API.generateAIBlog({title,category:cat,context:ctx});
+    UI.el('blog-id').value=blog.id;
+    UI.el('b-title').value=blog.title;
+    UI.el('b-excerpt').value=blog.excerpt||'';
+    UI.el('b-category').value=blog.category||'general';
+    UI.el('b-content').value=blog.content;
+    UI.el('b-published').checked=false;
+    document.getElementById('ai-gen-panel').style.display='none';
+    var pub=UI.el('pub-blog-btn'); if(pub) pub.style.display='';
+    var del=UI.el('del-blog-btn'); if(del) del.style.display='';
+    await loadBlogList();
+    UI.toast('AI draft created — review and approve to publish!','success',5000);
+  }catch(e){UI.toast('AI generation failed: '+e.message,'error');}
+  btn._busy=false; btn.disabled=false; icon.textContent='✨';
+}
+
+// ── Audit log ─────────────────────────────────────────────────
+async function loadAuditLog(){
+  var tbody=document.getElementById('audit-log-tbody'); if(!tbody) return;
+  var filter=document.getElementById('log-filter')&&document.getElementById('log-filter').value||null;
+  try{
+    var logs=await API.fetchActionLog({limit:100,actionType:filter||null});
+    if(!logs.length){tbody.innerHTML='<tr><td colspan="5" class="empty-state">No log entries</td></tr>';return;}
+    var typeColors={'stat_entry':'#60a5fa','match_edit':'#c8f135','adjustment':'#f5c842','injury_set':'#f87171','replacement_created':'#38d9f5','blog_published':'#34d399'};
+    tbody.innerHTML=logs.map(function(l){
+      var col=typeColors[l.action_type]||'var(--text2)';
+      return '<tr>'+
+        '<td style="font-size:11px;color:var(--text3);white-space:nowrap;">'+UI.shortDate(l.created_at)+'</td>'+
+        '<td><span style="background:'+col+'22;color:'+col+';font-size:10px;font-weight:800;padding:2px 7px;border-radius:3px;font-family:var(--f-ui);">'+UI.esc(l.action_type)+'</span></td>'+
+        '<td style="font-size:12px;">'+UI.esc(l.entity_type)+'</td>'+
+        '<td style="font-size:10px;color:var(--text3);font-family:var(--f-mono);">'+UI.esc((l.entity_id||'').substring(0,12))+'…</td>'+
+        '<td style="font-size:12px;">'+UI.esc(l.performed_by||'admin')+'</td>'+
+      '</tr>';
+    }).join('');
+    // Show undo button if stat entries are visible
+    var undoWrap=document.getElementById('undo-last-wrap');
+    if(undoWrap) undoWrap.style.display=logs.some(function(l){return l.action_type==='stat_entry';})?'':'none';
+  }catch(e){tbody.innerHTML='<tr><td colspan="5" style="color:var(--red);padding:12px;">'+UI.esc(e.message)+'</td></tr>';}
+}
+
 
 // ── Responsive ────────────────────────────────────────────────
 function fixGrids(){

@@ -670,7 +670,7 @@ body { display:flex; flex-direction:column; }
   .bottom-nav { display:none !important; }
   .page-content-wrap.sidebar-open { margin-left:var(--sb-w); }
   /* Hide user chip in topbar when sidebar is open (it's shown in sidebar footer) */
-  body:has(.sidebar.open) .topbar #nav-user { display:none; }
+  .sidebar.open ~ * .topbar #nav-user { display:none; }
   #nav-user { transition:opacity .2s; }
 }
 
@@ -749,5 +749,16 @@ body { display:flex; flex-direction:column; }
 .bar-track   { flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden; }
 .bar-fill    { height:100%;background:var(--accent);border-radius:4px;transition:width 1s ease; }
 .bar-pts     { font-family:var(--f-mono);font-weight:700;font-size:13px;min-width:36px;text-align:right; }
-.impact-pick-row { display:flex;align-items:center;gap:14px;padding:10px 0;border-bottom:1px solid var(--border); }
 .impact-pick-row:last-child { border-bottom:none; }
+
+/* 🏆 PoM & PoT Highlights */
+.player-card.pom-highlight { border-color: var(--gold) !important; box-shadow: 0 0 15px var(--gold-dim); }
+.player-card.pot-highlight { border-color: var(--purple) !important; box-shadow: 0 0 20px rgba(167,139,250,0.3); }
+
+.badge-pom { background: var(--gold); color: #000; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-family: var(--f-ui); }
+.badge-pot { background: var(--purple); color: #fff; font-size: 9px; font-weight: 900; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-family: var(--f-ui); }
+
+/* ⚠️ Premium Confirm Modal enhancements */
+#confirm-modal .modal-box { border-top: 4px solid var(--accent); }
+.confirm-icon { font-size: 42px; margin-bottom: 12px; display: block; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.3)); }
+#confirm-consequence { font-size: 12px; color: var(--text3); margin-top: 10px; font-style: italic; display: block; }

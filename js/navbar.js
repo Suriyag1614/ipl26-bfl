@@ -21,7 +21,16 @@ var NAV_LINKS = [
 
 // Sidebar state — persisted in localStorage
 var _sidebarOpen = true;
-try { var _saved = localStorage.getItem('bfl_sidebar'); if (_saved !== null) _sidebarOpen = _saved === '1'; } catch(e) {}
+try {
+  var _saved = localStorage.getItem('bfl_sidebar');
+  if (_saved !== null) {
+    _sidebarOpen = _saved === '1';
+  } else {
+    // If no saved state, default to open
+    _sidebarOpen = true;
+    localStorage.setItem('bfl_sidebar', '1');
+  }
+} catch(e) {}
 
 function buildNavbar(activePage) {
   var navbarEl = document.getElementById('navbar');
@@ -52,9 +61,7 @@ function buildNavbar(activePage) {
           '</div>' +
           '<button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>' +
         '</div>' +
-      '</div>';
-
-    var sidebarHtml =
+      '</div>' +
       // Sidebar
       '<aside class="sidebar" id="sidebar">' +
         '<div class="sb-logo-wrap">' +
@@ -77,10 +84,6 @@ function buildNavbar(activePage) {
       '</aside>' +
       // Overlay (click to close sidebar on mobile)
       '<div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>';
-
-    var exSb = document.getElementById('sidebar'); if (exSb) exSb.remove();
-    var exOv = document.getElementById('sb-overlay'); if (exOv) exOv.remove();
-    navbarEl.insertAdjacentHTML('afterend', sidebarHtml);
 
     // Apply initial state
     applySidebarState(false);
@@ -145,14 +148,20 @@ async function initNavbar(page) {
 }
 
 function setNavUser(name, initials, bg) {
-  ['nav-avatar','sb-avatar'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) { el.textContent = initials; if (bg) el.style.background = bg; }
-  });
-  ['nav-team-name','sb-user-name'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = name;
-  });
+  var avatarIds = ['nav-avatar','sb-avatar'];
+  if (Array.isArray(avatarIds)) {
+    avatarIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) { el.textContent = initials; if (bg) el.style.background = bg; }
+    });
+  }
+  var nameIds = ['nav-team-name','sb-user-name'];
+  if (Array.isArray(nameIds)) {
+    nameIds.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = name;
+    });
+  }
 }
 
 async function doLogout() { await Auth.signOut(); }
