@@ -170,6 +170,16 @@ async function initNavbar(page, customLinks) {
       } else {
         setNavUser('Team', 'T', null, null);
       }
+      // Add this at the end of the initNavbar function
+document.getElementById('sidebar').addEventListener('click', function(e) {
+  // Check if the clicked element (or its parent) is a link
+  if (e.target.closest('.sb-link')) {
+    // Only close if we are in mobile view (width < 1024)
+    if (window.innerWidth < 1024) {
+      toggleSidebar();
+    }
+  }
+});
     }
   } catch(e) { console.warn('navbar:', e.message); }
 }
