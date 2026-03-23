@@ -93,7 +93,7 @@ function renderSquad(){
   }
   var C={CSK:'#fdb913',MI:'#004ba0',RCB:'#da1818',KKR:'#6a1bac',SRH:'#f26522',DC:'#004c93',PBKS:'#ed1b24',RR:'#ea1a85',GT:'#1c2c5b',LSG:'#ff002b',SURA:'#1a3a8a'};
   grid.innerHTML=list.map(function(sp,i){
-    var p=sp.player||{},isCap=!!sp.is_captain,isVC=!!sp.is_vc;
+    var p=sp.player||{},isCap=!!sp.is_captain,isVC=!!sp.is_vc,isImpact=!!sp.is_impact;
     var isInjured=!!(p.is_injured), hasRep=!!(sp.replacement);
     var color=C[(p.ipl_team||'').replace(/\s+/g,'').toUpperCase()]||'#f0b429';
     var pRow=_playerPts[p.name]||{pts:0,pom:0,pot:0};
@@ -104,6 +104,7 @@ function renderSquad(){
     if(p.is_overseas) badges+=' <span class="role-tag rt-os" style="font-size:9px;">OS</span>';
     if(isCap) badges+=' <span class="badge badge-gold" style="font-size:10px;">2x</span>';
     if(isVC)  badges+=' <span class="badge badge-cyan"  style="font-size:10px;">1.5x</span>';
+    if(isImpact) badges+=' <span class="badge badge-impact" style="font-size:10px;">IMPACT</span>';
     if(pRow.pom) badges+=' <span class="badge-pom" title="PoM Winner">PoM '+(pRow.pom>1?pRow.pom:'')+'</span>';
     if(pRow.pot) badges+=' <span class="badge-pot" title="Player of Tournament">PoT</span>';
 
@@ -111,14 +112,15 @@ function renderSquad(){
     if(isInjured) statusBadges+='<span class="badge-injured">&#x1F3E5; Injured</span> ';
     if(hasRep)    statusBadges+='<span class="badge-replacement">&#x1F504; '+UI.esc(sp.replacement.replacement&&sp.replacement.replacement.name||'')+'</span>';
     
-    var cardCls='player-card'+(isCap?' captain':isVC?' vice-cap':'')+(isInjured&&!hasRep?' injured':'')+(hasRep?' replaced':'')+
+    var cardCls='player-card'+(isCap?' captain':isVC?' vice-cap':'')+(isImpact?' impact':'')+(isInjured&&!hasRep?' injured':'')+(hasRep?' replaced':'')+
                 (pRow.pom?' pom-highlight':'')+(pRow.pot?' pot-highlight':'');
     var pd=UI.esc(JSON.stringify({id:p.id,name:p.name||'',role:p.role||''}));
     return '<div class="'+cardCls+'" style="--ipl-color:'+color+';animation-delay:'+(i*0.05)+'s"'+
       (p.injury_note?' title="'+UI.esc('Injured: '+p.injury_note)+'"':'')+'>' +
       (pRow.pot?'<div class="captain-badge" style="background:var(--purple);color:#fff;">PoT Legend</div>':
        pRow.pom?'<div class="captain-badge" style="background:var(--gold);color:#000;">PoM Champ</div>':
-       isCap?'<div class="captain-badge">C Captain</div>':isVC?'<div class="captain-badge vc-badge">VC Vice</div>':'') +
+       isCap?'<div class="captain-badge">C Captain</div>':isVC?'<div class="captain-badge vc-badge">VC Vice</div>':
+       isImpact?'<div class="impact-role-badge">⚡ IMPACT</div>':'') +
       imgTag(displayImg, displayName, 'player-avatar') +
       '<div class="player-name">'+UI.esc(displayName)+'</div>' +
       (isInjured&&hasRep?'<div style="font-size:10px;color:var(--text3);text-decoration:line-through;margin-bottom:2px;">'+UI.esc(p.name||'')+'</div>':'') +
@@ -132,11 +134,11 @@ function renderSquad(){
 }
 
 function renderSummary(){
-  var cap=_squad.find(function(s){return s.is_captain;}),vc=_squad.find(function(s){return s.is_vc;});
+  var cap=_squad.find(function(s){return s.is_captain;}),vc=_squad.find(function(s){return s.is_vc;}),impact=_squad.find(function(s){return s.is_impact;});
   var os=_squad.filter(function(s){return s.player&&s.player.is_overseas;}).length;
   var inj=_squad.filter(function(s){return s.player&&s.player.is_injured;}).length;
   var el=document.getElementById('squad-summary'); if(!el)return;
-  var items=[{lbl:'Players',val:_squad.length,unit:'/12'},{lbl:'Captain',val:(cap&&cap.player)?cap.player.name:'&mdash;',plain:true},{lbl:'VC',val:(vc&&vc.player)?vc.player.name:'&mdash;',plain:true},{lbl:'Overseas',val:os,unit:'/4'}];
+  var items=[{lbl:'Players',val:_squad.length,unit:'/12'},{lbl:'Captain',val:(cap&&cap.player)?cap.player.name:'&mdash;',plain:true},{lbl:'VC',val:(vc&&vc.player)?vc.player.name:'&mdash;',plain:true},{lbl:'Impact',val:(impact&&impact.player)?impact.player.name:'&mdash;',plain:true},{lbl:'Overseas',val:os,unit:'/4'}];
   if(inj) items.push({lbl:'Injured',val:inj,accent:'var(--red)'});
   el.innerHTML='<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;">'+items.map(function(it,i){
     var sep=i?'<div style="width:1px;height:32px;background:var(--border);flex-shrink:0;"></div>':'';

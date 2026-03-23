@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- v1.1.1-fix -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -54,12 +55,11 @@
 var _myTeamId      = null;
 var _squad         = [];
 var _matches       = [];
-var _impactUsage   = [];
-var _impactCount   = 0;
-var _impactMatchMap = {};
+var _impactStats   = { used: 0, total: 8 };
+var _impactActive  = false; // for current match
+var _impactMatchMap = {}; // matchId -> is_active
 var _activeMatchId  = null;
 var _selectedWinner = null;
-var _selectedImpact = null;
 var _submitting     = false;
 
 /* ── helpers ── */
@@ -75,22 +75,35 @@ function imgTag(src, name, cls, style) {
 
 /* ── Init ── */
 async function init() {
+  console.log('[init] start');
   var sess = await Auth.requireAuth();
+  console.log('[init] session:', sess?.user?.id);
   if (!sess) return;
+
+  console.log('[init] calling initNavbar');
   await initNavbar('predictions');
+  
+  console.log('[init] calling fetchTeam');
   var team = await Auth.fetchTeam(sess.user.id);
-  if (!team) { showArea('<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Team not found. Contact admin.</div></div>'); return; }
+  if (!team) { 
+    console.warn('[init] team not found');
+    showArea('<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Team not found. Contact admin.</div></div>'); 
+    return; 
+  }
   _myTeamId = team.id;
 
+  console.log('[init] loading squad & stats');
   try {
-    var results = await Promise.allSettled([loadSquad(), loadImpactUsage()]);
-    results.forEach(function(r) { if (r.status === 'rejected') console.warn('[init]', r.reason); });
+    await Promise.all([loadSquad(), loadImpactStats()]);
   } catch(e) { console.warn('[init parallel]', e); }
 
+  console.log('[init] rendering usage meter');
   renderUsageMeter();
+  
+  console.log('[init] loading matches');
   await loadMatches();
+  console.log('[init] done');
 
-  // Poll every 30s to lock tabs whose deadline passed
   if (!window._lockPoll) {
     window._lockPoll = setInterval(function() {
       API.serverAutoLock().catch(function(){});
@@ -109,14 +122,10 @@ async function loadSquad() {
   } catch(e) { _squad = []; console.warn('[loadSquad]', e.message); }
 }
 
-async function loadImpactUsage() {
+async function loadImpactStats() {
   try {
-    var raw = await API.fetchImpactUsage(_myTeamId);
-    _impactUsage = safeArr(raw);
-    _impactCount = _impactUsage.length;
-    _impactMatchMap = {};
-    _impactUsage.forEach(function(u) { _impactMatchMap[u.match_id] = u.player_id; });
-  } catch(e) { _impactUsage = []; _impactCount = 0; console.warn('[loadImpactUsage]', e.message); }
+    _impactStats = await API.fetchImpactStats(_myTeamId);
+  } catch(e) { _impactStats = { used: 0, total: 8 }; console.warn('[loadImpactStats]', e.message); }
 }
 
 async function loadMatches() {
@@ -147,8 +156,9 @@ function showArea(html) {
 
 /* ── Usage meter ── */
 function renderUsageMeter() {
-  var MAX  = 8;
-  var left = Math.max(0, MAX - _impactCount);
+  var MAX  = _impactStats.total || 8;
+  var used = _impactStats.used || 0;
+  var left = Math.max(0, MAX - used);
   var numEl   = document.getElementById('usage-left-num');
   var pipsEl  = document.getElementById('usage-pips');
   var meterEl = document.getElementById('usage-meter');
@@ -157,7 +167,7 @@ function renderUsageMeter() {
   if (pipsEl) {
     var html = '';
     for (var i = 0; i < MAX; i++) {
-      var filled = i < _impactCount;
+      var filled = i < used;
       html += '<div class="usage-pip' + (filled ? (' filled' + (left===0?' gone':left<=2?' low':'')) : '') + '" style="animation-delay:' + (i*.04) + 's"></div>';
     }
     pipsEl.innerHTML = html;
@@ -186,10 +196,17 @@ function renderMatchTabs() {
 async function setActiveMatch(matchId) {
   _activeMatchId = matchId;
   _selectedWinner = null;
-  _selectedImpact = null;
+  _impactActive = false;
   document.querySelectorAll('.match-tab').forEach(function(t) { t.classList.remove('active'); });
   var tab = document.getElementById('tab-' + matchId);
   if (tab) { tab.classList.add('active'); tab.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' }); }
+  
+  try {
+    _impactActive = await API.fetchImpactActivation(_myTeamId, matchId);
+    _impactMatchMap[matchId] = _impactActive;
+    renderMatchTabs();
+  } catch(e) {}
+  
   await renderMatchArea(matchId);
 }
 
@@ -201,14 +218,11 @@ async function renderMatchArea(matchId) {
     if (!m) { showArea('<div class="empty-state"><div class="empty-state-text">Match not found</div></div>'); return; }
 
     var pred = null;
-    var impactEntry = null;
     try { pred = await API.fetchPrediction(matchId, _myTeamId); } catch(e) {}
-    if (_impactMatchMap[matchId]) {
-      impactEntry = _impactUsage.find(function(u) { return u.match_id === matchId; }) || null;
-    }
+    var impactActive = !!_impactMatchMap[matchId];
 
-    if (m.is_locked && m.winner) { renderResult(m, pred, impactEntry); return; }
-    if (pred)                     { renderSubmitted(m, pred, impactEntry); return; }
+    if (m.is_locked && m.winner) { renderResult(m, pred, impactActive); return; }
+    if (pred)                     { renderSubmitted(m, pred, impactActive); return; }
     if (!API.isMatchOpen(m))      { renderLocked(m, pred); return; }
     renderForm(m);
   } catch(e) {
@@ -219,7 +233,7 @@ async function renderMatchArea(matchId) {
 
 /* ── FORM ── */
 function renderForm(m) {
-  var exhausted = _impactCount >= 8;
+  var exhausted = _impactStats.used >= 8;
   showArea(
     '<div class="pred-card">' +
       matchHeader(m, '<span class="match-status status-open">Open</span>') +
@@ -238,15 +252,13 @@ function renderForm(m) {
         '<div class="pred-section-title">' +
           '<span class="step-badge" style="background:var(--gold);">3</span>' +
           ' Impact Player <span style="color:var(--gold);font-weight:700;margin-left:4px;">3×</span>' +
-          '<span style="margin-left:auto;font-size:11px;color:' + (_impactCount>=6?'var(--red)':'var(--text3)') + ';">' + _impactCount + ' / 8 used</span>' +
+          '<span style="margin-left:auto;font-size:11px;color:' + (_impactStats.used >= 6 ? 'var(--red)' : 'var(--text3)') + ';">' + _impactStats.used + ' / 8 used</span>' +
         '</div>' +
         '<p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">' +
-          'Earn <strong style="color:var(--gold);">3× multiplier</strong> on one player\'s points. Captain &amp; VC ineligible. ' +
-          (exhausted ? '<strong style="color:var(--red);">All 8 uses exhausted.</strong>' : '<strong>Optional</strong> — skip if unsure.') +
+          'Activate your fixed Impact Player for a <strong style="color:var(--gold);">3× multiplier</strong>. If OFF, they score 0.' +
         '</p>' +
-        '<div class="impact-player-grid" id="impact-grid">' + buildImpactGrid(exhausted, m) + '</div>' +
+        buildImpactToggle(m) +
         '<div id="impact-error"></div>' +
-        (exhausted ? '<div class="impact-exhausted-overlay"><div class="impact-exhausted-icon">🔒</div><div class="impact-exhausted-msg">Impact Uses Exhausted</div></div>' : '') +
       '</div>' +
       '<div class="pred-section">' +
         '<div class="form-error" id="pred-error" style="margin-bottom:12px;"></div>' +
@@ -257,33 +269,41 @@ function renderForm(m) {
   );
 }
 
-function buildImpactGrid(exhausted, m) {
-  var html = '<div class="impact-player-card impact-none-card selected" id="ip-none" onclick="selectImpact(null)">' +
-    '<div class="impact-none-icon">—</div>' +
-    '<div style="font-size:11px;font-weight:600;color:var(--text2);">No Impact</div>' +
-    '<div style="font-size:10px;color:var(--text3);">Optional</div>' +
+function buildImpactToggle(m) {
+  var impact = _squad.find(function(s) { return s.is_impact; });
+  if (!impact) return '<div class="empty-state-text" style="padding:10px;font-size:12px;color:var(--text3);">No Impact Player assigned to squad. Fix this in Squad page.</div>';
+  
+  var p = impact.player;
+  var exhausted = _impactStats.used >= 8 && !_impactActive;
+  var cls = 'impact-toggle-card' + (_impactActive ? ' active' : '') + (exhausted ? ' disabled' : '');
+  
+  return '<div class="' + cls + '" id="impact-card" onclick="toggleImpactActivation(' + !(_impactActive) + ')">' +
+    imgTag(p.image_url, p.name, 'impact-card-avatar', 'width:48px;height:48px;border-radius:8px;') +
+    '<div class="impact-toggle-info">' +
+      '<div class="impact-toggle-name">' + UI.esc(p.name) + ' <span class="badge-impact">IMPACT</span></div>' +
+      '<div class="impact-toggle-desc">' + (_impactActive ? '<span style="color:var(--cyan);font-weight:700;">ACTIVE (3×)</span>' : exhausted ? 'Usage Limit Reached' : 'OFF (Excl. from scoring)') + '</div>' +
+    '</div>' +
+    '<label class="switch" onclick="event.stopPropagation()">' +
+      '<input type="checkbox" id="impact-chk" ' + (_impactActive ? 'checked' : '') + (exhausted ? ' disabled' : '') + 
+      ' onchange="toggleImpactActivation(this.checked)">' +
+      '<span class="slider"></span>' +
+    '</label>' +
     '</div>';
+}
 
-  if (!_squad.length) {
-    html += '<div style="grid-column:1/-1;padding:12px;color:var(--text3);font-size:13px;">Squad not loaded — reload page</div>';
-    return html;
+function toggleImpactActivation(isActive) {
+  if (isActive && _impactStats.used >= 8) {
+    UI.toast('Maximum 8 activations reached for the tournament', 'error');
+    var chk = document.getElementById('impact-chk'); if (chk) chk.checked = false;
+    return;
   }
-
-  _squad.forEach(function(sp) {
-    var p = sp.player;
-    if (!p) return;
-    var isDisabled = exhausted || sp.is_captain || sp.is_vc;
-    var reason = sp.is_captain ? 'C' : sp.is_vc ? 'VC' : '';
-    var clickAttr = isDisabled ? '' : ' onclick="selectImpact(\'' + p.id + '\')"';
-    html += '<div class="impact-player-card' + (isDisabled ? ' disabled' : '') + '" id="ip-' + p.id + '"' + clickAttr + '>' +
-      (reason ? '<span class="impact-cvc-badge">' + reason + '</span>' : '') +
-      imgTag(p.image_url, p.name, 'impact-card-avatar') +
-      '<div class="impact-card-name">' + UI.esc(p.name) + '</div>' +
-      '<div style="margin:3px 0;">' + UI.roleBadge(p.role) + '</div>' +
-      '<div style="font-size:10px;color:var(--text3);">' + UI.esc(p.ipl_team||'') + '</div>' +
-      '</div>';
-  });
-  return html;
+  _impactActive = isActive;
+  var card = document.getElementById('impact-card');
+  if (card) card.classList.toggle('active', isActive);
+  var chk = document.getElementById('impact-chk');
+  if (chk) chk.checked = isActive;
+  var desc = card ? card.querySelector('.impact-toggle-desc') : null;
+  if (desc) desc.innerHTML = isActive ? '<span style="color:var(--cyan);font-weight:700;">ACTIVE (3×)</span>' : 'OFF (Excl. from scoring)';
 }
 
 /* ── LOCKED (no prediction, past deadline, awaiting result) ── */
@@ -296,7 +316,7 @@ function renderLocked(m, pred) {
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;flex-shrink:0;stroke:var(--red)"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>' +
           '<div><div class="locked-banner-title">Predictions Locked</div><div class="locked-banner-sub">This match is past its deadline. Results will appear after the match.</div></div>' +
         '</div>' +
-        (pred ? '<div style="margin-top:14px;">' + submittedBlock(pred, null) + '</div>' :
+        (pred ? '<div style="margin-top:14px;">' + submittedBlock(pred, _impactActive) + '</div>' :
           '<div style="margin-top:14px;color:var(--text3);font-size:13px;">No prediction was submitted for this match.</div>') +
       '</div>' +
     '</div>'
@@ -304,23 +324,22 @@ function renderLocked(m, pred) {
 }
 
 /* ── SUBMITTED (read-only with optional impact) ── */
-function renderSubmitted(m, pred, impactEntry) {
-  var canAddImpact = !impactEntry && _impactCount < 8 && m && !m.is_locked && API.isMatchOpen(m);
+function renderSubmitted(m, pred, impactActive) {
+  var isOpen = m && !m.is_locked && API.isMatchOpen(m);
   showArea(
     '<div class="pred-card">' +
       matchHeader(m, '<span class="match-status status-locked">Submitted</span>') +
       '<div class="pred-section">' +
         '<div style="background:var(--accent-dim);border:1px solid rgba(200,241,53,.2);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;color:var(--accent);">Your prediction is locked in</div>' +
-        submittedBlock(pred, impactEntry) +
+        submittedBlock(pred, impactActive) +
       '</div>' +
-      (canAddImpact ?
+      (isOpen ?
         '<div class="pred-section impact-section">' +
-          '<div class="pred-section-title"><span class="step-badge" style="background:var(--gold);">+</span> Add Impact Player <span style="color:var(--gold);">3×</span>' +
-          '<span style="margin-left:auto;font-size:11px;color:var(--text3);">' + _impactCount + ' / 8 used</span></div>' +
-          '<p style="font-size:12px;color:var(--text2);margin-bottom:12px;">Prediction locked, but you can still deploy an Impact Player.</p>' +
-          '<div class="impact-player-grid" id="impact-grid">' + buildImpactGrid(false, m) + '</div>' +
+          '<div class="pred-section-title"><span class="step-badge" style="background:var(--gold);">⚡</span> Impact Activation' +
+          '<span style="margin-left:auto;font-size:11px;color:var(--text3);">' + _impactStats.used + ' / 8 used</span></div>' +
+          buildImpactToggle(m) +
           '<div id="impact-error"></div>' +
-          '<button class="btn btn-gold" style="margin-top:12px;width:100%;" onclick="submitImpactOnly()">Lock In Impact Player</button>' +
+          '<button class="btn btn-gold" style="margin-top:12px;width:100%;" onclick="submitImpactOnly()">Update Impact Status</button>' +
         '</div>' : '') +
     '</div>'
   );
@@ -362,15 +381,19 @@ function matchHeader(m, badgeHtml) {
   '</div>';
 }
 
-function submittedBlock(pred, impactEntry, m) {
+function submittedBlock(pred, impactActive, m) {
   var diff = m && m.actual_target && pred ? Math.abs((pred.target_score||0) - m.actual_target) : null;
   var correct = m && m.winner && pred ? pred.predicted_winner === m.winner : null;
+  var impact = _squad.find(function(s) { return s.is_impact; });
+  var impactName = impact ? impact.player.name : 'None';
+  
   return '<div class="pred-submitted-block">' +
     '<div class="psb-row"><span class="psb-label">Target Score</span><span class="psb-value" style="font-family:var(--f-mono);">' + (pred.target_score||'—') + (diff!==null?'<span style="font-size:11px;color:var(--text3);margin-left:8px;">diff: ±'+diff+'</span>':'') + '</span></div>' +
     '<div class="psb-row"><span class="psb-label">Predicted Winner</span><span class="psb-value" style="color:' + (correct===true?'var(--green)':correct===false?'var(--red)':'inherit') + '">' + UI.esc(pred.predicted_winner||'—') + (correct===true?' ✓':correct===false?' ✗':'') + '</span></div>' +
-    (impactEntry && impactEntry.player
-      ? '<div class="psb-row"><span class="psb-label">Impact Player</span><span class="psb-impact-pill">⚡ ' + UI.esc(impactEntry.player.name) + ' <strong>3×</strong></span></div>'
-      : '<div class="psb-row"><span class="psb-label">Impact Player</span><span style="color:var(--text3);font-size:13px;">None</span></div>') +
+    '<div class="psb-row"><span class="psb-label">Impact Player</span>' +
+      (impactActive ? '<span class="psb-impact-pill">⚡ ' + UI.esc(impactName) + ' <strong>3× ACTIVE</strong></span>' 
+                    : '<span style="color:var(--text3);font-size:13px;">' + UI.esc(impactName) + ' (OFF)</span>') +
+    '</div>' +
     (pred.submitted_at ? '<div class="psb-row"><span class="psb-label" style="font-size:11px;">Submitted</span><span style="font-size:12px;color:var(--text3);">' + UI.fmtDate(pred.submitted_at) + '</span></div>' : '') +
   '</div>';
 }
@@ -383,39 +406,6 @@ function selectWinner(matchId, which) {
   var b1 = document.getElementById('wbtn-1'), b2 = document.getElementById('wbtn-2');
   if (b1) b1.classList.toggle('active', which === '1');
   if (b2) b2.classList.toggle('active', which === '2');
-}
-
-function selectImpact(playerId) {
-  document.querySelectorAll('.impact-player-card').forEach(function(c) {
-    c.classList.remove('selected');
-    var badge = c.querySelector('.impact-3x-badge');
-    if (badge) badge.remove();
-  });
-  _selectedImpact = playerId;
-  var errEl = document.getElementById('impact-error');
-  if (errEl) errEl.innerHTML = '';
-
-  if (!playerId) {
-    var noneEl = document.getElementById('ip-none');
-    if (noneEl) noneEl.classList.add('selected');
-    return;
-  }
-
-  var check = API.validateImpactPlayer(_squad, playerId, _impactCount);
-  if (!check.valid) {
-    if (errEl) errEl.innerHTML = '<div class="impact-error"><span class="impact-error-icon">⚠</span>' + UI.esc(check.error) + '</div>';
-    _selectedImpact = null;
-    var ne2 = document.getElementById('ip-none');
-    if (ne2) ne2.classList.add('selected');
-    return;
-  }
-
-  var card = document.getElementById('ip-' + playerId);
-  if (card) {
-    card.classList.add('selected');
-    card.insertAdjacentHTML('beforeend', '<div class="impact-3x-badge">3×</div>');
-    card.scrollIntoView({ behavior:'smooth', block:'nearest' });
-  }
 }
 
 /* ── Submit prediction ── */
@@ -432,11 +422,13 @@ async function submitPrediction() {
   if (!target || target < 50 || target > 400) { if(errEl) errEl.textContent = 'Enter a valid target score (50–400).'; return; }
   if (!_selectedWinner) { if(errEl) errEl.textContent = 'Please select a predicted winner.'; return; }
 
-  // ⚠️ Requirement: Confirmation Modal
+  var impact = _squad.find(s=>s.is_impact);
+  var impactText = _impactActive ? '\n⚡ Impact Player (' + (impact?.player?.name || 'Assigned') + '): ACTIVE' : '\nImpact Player: OFF';
+
   UI.showConfirm({
     icon: '🎯',
     title: 'Lock In Prediction?',
-    msg: 'Target: ' + target + ' runs · Winner: ' + _selectedWinner + (_selectedImpact ? '\nImpact Player: ' + (_squad.find(s=>s.player.id===_selectedImpact)?.player.name) : ''),
+    msg: 'Target: ' + target + ' runs · Winner: ' + _selectedWinner + impactText,
     consequence: 'Predictions cannot be changed after submission.',
     okLabel: 'Lock In',
     okClass: 'btn-accent',
@@ -447,19 +439,12 @@ async function submitPrediction() {
 
       try {
         await API.submitPrediction({ matchId:_activeMatchId, teamId:_myTeamId, targetScore:target, winner:_selectedWinner }, matchObj);
+        await API.submitImpactActivation(_myTeamId, _activeMatchId, _impactActive);
+        
+        UI.toast('Prediction locked in' + (_impactActive ? ' with Impact active!' : '!'), 'success');
 
-        if (_selectedImpact) {
-          try {
-            await API.submitImpactPlayer(_myTeamId, _activeMatchId, _selectedImpact);
-            UI.toast('Impact Player locked — 3x multiplier active!', 'success', 5000);
-          } catch(ie) {
-            UI.toast('Prediction saved. Impact failed: ' + ie.message, 'warn', 6000);
-          }
-        } else {
-          UI.toast('Prediction locked in!', 'success');
-        }
-
-        await loadImpactUsage();
+        await loadImpactStats();
+        _impactMatchMap[_activeMatchId] = _impactActive;
         renderUsageMeter();
         renderMatchTabs();
         await renderMatchArea(_activeMatchId);
@@ -474,30 +459,28 @@ async function submitPrediction() {
 
 /* ── Submit impact only (after prediction already locked) ── */
 async function submitImpactOnly() {
-  if (!_selectedImpact) { UI.toast('Select an Impact Player first', 'warn'); return; }
-  
-  var pName = _squad.find(s=>s.player.id===_selectedImpact)?.player.name || 'player';
+  var impact = _squad.find(s=>s.is_impact);
+  var pName = impact?.player.name || 'your impact player';
+  var msg = _impactActive ? 'Activate ' + pName + ' (3× multiplier) for this match?' : 'Keep ' + pName + ' OFF for this match?';
   
   UI.showConfirm({
-    icon: '⚡',
-    title: 'Deploy Impact Player?',
-    msg: 'Lock in ' + pName + ' as your Impact Player for this match?',
-    consequence: 'This will use 1 of your 8 tournament uses. Cannot be undone.',
-    okLabel: 'Deploy 3×',
-    okClass: 'btn-gold',
+    icon: _impactActive ? '⚡' : '🛡️',
+    title: 'Update Impact Status?',
+    msg: msg,
+    consequence: _impactActive ? 'Uses 1 of your 8 tournament allocations.' : 'Player will score 0 points for this match.',
+    okLabel: 'Confirm',
+    okClass: _impactActive ? 'btn-gold' : 'btn-ghost',
     onOk: async function() {
-      var btn = event && event.target;
-      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="btn-spin"></span> Locking…'; }
       try {
-        await API.submitImpactPlayer(_myTeamId, _activeMatchId, _selectedImpact);
-        UI.toast('Impact Player locked — 3x multiplier active!', 'success', 5000);
-        await loadImpactUsage();
+        await API.submitImpactActivation(_myTeamId, _activeMatchId, _impactActive);
+        UI.toast('Impact status updated!', 'success');
+        await loadImpactStats();
+        _impactMatchMap[_activeMatchId] = _impactActive;
         renderUsageMeter();
         renderMatchTabs();
         await renderMatchArea(_activeMatchId);
       } catch(e) {
         UI.toast('Failed: ' + e.message, 'error');
-        if (btn) { btn.disabled = false; btn.innerHTML = 'Lock In Impact Player'; }
       }
     }
   });

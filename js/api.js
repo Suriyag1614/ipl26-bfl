@@ -11,7 +11,7 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   async fetchSquad(teamId) {
     const { data, error } = await sb.from('squad_players')
-      .select('id,is_captain,is_vc,player:players(id,name,ipl_team,role,image_url,is_overseas,is_injured,injury_note)')
+      .select('id,is_captain,is_vc,is_impact,player:players(id,name,ipl_team,role,image_url,is_overseas,is_injured,injury_note)')
       .eq('fantasy_team_id', teamId).order('is_captain', { ascending: false });
     if (error) throw error;
     if (!data) return [];
@@ -207,7 +207,7 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   async fetchPrediction(matchId, teamId) {
     const { data, error } = await sb.from('predictions')
-      .select('*,impact_player:players!predictions_impact_player_id_fkey(id,name,role)')
+      .select('*')
       .eq('match_id', matchId).eq('fantasy_team_id', teamId).maybeSingle();
     if (error) throw error;
     return data;
@@ -215,7 +215,7 @@ const API = {
 
   async fetchAllPredictions(matchId) {
     const { data, error } = await sb.from('predictions')
-      .select('*,team:fantasy_teams(team_name),impact_player:players!predictions_impact_player_id_fkey(name)')
+      .select('*,team:fantasy_teams(team_name)')
       .eq('match_id', matchId);
     if (error) throw error;
     return data || [];
@@ -497,9 +497,13 @@ const API = {
     return pts;
   },
 
-  resolveMultiplier(squadPlayer, impactPlayerId) {
-    const pid = squadPlayer.player?.id;
-    if (impactPlayerId && pid === impactPlayerId) return { multiplier: 3,   label: '\u26a1 3\u00d7 Impact' };
+  resolveMultiplier(squadPlayer, isActive) {
+    const isImpact = squadPlayer.is_impact;
+    if (isImpact) {
+      return isActive 
+        ? { multiplier: 3, label: '\u26a1 3\u00d7 Impact (Active)' }
+        : { multiplier: 0, label: '(Excluded - Impact OFF)' };
+    }
     if (squadPlayer.is_captain)                   return { multiplier: 2,   label: '\ud83d\udc51 2\u00d7 C' };
     if (squadPlayer.is_vc)                        return { multiplier: 1.5, label: '\u2b50 1.5\u00d7 VC' };
     return { multiplier: 1, label: '' };
@@ -523,18 +527,18 @@ const API = {
     allStats.forEach(s => { statMap[s.player_id] = s; });
     allPredictions.forEach(p => { predMap[p.fantasy_team_id] = p; });
 
-    const { data: impactRows } = await sb.from('impact_usage')
-      .select('fantasy_team_id,player_id').eq('match_id', matchId).eq('used', true);
-    const impactMap = {};
-    (impactRows || []).forEach(r => { impactMap[r.fantasy_team_id] = r.player_id; });
+    const { data: actRows } = await sb.from('impact_activations')
+      .select('fantasy_team_id,is_active').eq('match_id', matchId);
+    const actMap = {};
+    (actRows || []).forEach(r => { actMap[r.fantasy_team_id] = !!r.is_active; });
 
     const logs = [];
     for (const team of (teams || [])) {
-      const squadRows      = await this.fetchSquad(team.id);
-      const pred           = predMap[team.id] || null;
-      const impactPlayerId = impactMap[team.id] || null;
+      const squadRows = await this.fetchSquad(team.id);
+      const pred      = predMap[team.id] || null;
+      const isActive  = !!actMap[team.id];
       let squadPts = 0, batPts = 0, bowlPts = 0, fldPts = 0, bonPts = 0;
-      const breakdown = { players: [], impactPlayerId };
+      const breakdown = { players: [], impactActive: isActive };
 
       const playerResults = [];
       for (const sp of squadRows) {
@@ -550,7 +554,7 @@ const API = {
         const fld  = stats ? this.calcFieldingPoints(stats) : 0;
         const bon  = stats ? this.calcBonusPoints(stats, pomPlayerId, potPlayerId) : 0;
         const base = bat + bowl + fld;
-        const { multiplier, label } = this.resolveMultiplier(sp, impactPlayerId);
+        const { multiplier, label } = this.resolveMultiplier(sp, isActive);
         const final = (base * multiplier) + bon;
 
         playerResults.push({
@@ -561,28 +565,17 @@ const API = {
           base: Math.round(base), bat: Math.round(bat), bowl: Math.round(bowl),
           fld: Math.round(fld), bon: Math.round(bon), multiplier, label,
           final: Math.round(final),
-          isImpact: impactPlayerId && (effectivePid === impactPlayerId),
-          isCaptain: sp.is_captain, isVC: sp.is_vc,
+          isImpact: !!sp.is_impact,
+          isImpactActive: !!(sp.is_impact && isActive),
+          isCaptain: !!sp.is_captain, isVC: !!sp.is_vc,
           isPom: pomPlayerId && (effectivePid === pomPlayerId), isPot: potPlayerId && (effectivePid === potPlayerId),
           points: final // raw points for sorting
         });
       }
 
-      // 🎯 Impact Player Logic:
-      // If NOT selected: → Only remaining 11 players' points are counted
-      // If selected: → All 12 players count (one with 3x multiplier)
-      if (!impactPlayerId) {
-        // Sort by points descending and take top 11
-        playerResults.sort((a, b) => b.points - a.points);
-        // The 12th player becomes a "bench" player with 0 points
-        if (playerResults.length > 11) {
-          for (let i = 11; i < playerResults.length; i++) {
-            playerResults[i].label = '(Bench - No Impact chosen)';
-            playerResults[i].final = 0;
-            playerResults[i].points = 0;
-          }
-        }
-      }
+      // 🎯 Impact Player Logic (New Correct Implementation):
+      // Multiplier handles EXCLUSION (0x if OFF, 3x if ON)
+      // Always count all 12 entries since the inactive player contributes 0 points
 
       // Final aggregation
       playerResults.forEach(pr => {
@@ -833,11 +826,37 @@ const API = {
     await sb.from('user_badges').upsert({ fantasy_team_id: teamId, badge_id: badgeId }, { onConflict: 'fantasy_team_id,badge_id' });
   },
 
+  /* ── Impact Player (Fixed-Role Activation System) ── */
+  async fetchImpactActivation(teamId, matchId) {
+    const { data, error } = await sb.from('impact_activations')
+      .select('is_active').eq('fantasy_team_id', teamId).eq('match_id', matchId).maybeSingle();
+    if (error) throw error;
+    return !!data?.is_active;
+  },
+
+  async fetchImpactStats(teamId) {
+    const { count, error } = await sb.from('impact_activations')
+      .select('*', { count: 'exact', head: true }).eq('fantasy_team_id', teamId).eq('is_active', true);
+    if (error) throw error;
+    return { used: count || 0, total: 8 };
+  },
+
+  async submitImpactActivation(teamId, matchId, isActive) {
+    if (isActive) {
+      const stats = await this.fetchImpactStats(teamId);
+      if (stats.used >= stats.total) throw new Error('Maximum tournament uses (8) reached.');
+    }
+    const { error } = await sb.from('impact_activations')
+      .upsert({ fantasy_team_id: teamId, match_id: matchId, is_active: isActive }, { onConflict: 'fantasy_team_id,match_id' });
+    if (error) throw error;
+    return true;
+  },
+
   async checkAndAwardBadges(teamId) {
     try {
-      const [breakdown, preds, impact, existing] = await Promise.all([
+      const [breakdown, preds, existing] = await Promise.all([
         this.fetchPointsBreakdown(teamId), this.fetchMyPredictions(teamId),
-        this.fetchImpactUsage(teamId), this.fetchUserBadges(teamId),
+        this.fetchUserBadges(teamId),
       ]);
       const earned = new Set(existing.map(b => b.badge_id));
       const predStats = this._calcPredStats(preds);

@@ -43,8 +43,8 @@ function buildNavbar(activePage) {
       '</a>';
     }).join('');
 
+    // Split into Topbar (in #navbar) and Sidebar (at body top)
     navbarEl.innerHTML =
-      // Topbar (always visible — logo + hamburger + user)
       '<div class="topbar">' +
         '<button class="sb-toggle" id="sb-toggle" onclick="toggleSidebar()" aria-label="Toggle menu">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>' +
@@ -61,8 +61,15 @@ function buildNavbar(activePage) {
           '</div>' +
           '<button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>' +
         '</div>' +
-      '</div>' +
-      // Sidebar
+      '</div>';
+
+    var sbWrap = document.getElementById('sb-wrap');
+    if (!sbWrap) {
+      sbWrap = document.createElement('div');
+      sbWrap.id = 'sb-wrap';
+      document.body.prepend(sbWrap);
+    }
+    sbWrap.innerHTML =
       '<aside class="sidebar" id="sidebar">' +
         '<div class="sb-logo-wrap">' +
           '<a href="dashboard.html" class="sb-logo">' +
@@ -82,7 +89,6 @@ function buildNavbar(activePage) {
           '<button class="btn btn-ghost btn-sm btn-full" onclick="doLogout()" style="margin-top:8px;">Logout</button>' +
         '</div>' +
       '</aside>' +
-      // Overlay (click to close sidebar on mobile)
       '<div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>';
 
     // Apply initial state

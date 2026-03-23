@@ -185,7 +185,8 @@ async function loadNextMatch() {
 
 async function loadImpactUsage() {
   try {
-    var count=await API.fetchImpactCount(_myTeamId);
+    var stats=await API.fetchImpactStats(_myTeamId);
+    var count=stats.used;
     var left=Math.max(0,8-count);
     var el=document.getElementById('impact-left');
     if(el){el.textContent=left;el.style.color=left===0?'var(--red)':left<=2?'#f59e0b':'var(--accent)';}
