@@ -25,9 +25,10 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Only cache GET requests with http/https schemes
-  const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || !url.protocol.startsWith('http')) return;
+  // ONLY cache GET requests with http/https schemes. Strictly skip POST/PUT/etc.
+  var url = new URL(e.request.url);
+  if (e.request.method !== 'GET') return; 
+  if (!url.protocol.startsWith('http')) return;
 
   e.respondWith(
     caches.open(CACHE_NAME).then((cache) => {

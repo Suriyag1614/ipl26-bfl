@@ -88,7 +88,7 @@ function buildNavbar(activePage, isAdmin) {
             '<div class="nav-avatar sb-avatar" id="sb-avatar">?</div>' +
             '<div class="sb-user-info">' +
               '<div class="sb-user-name" id="sb-user-name">—</div>' +
-              '<div class="sb-user-role">Team</div>' +
+              '<div class="sb-user-role" id="sb-user-role">' + (isAdmin ? 'Admin Panel' : 'Team') + '</div>' +
             '</div>' +
           '</div>' +
           '<button class="btn btn-ghost btn-sm btn-full" onclick="doLogout()" style="margin-top:8px;">Logout</button>' +

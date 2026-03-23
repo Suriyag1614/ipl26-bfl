@@ -155,8 +155,8 @@ function renderRoleBreakdown() {
   var labels = { Batter:'BAT', Bowler:'BOWL', 'All-Rounder':'AR', 'Wicket-Keeper':'WK' };
   var colors = { Batter:'#f87171', Bowler:'#60a5fa', 'All-Rounder':'#34d399', 'Wicket-Keeper':'#fbbf24' };
   
-  // Ideal ranges for a 11-12 player squad
-  var ideals = { Batter: [4, 5], Bowler: [4, 5], 'All-Rounder': [1, 3], 'Wicket-Keeper': [1, 2] };
+  // Ideal ranges for a 11-12 player squad per user request
+  var ideals = { Batter: [3, 5], Bowler: [3, 5], 'All-Rounder': [2, 5], 'Wicket-Keeper': [1, 3] };
   
   var el = document.getElementById('role-bars'); if (!el) return;
   
@@ -253,7 +253,7 @@ async function submitReplacement(){
 
 async function exportSquadPDF(){
   try{
-    var result=await sb.from('team_players').select('sold_price,is_retained,is_rtm,player:players(name,role,ipl_team,is_overseas,base_price)').eq('team_id',_myTeamId);
+    var result=await sb.from('squad_players').select('sold_price,is_retained,is_rtm,player:players(name,role,ipl_team,is_overseas,base_price)').eq('team_id',_myTeamId);
     if(result.error) throw result.error;
     var rows=result.data||[];
     var list=rows.sort(function(a,b){
