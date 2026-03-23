@@ -70,6 +70,7 @@ body {
   font-family:var(--f-body); font-size:15px; line-height:1.65;
   min-height:100vh; -webkit-font-smoothing:antialiased;
   overflow-x:hidden;
+  padding-bottom: 60px;
 }
 img { max-width:100%; }
 a   { color:inherit; text-decoration:none; }
@@ -173,6 +174,8 @@ body { display:flex; flex-direction:column; }
   transition:transform .28s cubic-bezier(.4,0,.2,1), width .28s cubic-bezier(.4,0,.2,1);
   z-index:200; overflow:hidden;
 }
+
+/* If you have a specific logout/profile section at the very bottom of the sidebar */
 .sidebar.open { transform:translateX(0); }
 
 .sb-logo-wrap { padding:18px 16px 12px; border-bottom:1px solid var(--border); flex-shrink:0; }
@@ -193,7 +196,7 @@ body { display:flex; flex-direction:column; }
 .sb-label       { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
 
 .sb-footer {
-  padding:14px 14px 18px; border-top:1px solid var(--border); flex-shrink:0;
+  padding:14px 14px 70px; border-top:1px solid var(--border); flex-shrink:0;
 }
 .sb-user-chip {
   display:flex; align-items:center; gap:10px;
@@ -698,7 +701,12 @@ body { display:flex; flex-direction:column; }
   .page-title { font-size:24px; }
   .nav-logo-text { display:none; }   /* hide text logo in topbar on mobile (save space) */
 }
-
+@media (min-width: 1024px) {
+    /* On desktop, where the bottom nav is hidden, remove the padding */
+    body {
+        padding-bottom: 0;
+    }
+  }
 @media (max-width:600px) {
   .container { padding:0 12px; }
   .card      { padding:16px 13px; }
@@ -805,7 +813,7 @@ input:focus + .slider { box-shadow: 0 0 1px var(--cyan); }
 .site-footer {
   width: 100%;
   margin-top: auto;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
 .footer-divider {
