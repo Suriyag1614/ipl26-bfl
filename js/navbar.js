@@ -55,8 +55,8 @@ function buildNavbar(activePage, isAdmin) {
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>' +
         '</button>' +
         '<a href="dashboard.html" class="nav-logo">' +
-          '<span class="nav-logo-dot"></span>' +
-          '<span class="nav-logo-text">BFL Fantasy</span>' +
+          '<span class="nav-logo-bfl"><img src="images/bfl/bfl-logo.png" alt="BFL Logo" style="height: 40px;width: 40px;"></span>' +
+          '<span class="nav-logo-text">BISHOPIANS FANTASY LEAGUE</span>' +
         '</a>' +
         '<div class="topbar-right">' +
           '<button class="btn btn-ghost btn-sm theme-toggle" onclick="UI.toggleTheme()" title="Toggle theme" style="padding:5px 7px;min-width:32px;"></button>' +
@@ -78,8 +78,8 @@ function buildNavbar(activePage, isAdmin) {
       '<aside class="sidebar" id="sidebar">' +
         '<div class="sb-logo-wrap">' +
           '<a href="dashboard.html" class="sb-logo">' +
-            '<span class="nav-logo-dot"></span>' +
-            '<span>BFL Fantasy</span>' +
+            '<span class="nav-logo-bfl"><img src="images/bfl/bfl-logo.png" alt="BFL Logo" style="height: 40px;width: 40px;"></span>' +
+            '<span class="nav-logo-text">BISHOPIANS FANTASY LEAGUE</span>' +
           '</a>' +
         '</div>' +
         '<nav class="sb-nav">' + navItemsHtml + '</nav>' +

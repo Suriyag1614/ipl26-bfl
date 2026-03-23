@@ -6,23 +6,23 @@
   <link rel="icon" type="image/png" href="images/bfl/bfl-logo.png">
   <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Squad — BFL Fantasy IPL 2026</title>
+  <title>IPL 2026 - BFL My Squad</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    .filter-tab{padding:6px 14px;background:transparent;border:none;border-radius:7px;font-family:"Barlow Condensed",sans-serif;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;transition:all .2s;}
+    .filter-tab{padding:6px 14px;background:transparent;border:none;border-radius:7px;font-family:"Barlow Condensed",sans-serif;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s;}
     .filter-tab.active{background:var(--accent);color:#000;}
     .player-pts-row{display:flex;align-items:center;justify-content:space-between;background:rgba(200,241,53,.05);border-radius:5px;padding:3px 7px;margin-top:7px;font-size:11px;}
-    .badge-injured{display:inline-flex;align-items:center;gap:3px;background:rgba(255,77,109,.18);color:var(--red);border:1px solid rgba(255,77,109,.35);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:800;}
-    .badge-replacement{display:inline-flex;align-items:center;gap:3px;background:rgba(56,217,245,.14);color:var(--cyan);border:1px solid rgba(56,217,245,.3);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:800;}
+    .badge-injured{display:inline-flex;align-items:center;gap:3px;background:rgba(255,77,109,.18);color:var(--red);border:1px solid rgba(255,77,109,.35);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:400;}
+    .badge-replacement{display:inline-flex;align-items:center;gap:3px;background:rgba(56,217,245,.14);color:var(--cyan);border:1px solid rgba(56,217,245,.3);border-radius:4px;padding:2px 7px;font-size:10px;font-weight:400;}
     .player-card.injured{border-color:rgba(255,77,109,.4);}
     .player-card.injured::before{background:var(--red);}
     .player-card.replaced{border-color:rgba(56,217,245,.4);}
     .player-card.replaced::before{background:var(--cyan);}
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px;}
     .modal-box{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius-xl);padding:26px;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,.6);animation:scale-in .22s ease both;}
-    .modal-title{font-family:"Barlow Condensed",sans-serif;font-weight:900;font-size:20px;margin-bottom:6px;}
+    .modal-title{font-family:"Barlow Condensed",sans-serif;font-weight:600;font-size:20px;margin-bottom:6px;}
     .modal-sub{font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.5;}
     .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(6px);z-index:700;display:flex;align-items:center;justify-content:center;padding:20px;}
     .confirm-box{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius-xl);padding:28px;width:100%;max-width:380px;text-align:center;}
@@ -101,6 +101,15 @@
 <script src="js/api.js"></script>
 <script src="js/navbar.js"></script>
 <script src="js/squad.js"></script>
-
+<footer class="site-footer">
+  <div class="footer-divider"></div>
+  <div class="footer-content">
+    <div class="footer-logos">
+      <img src="images\bfl\bfl-logo.png" alt="BFL Logo" class="footer-logo footer-logo-bfl">
+      <img src="images\ipl\ipl-logo.png" alt="IPL Logo" class="footer-logo footer-logo-t20">
+    </div>
+    <p class="footer-copy">Copyright 2026 BFL. All rights reserved.</p>
+  </div>
+</footer>
 </body>
 </html>

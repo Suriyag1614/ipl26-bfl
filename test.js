@@ -74,7 +74,7 @@ function renderSquad(){
       '<div class="player-name">'+UI.esc(name)+'</div>'+
       '<div class="player-ipl">'+UI.esc(p.ipl_team||'—')+'</div>'+
       '<div style="display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;">'+badges+'</div>'+
-      (pts>0?'<div class="player-pts-row"><span style="color:var(--text2)">Season</span><span style="font-family:var(--f-mono);font-weight:700;color:var(--accent)">'+pts+'</span></div>':'')+
+      (pts>0?'<div class="player-pts-row"><span style="color:var(--text2)">Season</span><span style="font-family:var(--f-mono);font-weight:600;color:var(--accent)">'+pts+'</span></div>':'')+
     '</div>';
   }).join('');
 }
@@ -91,9 +91,9 @@ function renderSummary(){
   el.innerHTML='<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;">'+
     items.map(function(it,i){
       var sep=i?'<div style="width:1px;height:32px;background:var(--border);flex-shrink:0;"></div>':''
-      var valHtml=it.plain?'<div style="font-family:var(--f-display);font-weight:700;font-size:15px;">'+UI.esc(String(it.val))+'</div>':
-        '<div style="font-family:var(--f-display);font-weight:900;font-size:22px;color:var(--accent);">'+it.val+(it.unit?'<span style="font-size:13px;color:var(--text2);">'+it.unit+'</span>':'')+'</div>';
-      return sep+'<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-family:var(--f-ui);font-weight:700;margin-bottom:2px;">'+it.lbl+'</div>'+valHtml+'</div>';
+      var valHtml=it.plain?'<div style="font-family:var(--f-display);font-weight:600;font-size:15px;">'+UI.esc(String(it.val))+'</div>':
+        '<div style="font-family:var(--f-display);font-weight:600;font-size:22px;color:var(--accent);">'+it.val+(it.unit?'<span style="font-size:13px;color:var(--text2);">'+it.unit+'</span>':'')+'</div>';
+      return sep+'<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-family:var(--f-ui);font-weight:600;margin-bottom:2px;">'+it.lbl+'</div>'+valHtml+'</div>';
     }).join('')+'</div>';
 }
 function renderRoleBreakdown(){
@@ -107,8 +107,8 @@ function renderRoleBreakdown(){
     var n=counts[role], min=mins[role], met=n>=min;
     return '<div style="flex:1;min-width:100px;">'+
       '<div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;">'+
-        '<span style="font-family:var(--f-ui);font-weight:700;color:var(--text2);">'+labels[role]+'</span>'+
-        '<span style="font-family:var(--f-mono);font-weight:700;color:'+(met?'var(--text)':'var(--red)')+'">'+n+'<span style="color:var(--text3);font-weight:400;">/'+min+'+</span></span>'+
+        '<span style="font-family:var(--f-ui);font-weight:600;color:var(--text2);">'+labels[role]+'</span>'+
+        '<span style="font-family:var(--f-mono);font-weight:600;color:'+(met?'var(--text)':'var(--red)')+'">'+n+'<span style="color:var(--text3);font-weight:400;">/'+min+'+</span></span>'+
       '</div>'+
       '<div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;">'+
         '<div style="height:100%;background:'+(met?colors[role]:'var(--red)')+';border-radius:3px;width:'+Math.min(100,(n/4)*100)+'%;transition:width 1s ease;"></div>'+

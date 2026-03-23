@@ -5,7 +5,7 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Analytics — BFL Fantasy IPL 2026</title>
+  <title>IPL 2026 - BFL Analytics</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
@@ -255,7 +255,7 @@ function renderCharts() {
       return '<div style="display:flex;align-items:center;gap:9px;margin-bottom:8px;">' +
         '<div style="width:11px;height:11px;border-radius:3px;background:' + s.color + ';flex-shrink:0;"></div>' +
         '<div style="flex:1;font-size:13px;color:var(--text2);">' + s.label + '</div>' +
-        '<div style="font-family:var(--f-display);font-weight:800;font-size:14px;">' + s.value + '</div></div>';
+        '<div style="font-family:var(--f-display);font-weight:400;font-size:14px;">' + s.value + '</div></div>';
     }).join('');
   }, 140);
 }
@@ -266,9 +266,9 @@ function renderStreaks() {
   var el = document.getElementById('streaks-wrap');
   if (!el) return;
   el.innerHTML =
-    '<div class="streak-card"><div class="streak-num" style="color:var(--accent);">' + (s.current||0) + '</div><div><div style="font-family:var(--f-display);font-weight:800;font-size:15px;">Current Streak</div><div class="streak-label">Consecutive correct winner picks</div></div></div>' +
-    '<div class="streak-card" style="animation-delay:.07s"><div class="streak-num" style="color:var(--gold);">' + (s.max||0) + '</div><div><div style="font-family:var(--f-display);font-weight:800;font-size:15px;">Best Streak</div><div class="streak-label">Max consecutive correct picks</div></div></div>' +
-    '<div class="streak-card" style="animation-delay:.14s"><div class="streak-num" style="color:var(--cyan);">' + (ps.exact||0) + '</div><div><div style="font-family:var(--f-display);font-weight:800;font-size:15px;">Exact Targets</div><div class="streak-label">Predicted exact score</div></div></div>';
+    '<div class="streak-card"><div class="streak-num" style="color:var(--accent);">' + (s.current||0) + '</div><div><div style="font-family:var(--f-display);font-weight:400;font-size:15px;">Current Streak</div><div class="streak-label">Consecutive correct winner picks</div></div></div>' +
+    '<div class="streak-card" style="animation-delay:.07s"><div class="streak-num" style="color:var(--gold);">' + (s.max||0) + '</div><div><div style="font-family:var(--f-display);font-weight:400;font-size:15px;">Best Streak</div><div class="streak-label">Max consecutive correct picks</div></div></div>' +
+    '<div class="streak-card" style="animation-delay:.14s"><div class="streak-num" style="color:var(--cyan);">' + (ps.exact||0) + '</div><div><div style="font-family:var(--f-display);font-weight:400;font-size:15px;">Exact Targets</div><div class="streak-label">Predicted exact score</div></div></div>';
 }
 
 function renderPlayers() {
@@ -359,9 +359,9 @@ function renderImpact() {
   if (picksEl) picksEl.innerHTML = picks.length
     ? picks.map(function(p, i) {
         return '<div class="impact-pick-row">' +
-          '<div style="font-family:var(--f-display);font-weight:900;font-size:20px;color:var(--accent);min-width:26px;">#' + (i+1) + '</div>' +
-          '<div style="flex:1;"><div style="font-weight:700;">' + UI.esc(p.name) + '</div><div style="font-size:12px;color:var(--text2);">' + UI.esc(p.match||'') + '</div></div>' +
-          '<div style="font-family:var(--f-display);font-weight:900;font-size:17px;color:var(--accent);">' + p.pts + '</div>' +
+          '<div style="font-family:var(--f-display);font-weight:600;font-size:20px;color:var(--accent);min-width:26px;">#' + (i+1) + '</div>' +
+          '<div style="flex:1;"><div style="font-weight:600;">' + UI.esc(p.name) + '</div><div style="font-size:12px;color:var(--text2);">' + UI.esc(p.match||'') + '</div></div>' +
+          '<div style="font-family:var(--f-display);font-weight:600;font-size:17px;color:var(--accent);">' + p.pts + '</div>' +
         '</div>';
       }).join('')
     : '<div style="padding:12px;color:var(--text3);font-size:13px;">No impact picks yet</div>';
@@ -378,7 +378,7 @@ function renderImpact() {
     });
     return '<tr>' +
       '<td>' + UI.esc((u.match && u.match.match_title) || '—') + '</td>' +
-      '<td style="font-weight:700;">' + UI.esc((u.player && u.player.name) || '—') + '</td>' +
+      '<td style="font-weight:600;">' + UI.esc((u.player && u.player.name) || '—') + '</td>' +
       '<td>' + UI.roleBadge(u.player && u.player.role) + '</td>' +
       '<td style="font-size:12px;color:var(--text2);">' + UI.esc((u.player && u.player.ipl_team) || '—') + '</td>' +
       '<td class="pts">' + (pInLog ? pInLog.final : '—') + '</td>' +
@@ -396,7 +396,7 @@ async function renderBadges() {
     var progEl = document.getElementById('badges-progress');
     if (progEl) progEl.innerHTML =
       '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">' +
-        '<div><span style="font-family:var(--f-display);font-weight:900;font-size:26px;color:var(--accent);">' + earnedIds.size + '</span>' +
+        '<div><span style="font-family:var(--f-display);font-weight:600;font-size:26px;color:var(--accent);">' + earnedIds.size + '</span>' +
         '<span style="font-family:var(--f-display);font-size:16px;color:var(--text3);">/' + allDefs.length + '</span></div>' +
         '<div style="flex:1;min-width:120px;">' +
           '<div style="height:7px;background:var(--bg3);border-radius:4px;overflow:hidden;">' +
@@ -416,7 +416,7 @@ async function renderBadges() {
         '<span class="badge-icon">' + UI.esc(def.icon||'') + '</span>' +
         '<div class="badge-name">' + UI.esc(def.name||'') + '</div>' +
         '<div class="badge-desc">' + UI.esc(def.description||'') + '</div>' +
-        (isEarned && earnRow ? '<div style="font-size:10px;color:var(--accent);margin-top:5px;font-family:var(--f-ui);font-weight:700;">Earned ' + UI.shortDate(earnRow.earned_at) + '</div>' : '') +
+        (isEarned && earnRow ? '<div style="font-size:10px;color:var(--accent);margin-top:5px;font-family:var(--f-ui);font-weight:600;">Earned ' + UI.shortDate(earnRow.earned_at) + '</div>' : '') +
       '</div>';
     }).join('');
   } catch(e) {
@@ -441,5 +441,15 @@ function switchTab(tab) {
 init();
 </script>
 </div>
+<footer class="site-footer">
+  <div class="footer-divider"></div>
+  <div class="footer-content">
+    <div class="footer-logos">
+      <img src="images\bfl\bfl-logo.png" alt="BFL Logo" class="footer-logo footer-logo-bfl">
+      <img src="images\ipl\ipl-logo.png" alt="IPL Logo" class="footer-logo footer-logo-t20">
+    </div>
+    <p class="footer-copy">Copyright 2026 BFL. All rights reserved.</p>
+  </div>
+</footer>
 </body>
 </html>

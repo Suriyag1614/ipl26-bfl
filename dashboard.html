@@ -6,7 +6,7 @@
   <link rel="icon" type="image/png" href="images/bfl/bfl-logo.png">
   <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard — BFL Fantasy IPL 2026</title>
+  <title>IPL 2026 - BFL Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
@@ -34,7 +34,7 @@
     </div>
     <div id="rank-chip" style="display:none;">
       <div style="background:var(--gold-dim);border:1px solid rgba(245,200,66,.25);border-radius:12px;padding:12px 20px;text-align:center;">
-        <div style="font-family:var(--f-display);font-size:28px;font-weight:900;color:var(--gold);" id="rank-val">—</div>
+        <div style="font-family:var(--f-display);font-size:28px;font-weight:600;color:var(--gold);" id="rank-val">—</div>
         <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;">Current Rank</div>
       </div>
     </div>
@@ -78,7 +78,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:16px;">
           <div>
-            <div style="font-family:var(--f-display);font-weight:900;font-size:34px;" id="impact-left">—</div>
+            <div style="font-family:var(--f-display);font-weight:600;font-size:34px;" id="impact-left">—</div>
             <div style="font-size:12px;color:var(--text2);">remaining</div>
           </div>
           <div style="display:flex;gap:4px;flex-wrap:wrap;max-width:150px;" id="impact-pips"></div>
@@ -220,7 +220,7 @@ async function loadHistory() {
     if(!logs.length){wrap.innerHTML='<div style="text-align:center;color:var(--text3);padding:24px;font-size:14px;">No match results yet</div>';return;}
     wrap.innerHTML='<div class="table-wrap"><table class="data-table"><thead><tr><th>Match</th><th>Squad</th><th>Pred</th><th>Total</th></tr></thead><tbody>'+
       logs.slice().reverse().slice(0,6).map(function(l){
-        return '<tr class="clickable-row" onclick="showMatchBreakdown(\''+l.id+'\')"><td style="font-weight:600;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+UI.esc(l.match?(l.match.match_title||l.match.team1+' vs '+l.match.team2):'—')+'</td><td class="font-mono">'+l.squad_points+'</td><td class="font-mono">'+l.prediction_points+'</td><td class="pts">'+l.total_points+'</td></tr>';
+        return '<tr class="clickable-row" onclick="showMatchBreakdown(\''+l.id+'\')"><td style="font-weight:400;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+UI.esc(l.match?(l.match.match_title||l.match.team1+' vs '+l.match.team2):'—')+'</td><td class="font-mono">'+l.squad_points+'</td><td class="font-mono">'+l.prediction_points+'</td><td class="pts">'+l.total_points+'</td></tr>';
       }).join('')+'</tbody></table></div>';
   } catch(e){wrap.innerHTML='<div style="color:var(--text3);font-size:13px;">Could not load history.</div>';}
 }
@@ -235,19 +235,19 @@ function showMatchBreakdown(logId) {
   players.forEach(function(p){
     var roleLabel=p.isCaptain?'(C)':p.isVC?'(VC)':p.isImpact?'(IP)':'';
     var multi=p.multiplier?(p.multiplier+'x'):'—';
-    var nameStyle=p.isImpact||p.isCaptain||p.isVC?'font-weight:700;color:var(--text)':'';
+    var nameStyle=p.isImpact||p.isCaptain||p.isVC?'font-weight:600;color:var(--text)':'';
     html+='<tr>'+
       '<td><div style="'+nameStyle+'">'+UI.esc(p.name)+'</div><div style="font-size:10px;color:var(--text3);">'+UI.esc(p.ipl_team||'—')+'</div></td>'+
-      '<td><span style="font-size:11px;font-weight:700;color:var(--text2);">'+UI.esc(p.role?p.role.substring(0,3).toUpperCase():'—')+' <span style="color:var(--accent);">'+roleLabel+'</span></span></td>'+
+      '<td><span style="font-size:11px;font-weight:600;color:var(--text2);">'+UI.esc(p.role?p.role.substring(0,3).toUpperCase():'—')+' <span style="color:var(--accent);">'+roleLabel+'</span></span></td>'+
       '<td class="font-mono">'+multi+'</td>'+
-      '<td class="font-mono" style="font-weight:700;color:var(--accent);">'+(p.final||p.points||0)+'</td>'+
+      '<td class="font-mono" style="font-weight:600;color:var(--accent);">'+(p.final||p.points||0)+'</td>'+
     '</tr>';
   });
   
   html+='</tbody></table></div>';
   html+='<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">'+
-    '<div style="font-size:12px;color:var(--text3);">Prediction Bonus: <span style="color:var(--text2);font-weight:700;">+'+(log.prediction_points||0)+'</span></div>'+
-    '<div style="font-size:16px;font-weight:900;">Total: <span style="color:var(--accent);">'+log.total_points+'</span></div>'+
+    '<div style="font-size:12px;color:var(--text3);">Prediction Bonus: <span style="color:var(--text2);font-weight:600;">+'+(log.prediction_points||0)+'</span></div>'+
+    '<div style="font-size:16px;font-weight:600;">Total: <span style="color:var(--accent);">'+log.total_points+'</span></div>'+
   '</div>';
 
   UI.showModal({
@@ -267,7 +267,7 @@ async function loadMiniLB() {
         var isMe=r.fantasy_team_id===_myTeamId;
         return '<tr'+(isMe?' class="highlight-me"':'')+'>'+
           '<td class="rank">'+(medals[r.rank]||r.rank)+'</td>'+
-          '<td style="font-weight:700;">'+UI.esc(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'')+'</td>'+
+          '<td style="font-weight:600;">'+UI.esc(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'')+'</td>'+
           '<td style="color:var(--text2);">'+r.matches_played+'</td>'+
           '<td class="pts">'+r.total_points+'</td></tr>';
       }).join('')+'</tbody></table></div>';
@@ -282,7 +282,7 @@ async function loadLatestBlog() {
     if(!b){card.innerHTML='<div class="card-title">Latest from Blog</div><div style="color:var(--text3);font-size:13px;">No posts yet.</div>';return;}
     card.innerHTML='<div class="card-title">Latest from Blog</div>'+
       '<div style="cursor:pointer;" onclick="window.location.href=\'blogs.html?slug='+UI.esc(b.slug||b.id)+'\'">'+
-        '<div style="font-family:var(--f-display);font-weight:800;font-size:16px;margin-bottom:6px;transition:color var(--t);" onmouseover="this.style.color=\'var(--accent)\'" onmouseout="this.style.color=\'\'">'+UI.esc(b.title)+'</div>'+
+        '<div style="font-family:var(--f-display);font-weight:400;font-size:16px;margin-bottom:6px;transition:color var(--t);" onmouseover="this.style.color=\'var(--accent)\'" onmouseout="this.style.color=\'\'">'+UI.esc(b.title)+'</div>'+
         '<div style="font-size:12px;color:var(--text2);">'+UI.esc(b.excerpt||'')+'</div>'+
         '<div style="font-size:11px;color:var(--text3);margin-top:6px;">'+UI.shortDate(b.created_at)+' · '+UI.esc(b.category||'general')+'</div>'+
       '</div>';
@@ -297,5 +297,15 @@ window.addEventListener('resize',fixGrid);
 init();
 </script>
 </div>
+<footer class="site-footer">
+  <div class="footer-divider"></div>
+  <div class="footer-content">
+    <div class="footer-logos">
+      <img src="images\bfl\bfl-logo.png" alt="BFL Logo" class="footer-logo footer-logo-bfl">
+      <img src="images\ipl\ipl-logo.png" alt="IPL Logo" class="footer-logo footer-logo-t20">
+    </div>
+    <p class="footer-copy">Copyright 2026 BFL. All rights reserved.</p>
+  </div>
+</footer>
 </body>
 </html>

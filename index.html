@@ -6,12 +6,12 @@
   <link rel="icon" type="image/png" href="images/bfl/bfl-logo.png">
   <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BFL Fantasy Cricket 2026 — Login</title>
+  <title>IPL 2026 - BFL Login</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    .role-tab { flex:1;padding:9px 0;background:transparent;border:none;border-radius:7px;font-family:var(--f-ui);font-size:14px;font-weight:700;color:var(--text2);cursor:pointer;transition:all var(--t); }
+    .role-tab { flex:1;padding:9px 0;background:transparent;border:none;border-radius:7px;font-family:var(--f-ui);font-size:14px;font-weight:600;color:var(--text2);cursor:pointer;transition:all var(--t); }
     .role-tab.active { background:var(--accent);color:#000; }
   </style>
 </head>
@@ -25,7 +25,8 @@
 <div class="login-wrap" style="position:relative;z-index:1;">
   <div class="login-card">
     <div style="text-align:center;margin-bottom:24px;">
-      <div class="login-logo-text">BFL Fantasy</div>
+      <div class="login-logo"><img src="images/bfl/bfl-logo.png" alt="BFL Logo" style="height: 100px;"></div>
+      <div class="login-logo-text">BISHOPIANS FANTASY LEAGUE</div>
       <div style="font-size:12px;color:var(--text2);margin-top:4px;letter-spacing:3px;text-transform:uppercase;">IPL 2026</div>
     </div>
 
@@ -52,7 +53,7 @@
 
     <div id="auth-error" style="color:var(--red);font-size:13px;min-height:18px;margin-bottom:12px;text-align:center;"></div>
 
-    <button class="btn btn-accent btn-full" id="login-btn" onclick="doLogin()">Enter Auction Room</button>
+    <button class="btn btn-accent btn-full" id="login-btn" onclick="doLogin()">SIGN IN</button>
 
     <div style="text-align:center;margin-top:20px;font-size:12px;color:var(--text3);">BFL Fantasy Cricket · Private System</div>
   </div>
@@ -74,7 +75,7 @@ function setRole(r) {
   document.getElementById('tab-admin').classList.toggle('active', r==='admin');
   document.getElementById('team-row').style.display  = r==='team' ? '' : 'none';
   document.getElementById('pwd-label').textContent   = r==='admin' ? 'Admin Password' : 'Team Password';
-  document.getElementById('login-btn').textContent   = r==='admin' ? 'Enter Control Room' : 'Enter Auction Room';
+  document.getElementById('login-btn').textContent   = r==='admin' ? 'ENTER CONTROL ROOM' : 'SIGN IN';
   document.getElementById('auth-error').textContent  = '';
 }
 
@@ -118,7 +119,7 @@ async function doLogin() {
     }
   } catch(e) {
     errEl.textContent=e.message; btn._busy=false; btn.disabled=false;
-    btn.textContent=_role==='admin'?'Enter Control Room':'Enter Auction Room';
+    btn.textContent=_role==='admin'?'ENTER CONTROL ROOM':'SIGN IN';
   }
 }
 

@@ -6,7 +6,7 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Predictions — BFL Fantasy IPL 2026</title>
+  <title>IPL 2026 - BFL Predictions</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
@@ -239,7 +239,7 @@ function renderForm(m) {
       matchHeader(m, '<span class="match-status status-open">Open</span>') +
       '<div class="pred-section">' +
         '<div class="pred-section-title"><span class="step-badge">1</span> Target Score (runs)</div>' +
-        '<input class="form-input" type="number" id="pred-target" placeholder="e.g. 185" min="50" max="400" style="font-family:var(--f-mono);font-size:22px;font-weight:700;max-width:180px;">' +
+        '<input class="form-input" type="number" id="pred-target" placeholder="e.g. 185" min="50" max="400" style="font-family:var(--f-mono);font-size:22px;font-weight:600;max-width:180px;">' +
       '</div>' +
       '<div class="pred-section">' +
         '<div class="pred-section-title"><span class="step-badge">2</span> Predicted Winner</div>' +
@@ -251,7 +251,7 @@ function renderForm(m) {
       '<div class="pred-section impact-section" id="impact-section">' +
         '<div class="pred-section-title">' +
           '<span class="step-badge" style="background:var(--gold);">3</span>' +
-          ' Impact Player <span style="color:var(--gold);font-weight:700;margin-left:4px;">3×</span>' +
+          ' Impact Player <span style="color:var(--gold);font-weight:600;margin-left:4px;">3×</span>' +
           '<span style="margin-left:auto;font-size:11px;color:' + (_impactStats.used >= 6 ? 'var(--red)' : 'var(--text3)') + ';">' + _impactStats.used + ' / 8 used</span>' +
         '</div>' +
         '<p style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.6;">' +
@@ -281,7 +281,7 @@ function buildImpactToggle(m) {
     imgTag(p.image_url, p.name, 'impact-card-avatar', 'width:48px;height:48px;border-radius:8px;') +
     '<div class="impact-toggle-info">' +
       '<div class="impact-toggle-name">' + UI.esc(p.name) + ' <span class="badge-impact">IMPACT</span></div>' +
-      '<div class="impact-toggle-desc">' + (_impactActive ? '<span style="color:var(--cyan);font-weight:700;">ACTIVE (3×)</span>' : exhausted ? 'Usage Limit Reached' : 'OFF (Excl. from scoring)') + '</div>' +
+      '<div class="impact-toggle-desc">' + (_impactActive ? '<span style="color:var(--cyan);font-weight:600;">ACTIVE (3×)</span>' : exhausted ? 'Usage Limit Reached' : 'OFF (Excl. from scoring)') + '</div>' +
     '</div>' +
     '<label class="switch" onclick="event.stopPropagation()">' +
       '<input type="checkbox" id="impact-chk" ' + (_impactActive ? 'checked' : '') + (exhausted ? ' disabled' : '') + 
@@ -303,7 +303,7 @@ function toggleImpactActivation(isActive) {
   var chk = document.getElementById('impact-chk');
   if (chk) chk.checked = isActive;
   var desc = card ? card.querySelector('.impact-toggle-desc') : null;
-  if (desc) desc.innerHTML = isActive ? '<span style="color:var(--cyan);font-weight:700;">ACTIVE (3×)</span>' : 'OFF (Excl. from scoring)';
+  if (desc) desc.innerHTML = isActive ? '<span style="color:var(--cyan);font-weight:600;">ACTIVE (3×)</span>' : 'OFF (Excl. from scoring)';
 }
 
 /* ── LOCKED (no prediction, past deadline, awaiting result) ── */
@@ -355,15 +355,15 @@ function renderResult(m, pred, impactEntry) {
       '<div class="pred-section">' +
         '<div class="winner-grid" style="margin-bottom:14px;">' +
           '<div style="background:' + (w1?'var(--accent-dim)':'var(--bg2)') + ';border:1px solid ' + (w1?'rgba(200,241,53,.3)':'var(--border)') + ';border-radius:var(--radius);padding:14px;text-align:center;">' +
-            '<div style="font-family:var(--f-display);font-weight:800;font-size:15px;' + (!w1?'opacity:.5':'') + '">' + UI.esc(m.team1) + '</div>' +
-            (w1?'<div style="font-size:11px;color:var(--accent);margin-top:4px;font-weight:700;">WINNER</div>':'') +
+            '<div style="font-family:var(--f-display);font-weight:400;font-size:15px;' + (!w1?'opacity:.5':'') + '">' + UI.esc(m.team1) + '</div>' +
+            (w1?'<div style="font-size:11px;color:var(--accent);margin-top:4px;font-weight:600;">WINNER</div>':'') +
           '</div>' +
           '<div style="background:' + (w2?'var(--accent-dim)':'var(--bg2)') + ';border:1px solid ' + (w2?'rgba(200,241,53,.3)':'var(--border)') + ';border-radius:var(--radius);padding:14px;text-align:center;">' +
-            '<div style="font-family:var(--f-display);font-weight:800;font-size:15px;' + (!w2?'opacity:.5':'') + '">' + UI.esc(m.team2) + '</div>' +
-            (w2?'<div style="font-size:11px;color:var(--accent);margin-top:4px;font-weight:700;">WINNER</div>':'') +
+            '<div style="font-family:var(--f-display);font-weight:400;font-size:15px;' + (!w2?'opacity:.5':'') + '">' + UI.esc(m.team2) + '</div>' +
+            (w2?'<div style="font-size:11px;color:var(--accent);margin-top:4px;font-weight:600;">WINNER</div>':'') +
           '</div>' +
         '</div>' +
-        (m.actual_target ? '<div style="text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:14px;"><div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;">Actual Target</div><div style="font-family:var(--f-display);font-size:28px;font-weight:900;color:var(--accent);">' + m.actual_target + '</div></div>' : '') +
+        (m.actual_target ? '<div style="text-align:center;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:14px;"><div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;">Actual Target</div><div style="font-family:var(--f-display);font-size:28px;font-weight:600;color:var(--accent);">' + m.actual_target + '</div></div>' : '') +
         (pred ? submittedBlock(pred, impactEntry, m) :
           '<div style="color:var(--text3);font-size:13px;padding:10px 0;">No prediction submitted.</div>') +
       '</div>' +
@@ -489,5 +489,15 @@ async function submitImpactOnly() {
 init();
 </script>
 </div>
+<footer class="site-footer">
+  <div class="footer-divider"></div>
+  <div class="footer-content">
+    <div class="footer-logos">
+      <img src="images\bfl\bfl-logo.png" alt="BFL Logo" class="footer-logo footer-logo-bfl">
+      <img src="images\ipl\ipl-logo.png" alt="IPL Logo" class="footer-logo footer-logo-t20">
+    </div>
+    <p class="footer-copy">Copyright 2026 BFL. All rights reserved.</p>
+  </div>
+</footer>
 </body>
 </html>

@@ -5,7 +5,7 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Leaderboard — BFL Fantasy IPL 2026</title>
+  <title>IPL 2026 - BFL Leaderboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
@@ -157,7 +157,7 @@ function renderTable() {
     var avg=r.matches_played?(r.total_points/r.matches_played).toFixed(1):'—';
     return '<tr class="'+(isMe?'highlight-me':'')+'" style="animation:row-in .28s ease '+(.04*i)+'s both;">' +
       '<td class="rank">'+(medals[r.rank]||r.rank)+'</td>' +
-      '<td style="font-family:var(--f-ui);font-weight:800;">'+UI.esc(r.team?r.team.team_name:'—')+
+      '<td style="font-family:var(--f-ui);font-weight:400;">'+UI.esc(r.team?r.team.team_name:'—')+
         (r.team&&r.team.owner_name?'<span style="font-size:12px;color:var(--text2);font-weight:400;"> · '+UI.esc(r.team.owner_name)+'</span>':'')+
         (isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'')+
       '</td>'+
@@ -191,7 +191,7 @@ async function loadMatchLB(matchId) {
       var isMe=r.fantasy_team_id===_myTeamId;
       return '<tr class="'+(r.match_rank===1?'highlight-me ':isMe?'highlight-me ':'')+(isMe?'':'')+'">'+
         '<td class="rank">'+(medals[r.match_rank]||r.match_rank)+'</td>'+
-        '<td style="font-family:var(--f-ui);font-weight:800;">'+UI.esc(r.team?.team_name||'—')+(isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'')+'</td>'+
+        '<td style="font-family:var(--f-ui);font-weight:400;">'+UI.esc(r.team?.team_name||'—')+(isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'')+'</td>'+
         '<td class="font-mono">'+r.squad_points+'</td>'+
         '<td class="font-mono">'+r.prediction_points+'</td>'+
         '<td class="pts">'+r.total_points+'</td>'+
@@ -216,7 +216,7 @@ async function loadBreakdown() {
     var total=logs.reduce(function(s,l){return s+(l.total_points||0);},0);
     tbody.innerHTML=logs.slice().reverse().map(function(l){
       return '<tr>'+
-        '<td style="font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+UI.esc(l.match?(l.match.match_title||l.match.team1+' vs '+l.match.team2):'—')+'</td>'+
+        '<td style="font-weight:400;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+UI.esc(l.match?(l.match.match_title||l.match.team1+' vs '+l.match.team2):'—')+'</td>'+
         '<td style="font-size:12px;color:var(--text2);">'+UI.shortDate(l.match&&l.match.match_date)+'</td>'+
         '<td class="font-mono" style="color:#f87171;">'+(l.batting_pts||0)+'</td>'+
         '<td class="font-mono" style="color:#60a5fa;">'+(l.bowling_pts||0)+'</td>'+
@@ -225,12 +225,22 @@ async function loadBreakdown() {
         '<td class="pts">'+l.total_points+'</td>'+
       '</tr>';
     }).join('')+
-    '<tr style="border-top:2px solid var(--border);"><td colspan="6" style="font-family:var(--f-ui);font-weight:800;text-align:right;color:var(--text2);">Season Total</td><td class="pts">'+total+'</td></tr>';
+    '<tr style="border-top:2px solid var(--border);"><td colspan="6" style="font-family:var(--f-ui);font-weight:400;text-align:right;color:var(--text2);">Season Total</td><td class="pts">'+total+'</td></tr>';
   } catch(e){tbody.innerHTML='<tr><td colspan="7" style="color:var(--red);padding:24px;">Failed to load</td></tr>';}
 }
 
 init();
 </script>
 </div>
+<footer class="site-footer">
+  <div class="footer-divider"></div>
+  <div class="footer-content">
+    <div class="footer-logos">
+      <img src="images\bfl\bfl-logo.png" alt="BFL Logo" class="footer-logo footer-logo-bfl">
+      <img src="images\ipl\ipl-logo.png" alt="IPL Logo" class="footer-logo footer-logo-t20">
+    </div>
+    <p class="footer-copy">Copyright 2026 BFL. All rights reserved.</p>
+  </div>
+</footer>
 </body>
 </html>

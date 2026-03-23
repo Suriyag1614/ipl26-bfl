@@ -57,7 +57,7 @@ function renderInjuryBanner(){
   if(!inj.length){w.innerHTML='';return;}
   var names=inj.map(function(s){return s.player.name+(s.player.injury_note?' ('+s.player.injury_note+')':'');}).join(', ');
   w.innerHTML='<div class="injury-banner"><span style="font-size:20px;">&#x1F3E5;</span>'+
-    '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-weight:800;font-size:15px;color:var(--red);">Injured Players</div>'+
+    '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-weight:400;font-size:15px;color:var(--red);">Injured Players</div>'+
     '<div style="font-size:13px;color:var(--text2);margin-top:2px;">'+UI.esc(names)+' &mdash; set replacements on their player cards.</div></div></div>';
 }
 
@@ -69,7 +69,7 @@ function renderReplacements(){
   document.getElementById('replacements-list').innerHTML=reps.map(function(sp){
     var r=sp.replacement;
     return '<div class="stats-saved-row" style="justify-content:space-between;">'+
-      '<div><div style="font-family:var(--f-ui);font-weight:800;font-size:14px;">'+UI.esc(sp.player.name)+'</div>'+
+      '<div><div style="font-family:var(--f-ui);font-weight:400;font-size:14px;">'+UI.esc(sp.player.name)+'</div>'+
       '<div style="font-size:12px;color:var(--text2);">Replaced by: <strong style="color:var(--cyan);">'+UI.esc(r.replacement&&r.replacement.name||'&mdash;')+'</strong></div></div>'+
       '<button class="btn btn-ghost btn-sm" onclick="confirmRemoveRep(\''+r.id+'\')">Remove</button></div>';
   }).join('');
@@ -127,7 +127,7 @@ function renderSquad(){
       '<div class="player-ipl">'+UI.esc(p.ipl_team||'&mdash;')+'</div>' +
       '<div style="display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;">'+badges+'</div>' +
       (statusBadges?'<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-top:6px;">'+statusBadges+'</div>':'') +
-      (pts>0?'<div class="player-pts-row"><span style="color:var(--text2)">Season</span><span style="font-family:var(--f-mono);font-weight:700;color:var(--accent)">'+pts+'</span></div>':'') +
+      (pts>0?'<div class="player-pts-row"><span style="color:var(--text2)">Season</span><span style="font-family:var(--f-mono);font-weight:600;color:var(--accent)">'+pts+'</span></div>':'') +
       (isInjured?'<button class="btn btn-sm" style="margin-top:8px;width:100%;background:rgba(56,217,245,.12);color:var(--cyan);border:1px solid rgba(56,217,245,.25);font-size:11px;" onclick="openRepModal(\''+pd+'\');">'+(hasRep?'&#x2194; Change':'+ Set Replacement')+'</button>':'') +
     '</div>';
   }).join('');
@@ -142,9 +142,9 @@ function renderSummary(){
   if(inj) items.push({lbl:'Injured',val:inj,accent:'var(--red)'});
   el.innerHTML='<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;">'+items.map(function(it,i){
     var sep=i?'<div style="width:1px;height:32px;background:var(--border);flex-shrink:0;"></div>':'';
-    var valHtml=it.plain?'<div style="font-family:var(--f-display);font-weight:700;font-size:15px;">'+UI.esc(String(it.val))+'</div>':
-      '<div style="font-family:var(--f-display);font-weight:900;font-size:22px;color:'+(it.accent||'var(--accent)')+';">'+it.val+(it.unit?'<span style="font-size:13px;color:var(--text2);">'+it.unit+'</span>':'')+'</div>';
-    return sep+'<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-family:var(--f-ui);font-weight:700;margin-bottom:2px;">'+it.lbl+'</div>'+valHtml+'</div>';
+    var valHtml=it.plain?'<div style="font-family:var(--f-display);font-weight:600;font-size:15px;">'+UI.esc(String(it.val))+'</div>':
+      '<div style="font-family:var(--f-display);font-weight:600;font-size:22px;color:'+(it.accent||'var(--accent)')+';">'+it.val+(it.unit?'<span style="font-size:13px;color:var(--text2);">'+it.unit+'</span>':'')+'</div>';
+    return sep+'<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text3);font-family:var(--f-ui);font-weight:600;margin-bottom:2px;">'+it.lbl+'</div>'+valHtml+'</div>';
   }).join('')+'</div>';
 }
 
@@ -178,13 +178,13 @@ function renderRoleBreakdown() {
     return `
       <div style="flex:1; min-width:140px; background:var(--bg2); padding:12px; border-radius:10px; border:1px solid var(--border);">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <span style="font-family:var(--f-ui); font-weight:800; font-size:12px; color:var(--text2);">${labels[role]}</span>
-          <span style="font-family:var(--f-mono); font-weight:700; font-size:14px; color:${statusCol};">${n} <small style="color:var(--text3); font-weight:400; font-size:10px;">(${range[0]}-${range[1]})</small></span>
+          <span style="font-family:var(--f-ui); font-weight:400; font-size:12px; color:var(--text2);">${labels[role]}</span>
+          <span style="font-family:var(--f-mono); font-weight:600; font-size:14px; color:${statusCol};">${n} <small style="color:var(--text3); font-weight:400; font-size:10px;">(${range[0]}-${range[1]})</small></span>
         </div>
         <div style="height:6px; background:var(--bg3); border-radius:3px; overflow:hidden; margin-bottom:6px;">
           <div style="height:100%; background:${colors[role]}; width:${Math.min(100, (n/6)*100)}%; transition:width 1s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>
         </div>
-        <div style="font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px;">${statusTxt}</div>
+        <div style="font-size:10px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px;">${statusTxt}</div>
       </div>
     `;
   }).join('');
@@ -196,8 +196,8 @@ function renderRoleBreakdown() {
     <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:16px;">
       <div class="card-title" style="margin:0;">Team Balance Analysis</div>
       <div style="text-align:right;">
-        <div style="font-size:10px; text-transform:uppercase; color:var(--text3); font-weight:700;">Overall Strength</div>
-        <div style="font-family:var(--f-display); font-size:24px; font-weight:900; color:${strengthCol}; line-height:1;">${avgStrength}%</div>
+        <div style="font-size:10px; text-transform:uppercase; color:var(--text3); font-weight:600;">Overall Strength</div>
+        <div style="font-family:var(--f-display); font-size:24px; font-weight:600; color:${strengthCol}; line-height:1;">${avgStrength}%</div>
       </div>
     </div>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px;" id="role-bars">
@@ -221,7 +221,7 @@ function openRepModal(playerDataStr){
           '<div style="width:34px;height:34px;border-radius:50%;background:var(--bg3);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">'+
             (pl.image_url?'<img src="'+UI.esc(pl.image_url)+'" style="width:34px;height:34px;object-fit:cover;" onerror="this.style.display=\'none\'">':'<span>'+UI.esc((pl.name||'P')[0])+'</span>')+
           '</div>'+
-          '<div style="flex:1;"><div style="font-family:\'Barlow Condensed\',sans-serif;font-weight:800;font-size:14px;">'+UI.esc(pl.name)+'</div>'+
+          '<div style="flex:1;"><div style="font-family:\'Barlow Condensed\',sans-serif;font-weight:400;font-size:14px;">'+UI.esc(pl.name)+'</div>'+
           '<div style="font-size:11px;color:var(--text2);">'+UI.esc(pl.ipl_team||'')+(pl.is_overseas?' &#x1F30F;':'')+'</div></div>'+
           UI.roleBadge(pl.role)+'</div>';
       }).join('');
@@ -253,7 +253,7 @@ async function submitReplacement(){
 
 async function exportSquadPDF(){
   try{
-    var result=await sb.from('squad_players').select('sold_price,is_retained,is_rtm,player:players(name,role,ipl_team,is_overseas,base_price)').eq('team_id',_myTeamId);
+    var result=await sb.from('squad_players').select('player:players(name,role,ipl_team,is_overseas)').eq('fantasy_team_id',_myTeamId);
     if(result.error) throw result.error;
     var rows=result.data||[];
     var list=rows.sort(function(a,b){
@@ -274,7 +274,7 @@ async function exportSquadPDF(){
         '<td><strong>'+UI.esc(p.name||'')+'</strong>'+(tags?'<br><small style="color:#888">'+tags+'</small>':'')+'</td>'+
         '<td>'+UI.esc(p.role||'')+'</td><td>'+UI.esc(p.ipl_team||'')+'</td>'+
         '<td style="text-align:center">'+(cap?'C':vc?'VC':'')+'</td>'+
-        '<td>Rs.'+(p.base_price||0)+'</td><td style="font-weight:700;color:#b7791f">Rs.'+Number(tp.sold_price||0).toFixed(2)+'</td></tr>';
+        '<td>Rs.'+(p.base_price||0)+'</td><td style="font-weight:600;color:#b7791f">Rs.'+Number(tp.sold_price||0).toFixed(2)+'</td></tr>';
     }).join('');
     var parts=['<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+UI.esc(_myTeam.team_name)+'</title>',
       '<style>body{font-family:Arial,sans-serif;font-size:13px;padding:20px}h1{font-size:18px}table{width:100%;border-collapse:collapse}',

@@ -240,7 +240,7 @@ async function loadTeams(){
     var logo=tLogo(r.team?r.team.team_name:''); var code=tCode(r.team?r.team.team_name:''); var col=code&&TCOLS[code]?TCOLS[code]:'var(--text)';
     return '<tr><td class="rank">'+r.rank+'</td>'+
       '<td><div style="display:flex;align-items:center;gap:9px;">'+(logo?'<img src="'+logo+'" style="width:22px;height:22px;object-fit:contain;" onerror="this.style.display=\'none\'">':'')+
-      '<span style="font-family:var(--f-ui);font-weight:800;font-size:14px;color:'+col+';">'+UI.esc(r.team?r.team.team_name:'—')+'</span></div></td>'+
+      '<span style="font-family:var(--f-ui);font-weight:400;font-size:14px;color:'+col+';">'+UI.esc(r.team?r.team.team_name:'—')+'</span></div></td>'+
       '<td style="color:var(--text2);">'+UI.esc(r.team?r.team.owner_name||'—':'—')+'</td>'+
       '<td>'+r.matches_played+'</td><td class="pts">'+r.total_points+'</td></tr>';
   }).join('');
@@ -274,9 +274,9 @@ async function loadSavedStats(matchId){
       var logo=tLogo(p.ipl_team||''); var code=tCode(p.ipl_team||''); var col=code&&TCOLS[code]?TCOLS[code]:'var(--text)';
       return '<div class="stats-saved-row">'+
         (logo?'<img src="'+logo+'" style="width:22px;height:22px;object-fit:contain;" onerror="this.style.display=\'none\'">':'')+
-        '<div style="flex:1;"><div style="font-family:var(--f-ui);font-weight:800;font-size:14px;color:'+col+';">'+UI.esc(p.name||'—')+'</div></div>'+
+        '<div style="flex:1;"><div style="font-family:var(--f-ui);font-weight:400;font-size:14px;color:'+col+';">'+UI.esc(p.name||'—')+'</div></div>'+
         '<div style="font-size:12px;color:var(--text2);font-family:var(--f-mono);">R:'+(s.runs||0)+' W:'+(s.wickets||0)+' C:'+(s.catches||0)+'</div>'+
-        '<div style="font-family:var(--f-display);font-weight:900;font-size:18px;color:var(--accent);min-width:44px;text-align:right;">'+Math.round(est)+'</div>'+
+        '<div style="font-family:var(--f-display);font-weight:600;font-size:18px;color:var(--accent);min-width:44px;text-align:right;">'+Math.round(est)+'</div>'+
       '</div>';
     }).join('');
   }catch(e){}
@@ -501,10 +501,10 @@ async function loadBlogList(){
       var col=catColors[b.category]||'#94a3b8';
       var sCls='status-'+(b.status==='published'?'done':b.status==='review'?'upcoming':'locked');
       return '<div class="fixture-row" onclick="editBlogAdmin(\'' + b.id + '\')" style="animation:row-in .22s ease '+(.04*i)+'s both;">'+
-        '<div style="flex:1;min-width:0;"><div style="font-family:var(--f-ui);font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+
+        '<div style="flex:1;min-width:0;"><div style="font-family:var(--f-ui);font-weight:400;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+
           (b.ai_generated?'🤖 ':'')+UI.esc(b.title)+'</div>'+
         '<div style="display:flex;gap:6px;margin-top:2px;flex-wrap:wrap;">'+
-          '<span style="background:'+col+'22;color:'+col+';font-family:var(--f-ui);font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;">'+UI.esc(b.category)+'</span>'+
+          '<span style="background:'+col+'22;color:'+col+';font-family:var(--f-ui);font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;">'+UI.esc(b.category)+'</span>'+
           '<span class="match-status '+sCls+'" style="font-size:10px;">'+UI.esc(b.status||'draft')+'</span>'+
           '<span style="font-size:11px;color:var(--text3);">'+UI.shortDate(b.created_at)+'</span>'+
           '<span style="font-size:11px;color:var(--text3);">'+b.views+' views</span>'+
@@ -619,7 +619,7 @@ async function loadAuditLog(){
       var col=typeColors[l.action_type]||'var(--text2)';
       return '<tr>'+
         '<td style="font-size:11px;color:var(--text3);white-space:nowrap;">'+UI.shortDate(l.created_at)+'</td>'+
-        '<td><span style="background:'+col+'22;color:'+col+';font-size:10px;font-weight:800;padding:2px 7px;border-radius:3px;font-family:var(--f-ui);">'+UI.esc(l.action_type)+'</span></td>'+
+        '<td><span style="background:'+col+'22;color:'+col+';font-size:10px;font-weight:400;padding:2px 7px;border-radius:3px;font-family:var(--f-ui);">'+UI.esc(l.action_type)+'</span></td>'+
         '<td style="font-size:12px;">'+UI.esc(l.entity_type)+'</td>'+
         '<td style="font-size:10px;color:var(--text3);font-family:var(--f-mono);">'+UI.esc((l.entity_id||'').substring(0,12))+'…</td>'+
         '<td style="font-size:12px;">'+UI.esc(l.performed_by||'admin')+'</td>'+
