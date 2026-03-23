@@ -17,10 +17,13 @@ var NAV_LINKS = [
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>' },
   { href:'blogs.html',        label:'Blogs',       page:'blogs',        bnav:false,
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>' },
+  { href:'admin.html',        label:'Admin',       page:'admin',        bnav:false, adminOnly:true,
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' },
 ];
 
 // Sidebar state — persisted in localStorage
 var _sidebarOpen = true;
+var _customSidebarLinks = null; 
 try {
   var _saved = localStorage.getItem('bfl_sidebar');
   if (_saved !== null) {
@@ -32,12 +35,14 @@ try {
   }
 } catch(e) {}
 
-function buildNavbar(activePage) {
+function buildNavbar(activePage, isAdmin) {
   var navbarEl = document.getElementById('navbar');
   if (navbarEl) {
-    var navItemsHtml = NAV_LINKS.map(function(l) {
+    var links = _customSidebarLinks || NAV_LINKS;
+    var navItemsHtml = links.filter(function(l) { return !l.adminOnly || isAdmin; }).map(function(l) {
       var isActive = activePage === l.page;
-      return '<a href="' + l.href + '" class="sb-link' + (isActive ? ' active' : '') + '" title="' + l.label + '">' +
+      var oc = l.onclick ? ' onclick="' + l.onclick + '; if(window.innerWidth<1024) toggleSidebar();"' : '';
+      return '<a href="' + l.href + '" class="sb-link' + (isActive ? ' active' : '') + '"' + oc + ' title="' + l.label + '">' +
         '<span class="sb-icon">' + l.icon + '</span>' +
         '<span class="sb-label">' + l.label + '</span>' +
       '</a>';
@@ -98,7 +103,8 @@ function buildNavbar(activePage) {
   // Mobile bottom nav
   var bnavEl = document.getElementById('bottom-nav-inner');
   if (bnavEl) {
-    bnavEl.innerHTML = NAV_LINKS.filter(function(l){ return l.bnav; }).map(function(l) {
+    var links = _customSidebarLinks || NAV_LINKS;
+    bnavEl.innerHTML = links.filter(function(l){ return l.bnav && (!l.adminOnly || isAdmin); }).map(function(l) {
       return '<a href="' + l.href + '" class="bnav-link' + (activePage === l.page ? ' active' : '') + '">' +
         l.icon + '<span>' + l.label + '</span></a>';
     }).join('');
@@ -132,35 +138,53 @@ function applySidebarState(animate) {
   }
 }
 
-async function initNavbar(page) {
-  buildNavbar(page);
+async function initNavbar(page, customLinks) {
   try {
+    if (customLinks) _customSidebarLinks = customLinks;
     var sess = await Auth.getSession();
+    var isAdmin = sess ? Auth.isAdmin(sess.user) : false;
+    buildNavbar(page, isAdmin);
+
     if (!sess) return;
-    var name = '', initials = '?', adminMode = Auth.isAdmin(sess.user);
+    var name = '', initials = '?', adminMode = isAdmin;
 
     if (adminMode) {
       name = 'Admin'; initials = 'A';
-      setNavUser(name, initials, 'linear-gradient(135deg,#ff4d6d,#a78bfa)');
+      setNavUser(name, initials, 'linear-gradient(135deg,#ff4d6d,#a78bfa)', 'images/bfl/bfl-logo.png');
     } else {
       var team = await Auth.fetchTeam(sess.user.id);
-      if (team) {
-        name     = team.team_name || '—';
+      if (team && team.team_name) {
+        name     = team.team_name;
         initials = name.split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
-        setNavUser(name, initials, null);
+        
+        // Map team name to logo
+        var codes = {CHENNAISUPERKINGS:'CSK',DELHICAPITALS:'DC',GUJARATTITANS:'GT',KOLKATAKNIGHTRIDERS:'KKR',LUCKNOWSUPERGIANTS:'LSG',MUMBAIINDIANS:'MI',PUNJABKINGS:'PBKS',RAJASTHANROYALS:'RR',ROYALCHALLENGERSBENGALURU:'RCB',SUNRISERSHYDERABAD:'SRH',SUPREMERAJAS:'SURA'};
+        var cleanName = name.toUpperCase().replace(/\s+/g,'');
+        var code = codes[cleanName] || null;
+        var logo = code ? 'images/teams/' + code + 'outline.png' : null;
+        
+        setNavUser(name, initials, null, logo);
+      } else {
+        setNavUser('Team', 'T', null, null);
       }
     }
   } catch(e) { console.warn('navbar:', e.message); }
 }
 
-function setNavUser(name, initials, bg) {
+function setNavUser(name, initials, bg, logoUrl) {
   var avatarIds = ['nav-avatar','sb-avatar'];
-  if (Array.isArray(avatarIds)) {
-    avatarIds.forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el) { el.textContent = initials; if (bg) el.style.background = bg; }
-    });
-  }
+  avatarIds.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    if (logoUrl) {
+      el.innerHTML = '<img src="' + logoUrl + '" style="width:100%;height:100%;object-fit:contain;padding:2px;" onerror="this.outerHTML=\'' + initials + '\'">';
+      el.style.background = 'var(--bg3)';
+      el.style.border = '1px solid var(--border)';
+    } else {
+      el.textContent = initials;
+      if (bg) el.style.background = bg;
+    }
+  });
   var nameIds = ['nav-team-name','sb-user-name'];
   if (Array.isArray(nameIds)) {
     nameIds.forEach(function(id) {

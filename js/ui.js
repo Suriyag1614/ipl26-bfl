@@ -97,6 +97,39 @@ const UI = {
   },
 
   // ════════════════════════════════════════════════════════════
+  //  MODALS
+  // ════════════════════════════════════════════════════════════
+  showModal({ title, content, customClass = '' }) {
+    this.closeActiveModal();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay ' + customClass;
+    overlay.id = 'active-modal-overlay';
+    overlay.onclick = (e) => { if (e.target === overlay) this.closeActiveModal(); };
+    overlay.innerHTML = `
+      <div class="modal-card bounce-in">
+        <div class="modal-header">
+          <div class="modal-title">${title}</div>
+          <button class="modal-close" onclick="UI.closeActiveModal()">×</button>
+        </div>
+        <div class="modal-body">${content}</div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+  },
+
+  closeActiveModal() {
+    const el = document.getElementById('active-modal-overlay');
+    if (el) {
+      el.classList.add('fade-out');
+      setTimeout(() => {
+        el.remove();
+        document.body.style.overflow = '';
+      }, 200);
+    }
+  },
+
+  // ════════════════════════════════════════════════════════════
   //  MINI CHART ENGINE (pure canvas, no dependencies)
   // ════════════════════════════════════════════════════════════
 
@@ -375,3 +408,10 @@ const UI = {
     return `<span class="match-status ${cls}"><span class="countdown" id="${id}">…</span></span>`;
   },
 };
+
+// PWA Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}

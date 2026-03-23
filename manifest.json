@@ -2,14 +2,15 @@
   "name": "BFL Fantasy IPL 2026",
   "short_name": "BFL Fantasy",
   "description": "Bishopians Fantasy Cricket League — IPL 2026",
-  "start_url": "/",
+  "start_url": ".",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#070910",
   "theme_color": "#c8f135",
   "orientation": "portrait-primary",
   "icons": [
-    { "src": "images/bfl/bfl-logo.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "images/bfl/bfl-logo.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "images/bfl/bfl-logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "images/bfl/bfl-logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "categories": ["sports", "games"],
   "shortcuts": [

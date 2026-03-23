@@ -148,21 +148,62 @@ function renderSummary(){
   }).join('')+'</div>';
 }
 
-function renderRoleBreakdown(){
-  var counts={Batter:0,Bowler:0,'All-Rounder':0,'Wicket-Keeper':0};
-  _squad.forEach(function(sp){if(sp.player&&sp.player.role)counts[sp.player.role]=(counts[sp.player.role]||0)+1;});
-  var labels={Batter:'BAT',Bowler:'BOWL','All-Rounder':'AR','Wicket-Keeper':'WK'};
-  var colors={Batter:'#f87171',Bowler:'#60a5fa','All-Rounder':'#34d399','Wicket-Keeper':'#fbbf24'};
-  var mins={Batter:2,Bowler:3,'All-Rounder':2,'Wicket-Keeper':1};
-  var el=document.getElementById('role-bars'); if(!el)return;
-  el.innerHTML=Object.keys(counts).map(function(role){
-    var n=counts[role],min=mins[role],met=n>=min;
-    return '<div style="flex:1;min-width:100px;"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px;">'+
-      '<span style="font-family:var(--f-ui);font-weight:700;color:var(--text2);">'+labels[role]+'</span>'+
-      '<span style="font-family:var(--f-mono);font-weight:700;color:'+(met?'var(--text)':'var(--red)')+';">'+n+'<span style="color:var(--text3);font-weight:400;">/'+min+'+</span></span>'+
-      '</div><div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;">'+
-      '<div style="height:100%;background:'+(met?colors[role]:'var(--red)')+';border-radius:3px;width:'+Math.min(100,(n/4)*100)+'%;transition:width 1s ease;"></div></div></div>';
+function renderRoleBreakdown() {
+  var counts = { Batter:0, Bowler:0, 'All-Rounder':0, 'Wicket-Keeper':0 };
+  _squad.forEach(function(sp) { if (sp.player && sp.player.role) counts[sp.player.role]++; });
+  
+  var labels = { Batter:'BAT', Bowler:'BOWL', 'All-Rounder':'AR', 'Wicket-Keeper':'WK' };
+  var colors = { Batter:'#f87171', Bowler:'#60a5fa', 'All-Rounder':'#34d399', 'Wicket-Keeper':'#fbbf24' };
+  
+  // Ideal ranges for a 11-12 player squad
+  var ideals = { Batter: [4, 5], Bowler: [4, 5], 'All-Rounder': [1, 3], 'Wicket-Keeper': [1, 2] };
+  
+  var el = document.getElementById('role-bars'); if (!el) return;
+  
+  var totalStrength = 0;
+  var roleHtml = Object.keys(counts).map(function(role) {
+    var n = counts[role];
+    var range = ideals[role];
+    var score = 0;
+    
+    if (n >= range[0] && n <= range[1]) score = 100;
+    else if (n < range[0]) score = Math.round((n / range[0]) * 100);
+    else score = Math.round((range[1] / n) * 100); // Penalty for over-stacking
+    
+    totalStrength += score;
+    var isLow = n < range[0], isHigh = n > range[1];
+    var statusTxt = isLow ? 'Low' : isHigh ? 'Heavy' : 'Balanced';
+    var statusCol = isLow ? 'var(--red)' : isHigh ? '#f59e0b' : 'var(--accent)';
+
+    return `
+      <div style="flex:1; min-width:140px; background:var(--bg2); padding:12px; border-radius:10px; border:1px solid var(--border);">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-family:var(--f-ui); font-weight:800; font-size:12px; color:var(--text2);">${labels[role]}</span>
+          <span style="font-family:var(--f-mono); font-weight:700; font-size:14px; color:${statusCol};">${n} <small style="color:var(--text3); font-weight:400; font-size:10px;">(${range[0]}-${range[1]})</small></span>
+        </div>
+        <div style="height:6px; background:var(--bg3); border-radius:3px; overflow:hidden; margin-bottom:6px;">
+          <div style="height:100%; background:${colors[role]}; width:${Math.min(100, (n/6)*100)}%; transition:width 1s cubic-bezier(0.34, 1.56, 0.64, 1);"></div>
+        </div>
+        <div style="font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.5px;">${statusTxt}</div>
+      </div>
+    `;
   }).join('');
+
+  var avgStrength = Math.round(totalStrength / 4);
+  var strengthCol = avgStrength > 85 ? 'var(--accent)' : avgStrength > 60 ? '#f59e0b' : 'var(--red)';
+
+  el.parentElement.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:16px;">
+      <div class="card-title" style="margin:0;">Team Balance Analysis</div>
+      <div style="text-align:right;">
+        <div style="font-size:10px; text-transform:uppercase; color:var(--text3); font-weight:700;">Overall Strength</div>
+        <div style="font-family:var(--f-display); font-size:24px; font-weight:900; color:${strengthCol}; line-height:1;">${avgStrength}%</div>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px;" id="role-bars">
+      ${roleHtml}
+    </div>
+  `;
 }
 
 function openRepModal(playerDataStr){
