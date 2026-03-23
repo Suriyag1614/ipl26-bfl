@@ -105,7 +105,10 @@ function buildNavbar(activePage, isAdmin) {
   if (bnavEl) {
     var links = _customSidebarLinks || NAV_LINKS;
     bnavEl.innerHTML = links.filter(function(l){ return l.bnav && (!l.adminOnly || isAdmin); }).map(function(l) {
-      return '<a href="' + l.href + '" class="bnav-link' + (activePage === l.page ? ' active' : '') + '">' +
+      // THIS IS THE MISSING PIECE: Injecting the onclick attribute
+      var attr = l.onclick ? ' onclick="' + l.onclick + '"' : '';
+      
+      return '<a href="' + l.href + '"' + attr + ' class="bnav-link' + (activePage === l.page ? ' active' : '') + '">' +
         l.icon + '<span>' + l.label + '</span></a>';
     }).join('');
   }

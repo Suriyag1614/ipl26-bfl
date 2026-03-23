@@ -11,46 +11,52 @@ var _allPlayers=[], _allMatches=[], _allTeamsData=[];
 
 var ADMIN_NAV_LINKS = [
   { 
-    href: '#fixtures',  
+    href: 'javascript:void(0)',  
     label: 'Fixtures',   
-    page: 'fixtures',  
+    page: 'fixtures',
+    bnav: true,  
     onclick: "switchTab('fixtures')", 
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z"/></svg>' 
   },
   { 
-    href: '#stats',     
+    href: 'javascript:void(0)',     
     label: 'Player Stats',
     page: 'stats',     
+    bnav: true,
+
     onclick: "switchTab('stats')",    
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z"/></svg>' 
   },
   { 
-    href: '#calculate', 
+    href: 'javascript:void(0)', 
     label: 'Calculate',  
     page: 'calculate', 
+    bnav: true,
     onclick: "switchTab('calculate')",
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6" y2="6"/><line x1="6" y1="18" x2="6" y2="18"/></svg>' 
   },
   { 
-    href: '#override',  
+    href: 'javascript:void(0)',  
     label: 'Override',   
     page: 'override',  
+    bnav: true,
     onclick: "switchTab('override')", 
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' 
   },
+  { 
+    href: 'javascript:void(0)',     
+    label: 'Teams',      
+    page: 'teams',     
+    bnav: true,
+    onclick: "switchTab('teams')",    
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>' 
+  },
   {
-    href: '#blogs',
+    href: 'javascript:void(0)',
     label: 'Blogs',
     page: 'blogs',
     onclick: "switchTab('blogs')",
     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>'
-  },
-  { 
-    href: '#teams',     
-    label: 'Teams',      
-    page: 'teams',     
-    onclick: "switchTab('teams')",    
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>' 
   }
 ];
 
@@ -246,13 +252,30 @@ async function loadTeams(){
   }).join('');
 }
 
-function switchTab(tab){
-  var order=['fixtures','stats','calculate','override','blogs','teams'];
-  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',order[i]===tab);});
-  document.querySelectorAll('.sb-link').forEach(function(l,i){l.classList.toggle('active',order[i]===tab);});
-  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
-  document.getElementById('tab-'+tab).classList.add('active');
-  if(tab==='blogs') loadBlogList();
+function switchTab(tab) {
+  // 1. Hide all panels and remove active state from buttons
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.bnav-link').forEach(l => l.classList.remove('active'));
+
+  // 2. Show the selected panel
+  const panel = document.getElementById('tab-' + tab);
+  if (panel) panel.classList.add('active');
+
+  // 3. Mark the buttons/icons as active
+  // This finds the mobile icon and highlights it
+  const mobileIcon = document.querySelector(`.bnav-link[onclick*="${tab}"]`);
+  if (mobileIcon) mobileIcon.classList.add('active');
+  
+  const sidebarLink = document.querySelector(`.sb-link[onclick*="${tab}"]`);
+  if (sidebarLink) sidebarLink.classList.add('active');
+
+  // 4. Special logic for specific tabs
+  if (tab === 'blogs') loadBlogList();
+  
+  // 5. Scroll to top on mobile
+  window.scrollTo(0, 0);
 }
 
 // ── Stats ──────────────────────────────────────────────────────
