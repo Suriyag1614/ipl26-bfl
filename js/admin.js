@@ -667,4 +667,170 @@ function fixGrids(){
 window.addEventListener('resize',()=>fixGrids()); 
 fixGrids();
 
+// ── Populate adv-match-sel when matches load ─────────────────
+// Call this after loadMatches() in admin.js:
+function populateAdvMatchSelect() {
+  var sel = document.getElementById('adv-match-sel');
+  if (!sel) return;
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">— Select match —</option>' +
+    _allMatches.map(function(m) {
+      return '<option value="' + m.id + '">M' + (m.match_no || '') + ' · ' +
+        UI.esc(tShort(m.team1) + ' vs ' + tShort(m.team2)) +
+        ' · ' + UI.shortDate(m.match_date) +
+        (m.status === 'abandoned' ? ' ☔' : m.is_locked ? ' 🔒' : ' ●') +
+        '</option>';
+    }).join('');
+  if (cur) sel.value = cur;
+}
+ 
+function onAdvMatchChange() {
+  var sel = document.getElementById('adv-match-sel');
+  var matchId = sel ? sel.value : '';
+  if (!matchId) return;
+  var m = _allMatches.find(function(x) { return x.id === matchId; });
+  if (!m) return;
+  // Pre-fill deadline input with existing value
+  var dlEl = document.getElementById('adv-deadline');
+  if (dlEl && m.deadline_time) {
+    // Convert UTC ISO to local datetime-local value
+    var d = new Date(m.deadline_time);
+    var offset = d.getTimezoneOffset() * 60000;
+    var local  = new Date(d - offset);
+    dlEl.value = local.toISOString().slice(0, 16);
+  }
+}
+ 
+function advCtrlLog(msg, type) {
+  var el = document.getElementById('adv-ctrl-log');
+  if (!el) return;
+  var cls = type === 'ok' ? 'color:var(--green)' : type === 'err' ? 'color:var(--red)' : 'color:var(--text2)';
+  el.innerHTML = '<div style="' + cls + ';font-size:13px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;">' + UI.esc(msg) + '</div>';
+}
+ 
+function getAdvMatchId() {
+  var sel = document.getElementById('adv-match-sel');
+  var mid = sel ? sel.value : '';
+  if (!mid) { UI.toast('Select a match first', 'warn'); return null; }
+  return mid;
+}
+ 
+async function extendDeadlineAdmin() {
+  var mid = getAdvMatchId(); if (!mid) return;
+  var dlEl = document.getElementById('adv-deadline');
+  var val  = dlEl ? dlEl.value : '';
+  if (!val) { UI.toast('Set a new deadline date/time', 'warn'); return; }
+  var isoIST = new Date(val + ':00+05:30').toISOString();
+  UI.showConfirm({
+    icon: '⏰', title: 'Extend Deadline?',
+    msg: 'New deadline: ' + new Date(isoIST).toLocaleString('en-IN'),
+    consequence: 'Lock time auto-set to deadline + 5 minutes.',
+    okLabel: 'Extend', okClass: 'btn-accent',
+    onOk: async function() {
+      try {
+        await API.extendDeadline(mid, isoIST, 5);
+        advCtrlLog('✓ Deadline extended.', 'ok');
+        UI.toast('Deadline extended!', 'success');
+        await loadMatches();
+        populateAdvMatchSelect();
+        document.getElementById('adv-match-sel').value = mid;
+      } catch(e) { advCtrlLog('Error: ' + e.message, 'err'); UI.toast(e.message, 'error'); }
+    }
+  });
+}
+ 
+async function reopenPredAdmin() {
+  var mid = getAdvMatchId(); if (!mid) return;
+  var dlEl = document.getElementById('adv-deadline');
+  var val  = dlEl ? dlEl.value : '';
+  var isoIST = val ? new Date(val + ':00+05:30').toISOString() : null;
+  UI.showConfirm({
+    icon: '🔓', title: 'Reopen Predictions?',
+    msg: isoIST
+      ? 'New deadline: ' + new Date(isoIST).toLocaleString('en-IN')
+      : 'Predictions will reopen for 30 minutes.',
+    consequence: 'Previously locked predictions remain — users can update them.',
+    okLabel: 'Reopen', okClass: 'btn-accent',
+    onOk: async function() {
+      try {
+        await API.reopenPredictions(mid, isoIST);
+        advCtrlLog('✓ Predictions reopened.', 'ok');
+        UI.toast('Predictions reopened!', 'success');
+        await loadMatches(); await loadAdminStats();
+        populateAdvMatchSelect();
+        document.getElementById('adv-match-sel').value = mid;
+      } catch(e) { advCtrlLog('Error: ' + e.message, 'err'); UI.toast(e.message, 'error'); }
+    }
+  });
+}
+ 
+async function setDLSAdmin() {
+  var mid = getAdvMatchId(); if (!mid) return;
+  var tEl = document.getElementById('adv-target');
+  var t   = parseInt(tEl ? tEl.value : '');
+  if (!t || t < 50 || t > 500) { UI.toast('Enter a valid revised target (50–500)', 'warn'); return; }
+  UI.showConfirm({
+    icon: '🌧', title: 'Set DLS Revised Target?',
+    msg: 'Revised target: ' + t + ' runs',
+    consequence: 'All prediction scoring will use this target. Mark match as DLS.',
+    okLabel: 'Set Target', okClass: 'btn-gold',
+    onOk: async function() {
+      try {
+        await API.setDLSTarget(mid, t);
+        advCtrlLog('✓ DLS target set to ' + t + '.', 'ok');
+        UI.toast('DLS target set!', 'success');
+        await loadMatches();
+        populateAdvMatchSelect();
+        document.getElementById('adv-match-sel').value = mid;
+      } catch(e) { advCtrlLog('Error: ' + e.message, 'err'); UI.toast(e.message, 'error'); }
+    }
+  });
+}
+ 
+async function abandonMatchAdmin() {
+  var mid = getAdvMatchId(); if (!mid) return;
+  var m = _allMatches.find(function(x) { return x.id === mid; });
+  UI.showConfirm({
+    icon: '☔', title: 'Abandon Match?',
+    msg: m ? (tShort(m.team1) + ' vs ' + tShort(m.team2)) : 'Selected match',
+    consequence: 'No points awarded. Impact uses refunded. Cannot be undone easily.',
+    okLabel: 'Mark Abandoned', okClass: 'btn-danger',
+    onOk: async function() {
+      try {
+        await API.markMatchAbandoned(mid);
+        advCtrlLog('✓ Match marked as abandoned. Impact uses refunded automatically.', 'ok');
+        UI.toast('Match abandoned — no points awarded', 'warn');
+        await loadMatches(); await loadAdminStats();
+        populateAdvMatchSelect();
+        document.getElementById('adv-match-sel').value = mid;
+      } catch(e) { advCtrlLog('Error: ' + e.message, 'err'); UI.toast(e.message, 'error'); }
+    }
+  });
+}
+ 
+async function quickLockAdmin() {
+  var mid = getAdvMatchId(); if (!mid) return;
+  UI.showConfirm({
+    icon: '🔒', title: 'Lock Predictions Now?',
+    msg: 'Immediately close predictions for this match.',
+    consequence: 'No further submissions or edits allowed.',
+    okLabel: 'Lock Now', okClass: 'btn-danger',
+    onOk: async function() {
+      try {
+        await API.lockMatch(mid);
+        advCtrlLog('✓ Match locked immediately.', 'ok');
+        UI.toast('Match locked!', 'warn');
+        await loadMatches();
+        populateAdvMatchSelect();
+        document.getElementById('adv-match-sel').value = mid;
+      } catch(e) { advCtrlLog('Error: ' + e.message, 'err'); UI.toast(e.message, 'error'); }
+    }
+  });
+}
+ 
+async function quickUnlockAdmin() {
+  await reopenPredAdmin();
+}
+// ── End of admin advanced controls JS ──
+
 init();

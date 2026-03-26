@@ -871,9 +871,322 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   //  MISC
   // ══════════════════════════════════════════════════════════════════
-  async fetchTeams() {
-    const { data, error } = await sb.from('fantasy_teams').select('id,team_name,owner_name').order('team_name');
+async fetchTeams() {
+  const { data, error } = await sb.from('fantasy_teams').select('id,team_name,owner_name').order('team_name');
+  if (error) throw error;
+  return data || [];
+},
+
+// ----------------------------------------------------------
+//  MATCH OPEN / LOCK HELPERS  (replaces old isMatchOpen)
+// ----------------------------------------------------------
+
+/**
+ * Returns the effective lock timestamp for a match.
+ * Priority: explicit lock_time → deadline_time + 5min → match_date - 10min
+ */
+getLockTime(match) {
+    if (!match) return null;
+    if (match.lock_time)     return new Date(match.lock_time);
+    if (match.deadline_time) return new Date(new Date(match.deadline_time).getTime() + 5 * 60 * 1000);
+    if (match.match_date)    return new Date(new Date(match.match_date).getTime() - 10 * 60 * 1000);
+    return null;
+  },
+
+  /**
+   * True when predictions are still editable.
+   * Respects: abandoned, completed, is_locked, deadline/lock_time.
+   */
+  isPredOpen(match) {
+    if (!match) return false;
+    if (match.is_locked || match._client_locked) return false;
+    const s = match.status;
+    if (s === 'abandoned' || s === 'completed' || s === 'processed') return false;
+    const lock = this.getLockTime(match);
+    if (lock && lock <= new Date()) return false;
+    return true;
+  },
+
+  /** Seconds until lock; null if no deadline. */
+  secondsToLock(match) {
+    const lock = this.getLockTime(match);
+    if (!lock) return null;
+    return Math.floor((lock - new Date()) / 1000);
+  },
+
+  // ----------------------------------------------------------
+  //  PREDICTION CRUD  (enhanced)
+  // ----------------------------------------------------------
+
+  /**
+   * Submit or update a prediction.
+   * Validates: lock state, duplicate prevention, target range.
+   */
+  async submitPrediction({ matchId, teamId, targetScore, winner }, match) {
+    // Always fetch fresh match state before writing
+    const freshMatch = match || await this.fetchMatch(matchId);
+    if (!freshMatch) throw new Error('Match not found.');
+
+    if (!this.isPredOpen(freshMatch)) {
+      throw new Error('Predictions are locked for this match.');
+    }
+    if (freshMatch.status === 'abandoned') {
+      throw new Error('This match was abandoned — no predictions accepted.');
+    }
+    if (!targetScore || targetScore < 50 || targetScore > 500) {
+      throw new Error('Target score must be between 50 and 500.');
+    }
+    if (!winner) {
+      throw new Error('Please select a predicted winner.');
+    }
+
+    const { data, error } = await sb.from('predictions').upsert({
+      match_id:          matchId,
+      fantasy_team_id:   teamId,
+      target_score:      parseInt(targetScore),
+      predicted_winner:  winner,
+      submitted_at:      new Date().toISOString(),
+      is_locked:         false,
+    }, { onConflict: 'match_id,fantasy_team_id' }).select().single();
+
+    if (error) throw error;
+    await this._log('prediction_submitted', 'team', teamId, null, data);
+    return data;
+  },
+
+  // ----------------------------------------------------------
+  //  IMPACT ACTIVATION  (abandoned-match aware)
+  // ----------------------------------------------------------
+
+  /**
+   * Fetch current activation for a specific match.
+   */
+  async fetchImpactActivation(teamId, matchId) {
+    const { data, error } = await sb.from('impact_activations')
+      .select('is_active')
+      .eq('fantasy_team_id', teamId)
+      .eq('match_id', matchId)
+      .maybeSingle();
+    if (error) throw error;
+    return !!data?.is_active;
+  },
+
+  /**
+   * Fetch season-wide impact stats.
+   * Abandoned matches are excluded from used count.
+   */
+  async fetchImpactStats(teamId) {
+    // Join with matches to exclude abandoned
+    const { data, error } = await sb.from('impact_activations')
+      .select('id, is_active, match:matches(status)')
+      .eq('fantasy_team_id', teamId)
+      .eq('is_active', true);
+    if (error) throw error;
+
+    const rows = data || [];
+    // Only count non-abandoned matches
+    const used = rows.filter(function(r) {
+      return r.match && r.match.status !== 'abandoned';
+    }).length;
+
+    return { used, total: 8, remaining: Math.max(0, 8 - used) };
+  },
+
+  /**
+   * Submit (or update) impact activation for a match.
+   * Validates: limit (excluding abandoned), match open state.
+   */
+  async submitImpactActivation(teamId, matchId, isActive) {
+    if (isActive) {
+      const stats = await this.fetchImpactStats(teamId);
+      if (stats.used >= stats.total) {
+        throw new Error('Impact Player limit reached (8/8 used across non-abandoned matches).');
+      }
+    }
+    const { error } = await sb.from('impact_activations').upsert(
+      { fantasy_team_id: teamId, match_id: matchId, is_active: isActive },
+      { onConflict: 'fantasy_team_id,match_id' }
+    );
+    if (error) throw error;
+    await this._log('impact_activation', 'team', teamId, null, { matchId, isActive });
+    return true;
+  },
+
+  // ----------------------------------------------------------
+  //  PREDICTION POINTS  (DLS / abandoned aware)
+  // ----------------------------------------------------------
+
+  /**
+   * Calculate prediction points for a completed match.
+   * Handles: DLS revised targets, abandoned (zero), super-over winner.
+   */
+  calcPredictionPoints(pred, match) {
+    if (!pred || !match) return 0;
+
+    // Abandoned → always 0, no exceptions
+    if (match.status === 'abandoned' || match.is_abandoned) return 0;
+
+    let pts = 0;
+    // For DLS matches, actual_target is the DLS-revised target
+    const diff = Math.abs(Number(pred.target_score || 0) - Number(match.actual_target || 0));
+    if      (diff === 0) pts += 250;
+    else if (diff === 1) pts += 150;
+    else if (diff <= 5)  pts += 100;
+    else if (diff <= 10) pts += 50;
+
+    // Winner: super over / tie breaker — match.winner is always the official winner
+    if (pred.predicted_winner === match.winner) pts += 25;
+
+    return pts;
+  },
+
+  // ----------------------------------------------------------
+  //  ADMIN: MATCH MANAGEMENT
+  // ----------------------------------------------------------
+
+  /**
+   * Update match deadline and/or lock_time.
+   * Admin use only.
+   */
+  async extendDeadline(matchId, newDeadlineIso, autoLockMins) {
+    const mins = autoLockMins || 5;
+    const newLock = new Date(new Date(newDeadlineIso).getTime() + mins * 60 * 1000).toISOString();
+    const { data: before } = await sb.from('matches').select('*').eq('id', matchId).maybeSingle();
+    const { data, error } = await sb.from('matches').update({
+      deadline_time: newDeadlineIso,
+      lock_time:     newLock,
+      is_locked:     false,
+      status:        'upcoming',
+    }).eq('id', matchId).select().single();
+    if (error) throw error;
+    await this._log('deadline_extended', 'match', matchId, before, data);
+    return data;
+  },
+
+  /**
+   * Reopen predictions after lock (admin override).
+   * Resets is_locked and clears lock_time to a future value.
+   */
+  async reopenPredictions(matchId, newDeadlineIso) {
+    const { data: before } = await sb.from('matches').select('*').eq('id', matchId).maybeSingle();
+    const deadline = newDeadlineIso || new Date(Date.now() + 30 * 60 * 1000).toISOString();
+    const lockTime = new Date(new Date(deadline).getTime() + 5 * 60 * 1000).toISOString();
+    const { data, error } = await sb.from('matches').update({
+      is_locked:     false,
+      deadline_time: deadline,
+      lock_time:     lockTime,
+      status:        'upcoming',
+    }).eq('id', matchId).select().single();
+    if (error) throw error;
+    await this._log('predictions_reopened', 'match', matchId, before, data);
+    return data;
+  },
+
+  /**
+   * Mark match as abandoned.
+   * Impact activations for this match are NOT counted against the 8-use limit
+   * (handled automatically by fetchImpactStats filtering on match status).
+   */
+  async markMatchAbandoned(matchId) {
+    const { data: before } = await sb.from('matches').select('*').eq('id', matchId).maybeSingle();
+    const { data, error } = await sb.from('matches').update({
+      status:       'abandoned',
+      is_abandoned: true,
+      is_locked:    true,
+    }).eq('id', matchId).select().single();
+    if (error) throw error;
+    await this._log('match_abandoned', 'match', matchId, before, data);
+    return data;
+  },
+
+  /**
+   * Mark DLS applied and set the revised target.
+   */
+  async setDLSTarget(matchId, revisedTarget) {
+    const { data: before } = await sb.from('matches').select('*').eq('id', matchId).maybeSingle();
+    const { data, error } = await sb.from('matches').update({
+      is_dls_applied: true,
+      actual_target:  parseInt(revisedTarget),
+    }).eq('id', matchId).select().single();
+    if (error) throw error;
+    await this._log('dls_target_set', 'match', matchId, before, data);
+    return data;
+  },
+
+  /**
+   * Set match result (winner + target). Locks match automatically.
+   */
+  async setMatchResult(matchId, { winner, actualTarget, isDLS }) {
+    const { data: before } = await sb.from('matches').select('*').eq('id', matchId).maybeSingle();
+    const payload = {
+      winner:         winner,
+      actual_target:  parseInt(actualTarget) || null,
+      is_locked:      true,
+      status:         'completed',
+    };
+    if (isDLS !== undefined) payload.is_dls_applied = !!isDLS;
+    const { data, error } = await sb.from('matches').update(payload).eq('id', matchId).select().single();
+    if (error) throw error;
+    await this._log('match_result_set', 'match', matchId, before, data);
+    return data;
+  },
+
+  // ----------------------------------------------------------
+  //  RECALCULATION (abandoned-aware)
+  // ----------------------------------------------------------
+
+  /**
+   * Enhanced recalculation that skips awarding prediction points
+   * for abandoned matches and ensures impact usages are refunded.
+   */
+  async recalculateMatch(matchId, onLog) {
+    onLog?.('Fetching match details...');
+    const match = await this.fetchMatch(matchId);
+    if (!match) throw new Error('Match not found');
+
+    if (match.status === 'abandoned' || match.is_abandoned) {
+      onLog?.('Match is ABANDONED — prediction points will be 0 for all teams.', 'good');
+    }
+    if (match.is_dls_applied) {
+      onLog?.('DLS applied — using revised target: ' + match.actual_target, 'good');
+    }
+
+    onLog?.('Deleting existing points for this match...');
+    const { error: delErr } = await sb.from('points_log').delete().eq('match_id', matchId);
+    if (delErr) throw delErr;
+
+    onLog?.('Recalculating...');
+    const result = await this.calculateMatchPoints(matchId, onLog);
+    try { await sb.rpc('refresh_match_center', { p_match_id: matchId }); } catch(_) {}
+    onLog?.('Done! Leaderboard refreshed.', 'good');
+    return result;
+  },
+
+  // ----------------------------------------------------------
+  //  ADMIN PANEL: FETCH PREDICTIONS FOR A MATCH
+  // ----------------------------------------------------------
+
+  /**
+   * Fetch all predictions with team info for admin review.
+   */
+  async fetchAllPredictions(matchId) {
+    const { data, error } = await sb.from('predictions')
+      .select('*, team:fantasy_teams(team_name, owner_name)')
+      .eq('match_id', matchId)
+      .order('submitted_at', { ascending: true });
     if (error) throw error;
     return data || [];
+  },
+
+  /**
+   * Admin: lock all predictions for a match immediately.
+   */
+  async lockAllPredictions(matchId) {
+    const { error } = await sb.from('predictions')
+      .update({ is_locked: true })
+      .eq('match_id', matchId);
+    if (error) throw error;
+    await this.lockMatch(matchId);
+    await this._log('predictions_locked', 'match', matchId, null, { matchId });
   },
 };
