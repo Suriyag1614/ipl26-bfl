@@ -167,7 +167,7 @@ function renderFixtureList(){
 async function loadIPLFixtures(event){
   UI.showConfirm({
     icon: '⚡', title: 'Load IPL Fixtures?',
-    msg: 'Insert all 20 IPL 2026 Part 1 fixtures?\nExisting fixtures with same match_no will be skipped.',
+    msg: 'Insert all IPL 2026 fixtures?\nExisting fixtures with same match_no will be skipped.',
     okLabel: 'Load 20 Matches', okClass: 'btn-accent',
     onOk: async function() {
       var btn=event.target; if(btn._busy) return; btn._busy=true; btn.disabled=true; btn.innerHTML='<span class="btn-spin"></span> Loading…';
