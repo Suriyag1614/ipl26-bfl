@@ -6,305 +6,995 @@
   <link rel="icon" type="image/png" href="images/bfl/bfl-logo.png">
   <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPL 2026 - BFL Admin</title>
+  <title>IPL 2026 — BFL Control Room</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    .form-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-    .form-2 .span-2{grid-column:1/-1;}
-    .fx-teams{flex:1;display:flex;align-items:center;gap:6px;font-family:var(--f-ui);font-weight:400;font-size:14px;overflow:hidden;}
-    .fx-team-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;}
-    .stats-saved-row{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;background:var(--bg2);border:1px solid var(--border);margin-bottom:7px;transition:all .18s;cursor:default;}
-    .stats-saved-row:hover{border-color:var(--border-h);transform:translateX(4px);}
-    .section-label{display:flex;align-items:center;gap:7px;font-family:var(--f-ui);font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:1.2px;padding:4px 0 2px;margin:12px 0 8px;grid-column:1/-1;}
-    .override-confirm{background:rgba(200,241,53,.08);border:1px solid rgba(200,241,53,.2);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--green);}
-    /* CSV name lookup chip */
-    .csv-status-ok  {color:var(--green);}
-    .csv-status-err {color:var(--red);}
+    /* ── Admin-specific layout ── */
+    .admin-layout { display:flex; min-height:100vh; padding-top:var(--topbar-h); }
+
+    /* Admin sidebar */
+    .admin-sidebar {
+      width:220px; flex-shrink:0; background:var(--bg1);
+      border-right:1px solid var(--border);
+      position:fixed; top:var(--topbar-h); left:0; bottom:0;
+      overflow-y:auto; z-index:150; display:flex; flex-direction:column;
+      scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+    }
+    .admin-sidebar-section { padding:10px 0 4px; }
+    .admin-sidebar-label {
+      font-family:var(--f-ui); font-size:9px; font-weight:800;
+      text-transform:uppercase; letter-spacing:1.8px; color:var(--text3);
+      padding:0 18px; margin-bottom:4px; display:block;
+    }
+    .admin-nav-link {
+      display:flex; align-items:center; gap:10px;
+      padding:9px 18px; color:var(--text2); text-decoration:none;
+      font-family:var(--f-ui); font-size:13px; font-weight:700;
+      border-left:3px solid transparent; transition:all var(--t);
+      cursor:pointer; background:none; border-top:none; border-right:none; border-bottom:none;
+      width:100%; text-align:left;
+    }
+    .admin-nav-link svg { width:16px; height:16px; stroke:currentColor; flex-shrink:0; }
+    .admin-nav-link:hover { color:var(--text); background:rgba(255,255,255,.04); border-left-color:var(--border-h); }
+    .admin-nav-link.active { color:var(--accent); background:var(--accent-dim); border-left-color:var(--accent); }
+    .admin-nav-link .nav-badge {
+      margin-left:auto; background:var(--red); color:#fff;
+      font-size:10px; font-weight:800; padding:1px 6px; border-radius:10px; min-width:18px; text-align:center;
+    }
+
+    /* Admin content */
+    .admin-content {
+      margin-left:220px; flex:1; padding:24px;
+      min-height:calc(100vh - var(--topbar-h));
+    }
+
+    /* Module panels */
+    .admin-panel { display:none; animation:fade-up .3s ease both; }
+    .admin-panel.active { display:block; }
+
+    /* Stats overview grid */
+    .overview-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(170px,1fr)); gap:14px; margin-bottom:24px; }
+    .overview-card {
+      background:var(--bg1); border:1px solid var(--border); border-radius:var(--radius-lg);
+      padding:18px; position:relative; overflow:hidden; cursor:default;
+      transition:all var(--t);
+    }
+    .overview-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--oc-color,var(--accent)); }
+    .overview-card:hover { border-color:var(--border-h); transform:translateY(-2px); }
+    .overview-card-val { font-family:var(--f-display); font-weight:900; font-size:34px; color:var(--oc-color,var(--accent)); line-height:1; margin-bottom:4px; }
+    .overview-card-lbl { font-family:var(--f-ui); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--text3); }
+    .overview-card-sub { font-size:11px; color:var(--text2); margin-top:4px; }
+
+    /* Two-col layout */
+    .admin-2col { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .admin-3col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+
+    /* Fixture list */
+    .fixture-admin-row {
+      display:flex; align-items:center; gap:10px; padding:10px 14px;
+      border-bottom:1px solid var(--border); transition:background var(--t); cursor:pointer;
+    }
+    .fixture-admin-row:hover { background:rgba(255,255,255,.03); }
+    .fixture-admin-row.selected { background:var(--accent-dim); border-left:3px solid var(--accent); }
+    .fx-match-label { flex:1; min-width:0; }
+    .fx-match-title { font-family:var(--f-ui); font-weight:700; font-size:13px; }
+    .fx-match-sub { font-size:11px; color:var(--text2); margin-top:1px; }
+    .fx-actions { display:flex; gap:6px; opacity:0; transition:opacity var(--t); }
+    .fixture-admin-row:hover .fx-actions { opacity:1; }
+
+    /* Stats entry form */
+    .stats-grid-form { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; }
+    .stat-input-group { }
+    .stat-input-group label { font-family:var(--f-ui); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--text3); display:block; margin-bottom:4px; }
+    .stat-input-group input, .stat-input-group select { width:100%; }
+
+    /* Saved stats rows */
+    .saved-stat-card {
+      display:flex; align-items:center; gap:12px;
+      background:var(--bg2); border:1px solid var(--border);
+      border-radius:10px; padding:10px 14px; margin-bottom:8px;
+      transition:all var(--t);
+    }
+    .saved-stat-card:hover { border-color:var(--border-h); }
+    .saved-stat-player { flex:1; }
+    .saved-stat-player-name { font-family:var(--f-ui); font-weight:700; font-size:14px; }
+    .saved-stat-player-sub { font-size:11px; color:var(--text2); }
+    .saved-stat-pts { font-family:var(--f-display); font-weight:900; font-size:22px; color:var(--accent); min-width:48px; text-align:right; }
+    .saved-stat-breakdown { font-size:11px; color:var(--text2); font-family:var(--f-mono); }
+
+    /* Live points estimator */
+    .live-pts-ring {
+      width:72px; height:72px; border-radius:50%;
+      background:var(--accent-dim); border:3px solid var(--accent);
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--f-display); font-weight:900; font-size:20px; color:var(--accent);
+      flex-shrink:0; transition:all var(--t);
+    }
+
+    /* Player search */
+    .player-search-wrap { position:relative; }
+    .player-search-results {
+      position:absolute; top:100%; left:0; right:0; z-index:50;
+      background:var(--bg1); border:1px solid var(--border); border-radius:var(--radius);
+      max-height:220px; overflow-y:auto; display:none; box-shadow:var(--shadow);
+    }
+    .player-search-results.visible { display:block; }
+    .player-search-item {
+      padding:9px 13px; cursor:pointer; transition:background var(--t);
+      display:flex; align-items:center; gap:8px;
+      font-size:13px; border-bottom:1px solid var(--border);
+    }
+    .player-search-item:last-child { border-bottom:none; }
+    .player-search-item:hover { background:var(--bg3); }
+
+    /* Team selector pills */
+    .team-pill-grid { display:flex; flex-wrap:wrap; gap:8px; }
+    .team-pill {
+      padding:5px 12px; border-radius:20px; border:1px solid var(--border);
+      font-family:var(--f-ui); font-size:12px; font-weight:700; color:var(--text2);
+      cursor:pointer; transition:all var(--t); background:var(--bg2);
+    }
+    .team-pill:hover { border-color:var(--border-h); color:var(--text); }
+    .team-pill.active { background:var(--accent); color:#000; border-color:var(--accent); }
+
+    /* Override / adjustment */
+    .adj-row {
+      display:flex; align-items:center; gap:10px; padding:9px 14px;
+      background:var(--bg2); border:1px solid var(--border); border-radius:9px; margin-bottom:7px;
+    }
+    .adj-pts-badge {
+      font-family:var(--f-display); font-weight:900; font-size:16px;
+      padding:3px 10px; border-radius:6px; flex-shrink:0;
+    }
+    .adj-pts-badge.pos { background:rgba(45,212,191,.15); color:var(--green); }
+    .adj-pts-badge.neg { background:var(--red-dim); color:var(--red); }
+
+    /* Calc log */
+    .calc-log-wrap { background:var(--bg); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; max-height:280px; overflow-y:auto; font-family:var(--f-mono); font-size:12px; }
+    .calc-log-line { padding:2px 0; border-bottom:1px solid rgba(255,255,255,.03); }
+    .calc-log-line.ok { color:var(--green); }
+    .calc-log-line.warn { color:var(--gold); }
+    .calc-log-line.err { color:var(--red); }
+
+    /* Audit log table */
+    .audit-tag { display:inline-block; padding:2px 7px; border-radius:3px; font-family:var(--f-ui); font-size:10px; font-weight:700; }
+
+    /* User management */
+    .user-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+    .user-avatar-sm { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--cyan)); display:flex; align-items:center; justify-content:center; font-family:var(--f-display); font-weight:900; font-size:13px; color:#000; flex-shrink:0; }
+
+    /* Blog editor */
+    .blog-editor textarea { min-height:200px; resize:vertical; font-family:var(--f-body); font-size:14px; line-height:1.7; }
+    .blog-status-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:12px; font-family:var(--f-ui); font-size:11px; font-weight:700; }
+
+    /* Injury / replacement */
+    .injury-player-card {
+      background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius);
+      padding:12px; display:flex; align-items:center; gap:10px; margin-bottom:8px; transition:all var(--t);
+    }
+    .injury-player-card.injured { border-color:rgba(255,77,109,.4); }
+    .injury-player-card.replaced { border-color:rgba(56,217,245,.35); }
+
+    /* Advanced match controls */
+    .adv-ctrl-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px; }
+    .adv-ctrl-title { font-family:var(--f-ui); font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+
+    /* Section header */
+    .section-hdr { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
+    .section-title { font-family:var(--f-display); font-weight:900; font-size:22px; }
+    .section-sub { font-size:13px; color:var(--text2); margin-top:2px; }
+
+    /* Import area */
+    .dropzone-admin { border:2px dashed var(--border); border-radius:var(--radius-lg); padding:24px; text-align:center; cursor:pointer; transition:all var(--t); }
+    .dropzone-admin:hover, .dropzone-admin.drag-over { border-color:var(--accent); background:var(--accent-dim); }
+
+    /* Responsive */
+    @media(max-width:900px) {
+      .admin-sidebar { transform:translateX(-100%); transition:transform .28s ease; }
+      .admin-sidebar.open { transform:none; }
+      .admin-content { margin-left:0; padding:14px; }
+      .admin-2col, .admin-3col { grid-template-columns:1fr; }
+      .overview-grid { grid-template-columns:repeat(2,1fr); }
+      .stats-grid-form { grid-template-columns:repeat(2,1fr); }
+    }
+
+    /* Pending badge */
+    .pending-dot { width:8px; height:8px; border-radius:50%; background:var(--red); display:inline-block; animation:blink-dot 1.4s infinite; }
+
+    /* scroll fix for modals in admin */
+    .modal-body { max-height:60vh; overflow-y:auto; }
+
+    /* form inline row */
+    .form-inline-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+    .form-inline-row .form-group { flex:1; min-width:140px; margin-bottom:0; }
+
+    /* team color chips inside selects */
+    option.team-opt { font-weight:700; }
   </style>
 </head>
 <body>
 <div id="toast-container"></div>
 <div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
 
+<!-- Topbar -->
 <nav class="navbar" id="navbar"></nav>
-<div class="bottom-nav"><div class="bottom-nav-inner" id="bottom-nav-inner"></div></div>
 
-<div class="page-content-wrap" id="page-content-wrap">
-<div class="page-wrap">
-<main class="main">
-<div class="container">
+<!-- Admin layout wrapper -->
+<div class="admin-layout">
 
-  <div class="page-header flex-between">
-    <div><div class="page-title">Control Room</div><div class="page-sub">Fixtures · Stats · Calculate · Blogs · Override</div></div>
-    <div style="display:flex;gap:8px;">
-      <button class="btn btn-ghost btn-sm" onclick="loadAll()">↻ Refresh</button>
-      <a href="leaderboard.html" class="btn btn-ghost btn-sm" target="_blank">Leaderboard ↗</a>
+  <!-- ── Sidebar ── -->
+  <aside class="admin-sidebar" id="admin-sidebar">
+
+    <div class="admin-sidebar-section">
+      <span class="admin-sidebar-label">Overview</span>
+      <button class="admin-nav-link active" onclick="showPanel('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+        Dashboard
+      </button>
     </div>
-  </div>
 
-  <div class="stat-grid mb-24" id="admin-stats">
-    <div class="skel skel-chip"></div><div class="skel skel-chip"></div><div class="skel skel-chip"></div>
-  </div>
-
-  <div class="tabs" style="display:none;">
-    <button class="tab-btn active"  onclick="switchTab('fixtures')">Fixtures</button>
-    <button class="tab-btn"         onclick="switchTab('stats')">Player Stats</button>
-    <button class="tab-btn"         onclick="switchTab('calculate')">Calculate</button>
-    <button class="tab-btn"         onclick="switchTab('override')">Override</button>
-    <button class="tab-btn"         onclick="switchTab('blogs')">Blogs</button>
-    <button class="tab-btn"         onclick="switchTab('teams')">Teams</button>
-  </div>
-
-  <!-- ════ FIXTURES ════ -->
-  <div class="tab-panel active" id="tab-fixtures">
-    <div id="fixtures-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-      <div class="card">
-        <div class="card-title">Add / Edit Fixture</div>
-        <input type="hidden" id="edit-match-id">
-        <div id="edit-badge-wrap" style="display:none;margin-bottom:12px;"><span class="badge badge-accent" id="edit-badge-text">New</span></div>
-        <div class="form-group"><label class="form-label">Match Number</label><input class="form-input font-mono" type="number" id="m-no" min="1" max="74" placeholder="e.g. 1"></div>
-        <div class="form-2">
-          <div class="form-group"><label class="form-label">Home Team</label>
-            <div class="select-logo-wrap"><img id="logo-home" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'"><select class="form-select" id="m-team1" onchange="onTeamChange('home')"><option value="">— Select —</option></select></div></div>
-          <div class="form-group"><label class="form-label">Away Team</label>
-            <div class="select-logo-wrap"><img id="logo-away" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'"><select class="form-select" id="m-team2" onchange="onTeamChange('away')"><option value="">— Select —</option></select></div></div>
-        </div>
-        <div class="form-2">
-          <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="m-date" style="color-scheme:dark;"></div>
-          <div class="form-group"><label class="form-label">Time</label><select class="form-select" id="m-time"><option value="15:30">3:30 PM</option><option value="19:30" selected>7:30 PM</option></select></div>
-        </div>
-        <div class="form-group"><label class="form-label">Venue</label>
-          <select class="form-select" id="m-venue"><option value="">— Select Venue —</option><option>Bengaluru</option><option>Mumbai</option><option>Guwahati</option><option>New Chandigarh</option><option>Lucknow</option><option>Kolkata</option><option>Chennai</option><option>Delhi</option><option>Ahmedabad</option><option>Hyderabad</option><option>Jaipur</option><option>Dharamsala</option><option>Ranchi</option><option>Pune</option></select>
-        </div>
-        <div class="form-group"><label class="form-label">Auto-lock (mins before match)</label><input class="form-input font-mono" type="number" id="m-autolock" value="15" min="5" max="120"></div>
-        <div class="card-title" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">Result (fill after match)</div>
-        <div class="form-2">
-          <div class="form-group"><label class="form-label">Actual Target</label><input class="form-input font-mono" id="m-target" type="number" placeholder="e.g. 185" min="50" max="500"></div>
-          <div class="form-group"><label class="form-label">Winner</label>
-            <div class="select-logo-wrap"><img id="logo-winner" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'"><select class="form-select" id="m-winner" onchange="onTeamChange('winner')"><option value="">— No Result Yet —</option></select></div></div>
-        </div>
-        <div class="form-group"><label class="form-label">Player of Match</label><select class="form-select" id="m-pom"><option value="">— Select Player —</option></select></div>
-        <div style="display:flex;gap:10px;margin-top:6px;">
-          <button class="btn btn-accent" onclick="saveMatch()">Save Fixture</button>
-          <button class="btn btn-ghost"  onclick="clearMatchForm()">Clear</button>
-        </div>
-      </div>
-
-      <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;">
-        <div style="padding:16px 20px 10px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
-          <div class="card-title" style="margin:0;">All Fixtures</div>
-          <button class="btn btn-accent btn-sm" onclick="loadIPLFixtures()">⚡ Load IPL 2026</button>
-        </div>
-        <div style="flex:1;overflow-y:auto;max-height:520px;" id="fixtures-scroll">
-          <div id="fixtures-list"><div style="padding:14px 20px;color:var(--text3);font-size:13px;">Loading…</div></div>
-        </div>
-      </div>
-      <!-- ── CARD: Advanced Match Controls ── -->
-<div class="card" style="grid-column:1/-1;">
-  <div class="card-title" style="margin-bottom:16px;">Advanced Match Controls</div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;">
- 
-    <!-- Extend / Reopen Deadline -->
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
-      <div style="font-family:var(--f-ui);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);margin-bottom:10px;">⏰ Extend Deadline / Reopen</div>
-      <div class="form-group" style="margin-bottom:10px;">
-        <label class="form-label">Match</label>
-        <select class="form-select" id="adv-match-sel" onchange="onAdvMatchChange()">
-          <option value="">— Select match —</option>
-        </select>
-      </div>
-      <div class="form-group" style="margin-bottom:10px;">
-        <label class="form-label">New Deadline (IST)</label>
-        <input class="form-input" type="datetime-local" id="adv-deadline">
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-ghost btn-sm" onclick="extendDeadlineAdmin()">Extend Deadline</button>
-        <button class="btn btn-ghost btn-sm" style="color:var(--cyan);border-color:rgba(56,217,245,.3);" onclick="reopenPredAdmin()">Reopen Predictions</button>
-      </div>
+    <div class="admin-sidebar-section">
+      <span class="admin-sidebar-label">Matches</span>
+      <button class="admin-nav-link" onclick="showPanel('fixtures')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Fixtures
+      </button>
+      <button class="admin-nav-link" onclick="showPanel('results')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+        Results & Winner
+      </button>
+      <button class="admin-nav-link" onclick="showPanel('match-controls')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+        Match Controls
+      </button>
     </div>
- 
-    <!-- DLS + Result -->
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
-      <div style="font-family:var(--f-ui);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-bottom:10px;">🌧 DLS / Result Entry</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;">Uses the same match selected above.</div>
-      <div class="form-group" style="margin-bottom:10px;">
-        <label class="form-label">DLS Revised Target (or actual)</label>
-        <input class="form-input font-mono" type="number" id="adv-target" placeholder="e.g. 167" min="50" max="500">
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-ghost btn-sm" style="color:var(--gold);border-color:rgba(245,200,66,.3);" onclick="setDLSAdmin()">Set DLS Target</button>
-      </div>
-    </div>
- 
-    <!-- Abandon -->
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
-      <div style="font-family:var(--f-ui);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--purple);margin-bottom:10px;">☔ Abandoned Match</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6;">
-        Marks match as abandoned.<br>
-        ✓ No prediction points awarded<br>
-        ✓ Impact uses <strong>not</strong> counted against limit
-      </div>
-      <button class="btn btn-danger btn-sm btn-full" onclick="abandonMatchAdmin()">Mark as Abandoned</button>
-    </div>
- 
-    <!-- Quick Lock / Unlock -->
-    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;">
-      <div style="font-family:var(--f-ui);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--red);margin-bottom:10px;">🔒 Quick Lock Controls</div>
-      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6;">
-        Emergency lock: close predictions immediately.<br>
-        Unlock: reopen with 30-minute window.
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <button class="btn btn-danger btn-sm" onclick="quickLockAdmin()">Lock Now</button>
-        <button class="btn btn-ghost btn-sm" onclick="quickUnlockAdmin()">Unlock (30 min)</button>
-      </div>
-    </div>
- 
-  </div>
- 
-  <!-- Status output -->
-  <div id="adv-ctrl-log" style="margin-top:14px;"></div>
-</div>
-    </div>
-  </div>
 
-  <!-- ════ PLAYER STATS ════ -->
-  <div class="tab-panel" id="tab-stats">
-    <div class="card mb-16">
-      <div class="card-title">Select Match &amp; Player</div>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:200px;"><label class="form-label">Match</label><select class="form-select" id="stats-match-select" onchange="onStatsMatchChange()"><option value="">— Select match —</option></select></div>
-        <div style="flex:1;min-width:200px;"><label class="form-label">Player</label><div class="select-logo-wrap"><img id="logo-stats-player" class="select-logo-icon" src="" alt="" style="display:none;" onerror="this.style.display='none'"><select class="form-select" id="stats-player-select" onchange="prefillStats()"><option value="">— Select player —</option></select></div></div>
-      </div>
+    <div class="admin-sidebar-section">
+      <span class="admin-sidebar-label">Stats & Points</span>
+      <button class="admin-nav-link" onclick="showPanel('stats')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+        Player Stats
+        <span class="nav-badge" id="badge-stats" style="display:none;">!</span>
+      </button>
+      <button class="admin-nav-link" onclick="showPanel('calculate')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        Calculate Points
+      </button>
+      <button class="admin-nav-link" onclick="showPanel('overrides')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Point Overrides
+      </button>
+    </div>
 
-      <!-- CSV Bulk Upload — with player name→ID lookup (Audit Fix #18) -->
-      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
-        <div class="card-title" style="margin-bottom:6px;">Bulk Upload via CSV</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:4px;">Accepts either <strong>player_id</strong> (UUID) or <strong>player_name</strong> columns. Names are auto-matched.</div>
-        <div style="font-size:12px;color:var(--text3);margin-bottom:10px;font-family:var(--f-mono);background:var(--bg3);padding:6px 10px;border-radius:6px;overflow-x:auto;white-space:nowrap;">player_id or player_name, runs, balls_faced, fours, sixes, not_out, wickets, overs_bowled, runs_conceded, maidens, catches, run_outs, stumpings</div>
-        <div class="dropzone" id="csv-dropzone" onclick="document.getElementById('csv-file-input').click()" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="onCSVDrop(event)">
-          <input type="file" id="csv-file-input" accept=".csv" style="display:none;" onchange="onCSVFile(event)">
-          <div class="dropzone-icon">📤</div>
-          <div class="dropzone-label">Drop CSV or click to browse</div>
-          <div class="dropzone-sub">Player name or ID accepted · Max 100 rows</div>
+    <div class="admin-sidebar-section">
+      <span class="admin-sidebar-label">Players & Teams</span>
+      <button class="admin-nav-link" onclick="showPanel('injuries')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Injuries & Replacements
+      </button>
+      <button class="admin-nav-link" onclick="showPanel('squads')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Squad Management
+      </button>
+    </div>
+
+    <div class="admin-sidebar-section">
+      <span class="admin-sidebar-label">Content</span>
+      <button class="admin-nav-link" onclick="showPanel('blogs')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        Blog Manager
+      </button>
+    </div>
+
+    <div class="admin-sidebar-section">
+      <span class="admin-sidebar-label">System</span>
+      <button class="admin-nav-link" onclick="showPanel('users')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Users
+      </button>
+      <button class="admin-nav-link" onclick="showPanel('audit')">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Audit Log
+      </button>
+    </div>
+
+    <div style="padding:14px 18px 24px; margin-top:auto; border-top:1px solid var(--border);">
+      <a href="dashboard.html" class="btn btn-ghost btn-sm btn-full" style="margin-bottom:6px;">← User View</a>
+      <button class="btn btn-danger btn-sm btn-full" onclick="doLogout()">Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ── -->
+  <main class="admin-content" id="admin-content">
+
+    <!-- ════ DASHBOARD ════ -->
+    <div class="admin-panel active" id="panel-dashboard">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Control Room</div>
+          <div class="section-sub" id="dash-greeting">IPL 2026 · BFL Fantasy Admin</div>
         </div>
-        <div id="csv-preview" style="display:none;margin-top:10px;"></div>
+        <button class="btn btn-ghost btn-sm" onclick="loadDashboard()">↻ Refresh</button>
+      </div>
+
+      <div class="overview-grid" id="overview-cards">
+        <div class="skel skel-chip"></div><div class="skel skel-chip"></div>
+        <div class="skel skel-chip"></div><div class="skel skel-chip"></div>
+        <div class="skel skel-chip"></div><div class="skel skel-chip"></div>
+      </div>
+
+      <div class="admin-2col">
+        <!-- Upcoming matches needing attention -->
+        <div class="card">
+          <div class="flex-between mb-12">
+            <div class="card-title">Upcoming Matches</div>
+            <button class="btn btn-ghost btn-sm" onclick="showPanel('fixtures')">Manage →</button>
+          </div>
+          <div id="dash-upcoming"><div class="skel skel-row"></div></div>
+        </div>
+
+        <!-- Matches pending calculation -->
+        <div class="card">
+          <div class="flex-between mb-12">
+            <div class="card-title">Pending Calculation</div>
+            <button class="btn btn-ghost btn-sm" onclick="showPanel('calculate')">Go →</button>
+          </div>
+          <div id="dash-pending"><div class="skel skel-row"></div></div>
+        </div>
+      </div>
+
+      <div class="admin-2col mt-20">
+        <!-- Season leaderboard snapshot -->
+        <div class="card">
+          <div class="flex-between mb-12">
+            <div class="card-title">Top 5 Teams</div>
+            <a href="leaderboard.html" target="_blank" class="btn btn-ghost btn-sm">Full →</a>
+          </div>
+          <div id="dash-leaderboard"><div class="skel skel-row"></div></div>
+        </div>
+
+        <!-- Recent audit actions -->
+        <div class="card">
+          <div class="flex-between mb-12">
+            <div class="card-title">Recent Actions</div>
+            <button class="btn btn-ghost btn-sm" onclick="showPanel('audit')">All →</button>
+          </div>
+          <div id="dash-audit"><div class="skel skel-row"></div></div>
+        </div>
       </div>
     </div>
 
-    <div class="card" id="stats-form-card" style="display:none;">
-      <div class="flex-between mb-16">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <img id="stats-team-logo" style="width:36px;height:36px;object-fit:contain;display:none;" alt="" onerror="this.style.display='none'">
-          <div><div class="card-title" style="margin:0;" id="stats-player-name">Player Stats</div><div style="display:flex;gap:5px;margin-top:4px;" id="stats-player-chips"></div></div>
+    <!-- ════ FIXTURES ════ -->
+    <div class="admin-panel" id="panel-fixtures">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Fixture Management</div>
+          <div class="section-sub">Create, edit, and manage all matches</div>
         </div>
-        <div style="background:var(--accent-dim);border:1px solid rgba(200,241,53,.2);border-radius:9px;padding:7px 14px;">
-          <span style="font-size:11px;color:var(--text2);font-family:var(--f-ui);font-weight:600;text-transform:uppercase;letter-spacing:.8px;">Est. Pts</span>
-          <span id="live-pts" style="font-family:var(--f-display);font-weight:400;color:var(--accent);font-size:22px;margin-left:6px;">0</span>
-        </div>
-      </div>
-      <input type="hidden" id="stat-match-id"><input type="hidden" id="stat-player-id">
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;">
-        <div class="section-label" style="color:#f87171;"><span>🏏</span> Batting</div>
-        <div class="form-group"><label class="form-label">Runs</label><input class="form-input font-mono" type="number" id="s-runs" min="0" oninput="recalcLive()"></div>
-        <div class="form-group"><label class="form-label">Balls Faced</label><input class="form-input font-mono" type="number" id="s-balls" min="0" oninput="recalcLive()"></div>
-        <div class="form-group"><label class="form-label">Fours</label><input class="form-input font-mono" type="number" id="s-fours" min="0" oninput="recalcLive()"></div>
-        <div class="form-group"><label class="form-label">Sixes</label><input class="form-input font-mono" type="number" id="s-sixes" min="0" oninput="recalcLive()"></div>
-        <div class="form-group"><label class="form-label">Not Out?</label><select class="form-select" id="s-notout" onchange="recalcLive()"><option value="">No</option><option value="true">Yes ✓</option></select></div>
-        <div class="section-label" style="color:#60a5fa;"><span>🎳</span> Bowling</div>
-        <div class="form-group"><label class="form-label">Wickets</label><input class="form-input font-mono" type="number" id="s-wickets" min="0" oninput="recalcLive()"></div>
-        <div class="form-group"><label class="form-label">Overs</label><input class="form-input font-mono" type="number" id="s-overs" min="0" step="0.1" oninput="recalcLive()"></div>
-        <div class="form-group"><label class="form-label">Runs Conceded</label><input class="form-input font-mono" type="number" id="s-runsc" min="0" oninput="recalcLive()"></div>
-        <div class="form-group"><label class="form-label">Maidens</label><input class="form-input font-mono" type="number" id="s-maidens" min="0" oninput="recalcLive()"></div>
-        <div class="section-label" style="color:#34d399;"><span>🧤</span> Fielding</div>
-        <div class="form-group"><label class="form-label">Catches</label><input class="form-input font-mono" type="number" id="s-catches" min="0" oninput="recalcLive()"></div>
-        <div class="form-group"><label class="form-label">Run Outs</label><input class="form-input font-mono" type="number" id="s-runouts" min="0" oninput="recalcLive()"></div>
-        <div class="form-group"><label class="form-label">Stumpings</label><input class="form-input font-mono" type="number" id="s-stumpings" min="0" oninput="recalcLive()"></div>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:16px;">
-        <button class="btn btn-accent" onclick="saveStats()">Save Stats</button>
-        <button class="btn btn-ghost"  onclick="clearStatsForm()">Clear</button>
-      </div>
-    </div>
-
-    <div class="card mt-16" id="saved-stats-card" style="display:none;">
-      <div class="card-title">Saved Stats for This Match</div>
-      <div id="saved-stats-list"></div>
-    </div>
-  </div>
-
-  <!-- ════ CALCULATE ════ -->
-  <div class="tab-panel" id="tab-calculate">
-    <div id="calc-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-      <div class="card">
-        <div class="card-title">Calculate &amp; Lock Match</div>
-        <div class="form-group"><label class="form-label">Select Match</label><select class="form-select" id="calc-match-select"><option value="">— Select —</option></select></div>
-        <div style="background:var(--bg3);border-radius:9px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.9;">
-          ✔ Score all 12 players per team<br>✔ Apply C 2× · VC 1.5× · Impact 3× multipliers<br>✔ Score predictions (target diff + winner)<br>✔ Refresh leaderboard + lock match
-        </div>
-        <button class="btn btn-gold btn-full mb-8" id="calc-btn" onclick="calculatePoints()" style="font-size:16px;padding:14px;">⚡ Calculate &amp; Lock</button>
-        <button class="btn btn-danger btn-full" id="recalc-btn" onclick="recalculate()" style="font-size:14px;">↻ Recalculate (delete &amp; redo)</button>
-      </div>
-      <div class="card">
-        <div class="card-title">Calculation Log</div>
-        <div class="calc-log" id="calc-log" style="min-height:240px;"><div class="calc-log-line" style="color:var(--text3);">Awaiting calculation…</div></div>
-        <button class="btn btn-ghost btn-sm mt-8" onclick="document.getElementById('calc-log').innerHTML=''">Clear Log</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ════ OVERRIDE ════ -->
-  <div class="tab-panel" id="tab-override">
-    <div class="card" style="max-width:600px;">
-      <div class="card-title">Manual Points Override</div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7;">Manually adjust a team's points for a specific match. Use for scoring corrections or disputes. A log entry is added to the breakdown.</div>
-      <!-- Audit Fix #17: both selects populated by loadAll() before any tab switch -->
-      <div class="form-group"><label class="form-label">Match</label><select class="form-select" id="override-match"><option value="">— Select match —</option></select></div>
-      <div class="form-group"><label class="form-label">Team</label><select class="form-select" id="override-team"><option value="">— Loading… —</option></select></div>
-      <div class="form-group"><label class="form-label">Adjustment (positive or negative)</label><input class="form-input font-mono" type="number" id="override-adj" placeholder="e.g. 50 or -25"></div>
-      <div class="form-group"><label class="form-label">Reason (required)</label><input class="form-input" id="override-reason" placeholder="e.g. Scorer error correction"></div>
-      <button class="btn btn-gold" onclick="submitOverride()">Apply Override</button>
-      <div id="override-log" style="margin-top:14px;"></div>
-    </div>
-  </div>
-
-  <!-- ════ BLOGS ════ -->
-  <div class="tab-panel" id="tab-blogs">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" id="blogs-grid">
-      <div class="card">
-        <div class="card-title">New / Edit Post</div>
-        <input type="hidden" id="blog-id">
-        <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="b-title" placeholder="Post title…"></div>
-        <div class="form-group"><label class="form-label">Excerpt</label><input class="form-input" id="b-excerpt" placeholder="One-line summary shown in the blog list…"></div>
-        <div class="form-group"><label class="form-label">Category</label>
-          <select class="form-select" id="b-category"><option value="general">General</option><option value="preview">Match Preview</option><option value="tips">Strategy Tips</option><option value="announcement">Announcement</option><option value="recap">Match Recap</option></select></div>
-        <div class="form-group"><label class="form-label">Content</label><textarea class="form-input" id="b-content" style="min-height:180px;resize:vertical;" placeholder="Write your post here…&#10;&#10;Blank lines become paragraph breaks."></textarea></div>
-        <div class="form-group" style="display:flex;align-items:center;gap:10px;"><input type="checkbox" id="b-published" style="width:16px;height:16px;accent-color:var(--accent);"><label style="font-size:14px;color:var(--text2);">Publish immediately</label></div>
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-accent" onclick="saveBlogAdmin()">Save Post</button>
-          <button class="btn btn-danger btn-sm" id="del-blog-btn" style="display:none;" onclick="deleteBlogAdmin()">Delete</button>
-          <button class="btn btn-ghost" onclick="clearBlogForm()">Clear</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadIPLFixtures()">⚡ Bulk Load IPL 2026</button>
+          <button class="btn btn-accent btn-sm" onclick="openFixtureModal()">+ New Match</button>
         </div>
       </div>
-      <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;">
-        <div style="padding:16px 20px 10px;flex-shrink:0;"><div class="card-title" style="margin:0;">All Posts</div></div>
-        <div style="flex:1;overflow-y:auto;max-height:520px;" id="blog-admin-list"><div style="padding:20px;color:var(--text3);font-size:13px;">Loading…</div></div>
+
+      <div class="admin-2col">
+        <!-- Fixture list -->
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div style="padding:14px 18px 10px; display:flex; align-items:center; gap:10px;">
+            <input class="form-input" id="fixture-search" placeholder="Search matches…" oninput="filterFixtures(this.value)" style="flex:1;">
+            <select class="form-select" id="fixture-status-filter" onchange="filterFixtures()" style="width:130px;">
+              <option value="">All Status</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="locked">Locked</option>
+              <option value="completed">Completed</option>
+              <option value="abandoned">Abandoned</option>
+            </select>
+          </div>
+          <div id="fixture-list" style="max-height:560px;overflow-y:auto;">
+            <div style="padding:20px;text-align:center;color:var(--text3);">Loading…</div>
+          </div>
+        </div>
+
+        <!-- Fixture edit form -->
+        <div class="card" id="fixture-form-card">
+          <div class="card-title" id="fixture-form-title">New Match</div>
+          <input type="hidden" id="fx-id">
+          <div class="form-group"><label class="form-label">Match Number</label>
+            <input class="form-input font-mono" type="number" id="fx-no" placeholder="1"></div>
+          <div class="admin-2col" style="gap:10px;">
+            <div class="form-group"><label class="form-label">Home Team</label>
+              <select class="form-select" id="fx-team1" onchange="syncWinnerOpts()"></select></div>
+            <div class="form-group"><label class="form-label">Away Team</label>
+              <select class="form-select" id="fx-team2" onchange="syncWinnerOpts()"></select></div>
+          </div>
+          <div class="admin-2col" style="gap:10px;">
+            <div class="form-group"><label class="form-label">Date</label>
+              <input class="form-input" type="date" id="fx-date" style="color-scheme:dark;"></div>
+            <div class="form-group"><label class="form-label">Time (IST)</label>
+              <select class="form-select" id="fx-time">
+                <option value="15:30">3:30 PM</option>
+                <option value="19:30" selected>7:30 PM</option>
+              </select></div>
+          </div>
+          <div class="form-group"><label class="form-label">Venue</label>
+            <select class="form-select" id="fx-venue">
+              <option value="">— Select —</option>
+              <option>Bengaluru</option><option>Mumbai</option><option>Guwahati</option>
+              <option>New Chandigarh</option><option>Lucknow</option><option>Kolkata</option>
+              <option>Chennai</option><option>Delhi</option><option>Ahmedabad</option>
+              <option>Hyderabad</option><option>Jaipur</option><option>Dharamsala</option>
+              <option>Ranchi</option><option>Pune</option>
+            </select></div>
+          <div class="form-group"><label class="form-label">Auto-lock (mins before match)</label>
+            <input class="form-input font-mono" type="number" id="fx-autolock" value="15" min="5" max="120"></div>
+          <div class="form-group"><label class="form-label">Status</label>
+            <select class="form-select" id="fx-status">
+              <option value="upcoming">Upcoming</option>
+              <option value="locked">Locked</option>
+              <option value="live">Live</option>
+              <option value="completed">Completed</option>
+              <option value="abandoned">Abandoned</option>
+            </select></div>
+          <div style="display:flex;gap:8px;margin-top:4px;">
+            <button class="btn btn-accent" onclick="saveFixture()">Save Match</button>
+            <button class="btn btn-ghost" onclick="clearFixtureForm()">Clear</button>
+            <button class="btn btn-danger btn-sm" id="fx-delete-btn" style="display:none;margin-left:auto;" onclick="deleteFixture()">Delete</button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- ════ TEAMS ════ -->
-  <div class="tab-panel" id="tab-teams">
-    <div class="card" style="padding:0;overflow:hidden;">
-      <div style="padding:16px 20px 0;"><div class="card-title">All Fantasy Teams</div></div>
-      <div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Team</th><th>Owner</th><th>Matches</th><th>Total Pts</th></tr></thead><tbody id="teams-tbody"><tr><td colspan="5"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody></table></div>
+    <!-- ════ RESULTS ════ -->
+    <div class="admin-panel" id="panel-results">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Match Results</div>
+          <div class="section-sub">Enter final target, winner, Player of Match</div>
+        </div>
+      </div>
+      <div class="admin-2col">
+        <div class="card">
+          <div class="card-title">Set Result</div>
+          <div class="form-group"><label class="form-label">Select Match</label>
+            <select class="form-select" id="res-match-sel" onchange="loadResultForm()">
+              <option value="">— Select match —</option>
+            </select></div>
+          <div id="result-form-body" style="display:none;">
+            <div class="admin-2col" style="gap:10px;">
+              <div class="form-group"><label class="form-label">Actual Target (1st inns +1)</label>
+                <input class="form-input font-mono" type="number" id="res-target" placeholder="e.g. 181" min="50" max="500"></div>
+              <div class="form-group"><label class="form-label">Winner</label>
+                <select class="form-select" id="res-winner">
+                  <option value="">— Select —</option>
+                </select></div>
+            </div>
+            <div class="form-group"><label class="form-label">Player of Match</label>
+              <select class="form-select" id="res-pom"><option value="">— Select —</option></select></div>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;">
+              <label style="display:flex;align-items:center;gap:7px;cursor:pointer;font-size:13px;color:var(--text2);">
+                <input type="checkbox" id="res-dls" style="width:15px;height:15px;accent-color:var(--accent);">
+                DLS Applied (revised target)
+              </label>
+            </div>
+            <div class="form-error" id="res-error" style="min-height:16px;margin-bottom:8px;"></div>
+            <button class="btn btn-accent" onclick="saveResult()">Save Result</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Result Preview</div>
+          <div id="result-preview" style="color:var(--text3);font-size:13px;">Select a match to preview its current result.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ MATCH CONTROLS ════ -->
+    <div class="admin-panel" id="panel-match-controls">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Match Controls</div>
+          <div class="section-sub">Deadlines · Locks · DLS · Abandon</div>
+        </div>
+      </div>
+
+      <div class="card mb-20">
+        <div class="card-title">Select Match</div>
+        <select class="form-select" id="ctrl-match-sel" onchange="loadMatchCtrl()" style="max-width:400px;">
+          <option value="">— Pick a match —</option>
+        </select>
+        <div id="ctrl-match-info" style="margin-top:12px;"></div>
+      </div>
+
+      <div class="admin-3col" id="ctrl-cards" style="display:none;">
+
+        <!-- Extend deadline -->
+        <div class="adv-ctrl-card">
+          <div class="adv-ctrl-title" style="color:var(--cyan);">⏰ Extend Deadline</div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">New Deadline (IST)</label>
+            <input class="form-input" type="datetime-local" id="ctrl-deadline">
+          </div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Lock time = deadline + 5 min automatically</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm" onclick="ctrlExtendDeadline()">Extend</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--cyan);" onclick="ctrlReopen()">Reopen (30 min)</button>
+          </div>
+        </div>
+
+        <!-- DLS + Quick lock -->
+        <div class="adv-ctrl-card">
+          <div class="adv-ctrl-title" style="color:var(--gold);">🌧 DLS / Quick Lock</div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">DLS Revised Target</label>
+            <input class="form-input font-mono" type="number" id="ctrl-dls-target" placeholder="e.g. 167" min="50" max="500">
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm" style="color:var(--gold);" onclick="ctrlSetDLS()">Set DLS</button>
+            <button class="btn btn-danger btn-sm" onclick="ctrlQuickLock()">🔒 Lock Now</button>
+          </div>
+        </div>
+
+        <!-- Abandon -->
+        <div class="adv-ctrl-card">
+          <div class="adv-ctrl-title" style="color:var(--purple);">☔ Special States</div>
+          <div style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.7;">
+            Abandon: no points, impact uses refunded.<br>
+            Mark Live: signals match in progress.
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-danger btn-sm" onclick="ctrlAbandon()">☔ Abandon</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--purple);" onclick="ctrlMarkLive()">⚡ Mark Live</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="ctrl-log" style="margin-top:16px;"></div>
+    </div>
+
+    <!-- ════ PLAYER STATS ════ -->
+    <div class="admin-panel" id="panel-stats">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Player Stats Entry</div>
+          <div class="section-sub">Enter or edit per-match stats per player</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="openCSVModal()">📤 Bulk CSV Upload</button>
+        </div>
+      </div>
+
+      <!-- Match + Player selectors -->
+      <div class="card mb-16">
+        <div class="form-inline-row">
+          <div class="form-group">
+            <label class="form-label">Match</label>
+            <select class="form-select" id="stats-match-sel" onchange="onStatsMatchChange()">
+              <option value="">— Select match —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Filter by Team</label>
+            <select class="form-select" id="stats-team-filter" onchange="filterStatPlayers()">
+              <option value="">Both teams</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:2;">
+            <label class="form-label">Player</label>
+            <div class="player-search-wrap">
+              <input class="form-input" id="stats-player-input" placeholder="Search player name…" autocomplete="off"
+                oninput="searchPlayers(this.value)" onblur="setTimeout(()=>closePlayerSearch(),200)">
+              <div class="player-search-results" id="player-search-results"></div>
+            </div>
+            <input type="hidden" id="stats-player-id">
+          </div>
+        </div>
+        <div id="stats-player-chip" style="display:none;margin-top:8px;"></div>
+      </div>
+
+      <!-- Stats form -->
+      <div class="card" id="stats-form-card" style="display:none;">
+        <div class="flex-between mb-16">
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div class="live-pts-ring" id="live-pts-ring">0</div>
+            <div>
+              <div style="font-family:var(--f-display);font-weight:900;font-size:18px;" id="stats-form-player-name">Player</div>
+              <div style="font-size:12px;color:var(--text2);" id="stats-form-player-sub">Select a player</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm" onclick="clearStatsForm()">Clear</button>
+            <button class="btn btn-accent" onclick="saveStats()">Save Stats</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div class="admin-sidebar-label" style="color:#f87171;padding:0;margin-bottom:8px;">🏏 Batting</div>
+          <div class="stats-grid-form">
+            <div class="stat-input-group"><label>Runs</label><input class="form-input font-mono" type="number" id="s-runs" min="0" oninput="recalcLive()"></div>
+            <div class="stat-input-group"><label>Balls Faced</label><input class="form-input font-mono" type="number" id="s-balls" min="0" oninput="recalcLive()"></div>
+            <div class="stat-input-group"><label>Fours</label><input class="form-input font-mono" type="number" id="s-fours" min="0" oninput="recalcLive()"></div>
+            <div class="stat-input-group"><label>Sixes</label><input class="form-input font-mono" type="number" id="s-sixes" min="0" oninput="recalcLive()"></div>
+            <div class="stat-input-group"><label>Not Out?</label>
+              <select class="form-select" id="s-notout" onchange="recalcLive()">
+                <option value="">No</option><option value="true">Yes ✓</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+          <div class="admin-sidebar-label" style="color:#60a5fa;padding:0;margin-bottom:8px;">🎳 Bowling</div>
+          <div class="stats-grid-form">
+            <div class="stat-input-group"><label>Wickets</label><input class="form-input font-mono" type="number" id="s-wickets" min="0" oninput="recalcLive()"></div>
+            <div class="stat-input-group"><label>Overs Bowled</label><input class="form-input font-mono" type="number" id="s-overs" min="0" step="0.1" oninput="recalcLive()"></div>
+            <div class="stat-input-group"><label>Runs Conceded</label><input class="form-input font-mono" type="number" id="s-runsc" min="0" oninput="recalcLive()"></div>
+            <div class="stat-input-group"><label>Maidens</label><input class="form-input font-mono" type="number" id="s-maidens" min="0" oninput="recalcLive()"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="admin-sidebar-label" style="color:#34d399;padding:0;margin-bottom:8px;">🧤 Fielding</div>
+          <div class="stats-grid-form">
+            <div class="stat-input-group"><label>Catches</label><input class="form-input font-mono" type="number" id="s-catches" min="0" oninput="recalcLive()"></div>
+            <div class="stat-input-group"><label>Run Outs</label><input class="form-input font-mono" type="number" id="s-runouts" min="0" oninput="recalcLive()"></div>
+            <div class="stat-input-group"><label>Stumpings</label><input class="form-input font-mono" type="number" id="s-stumpings" min="0" oninput="recalcLive()"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved stats for selected match -->
+      <div class="card mt-16" id="saved-stats-card" style="display:none;">
+        <div class="flex-between mb-12">
+          <div class="card-title">Saved Stats — <span id="saved-stats-match-label">Match</span></div>
+          <button class="btn btn-ghost btn-sm" onclick="loadSavedStats()">↻ Refresh</button>
+        </div>
+        <div id="saved-stats-list"></div>
+      </div>
+    </div>
+
+    <!-- ════ CALCULATE ════ -->
+    <div class="admin-panel" id="panel-calculate">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Points Calculation</div>
+          <div class="section-sub">Compute and lock match scores</div>
+        </div>
+      </div>
+
+      <div class="admin-2col">
+        <div class="card">
+          <div class="card-title">Select Match</div>
+          <select class="form-select" id="calc-match-sel" onchange="loadCalcInfo()" style="margin-bottom:14px;">
+            <option value="">— Select match —</option>
+          </select>
+
+          <div id="calc-match-info" style="margin-bottom:16px;"></div>
+
+          <div style="background:var(--bg3);border-radius:9px;padding:14px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:2;">
+            ✔ Score all 12 players per squad<br>
+            ✔ Apply C 2× · VC 1.5× · Impact 3× multipliers<br>
+            ✔ Apply PoM +100 · PoT +500 bonuses<br>
+            ✔ Score predictions (target diff + winner pick)<br>
+            ✔ Merge adjustments · Refresh leaderboard · Lock match
+          </div>
+
+          <button class="btn btn-gold btn-full mb-8" id="calc-btn" onclick="calculatePoints()" style="font-size:15px;padding:14px;">
+            ⚡ Calculate & Lock
+          </button>
+          <button class="btn btn-danger btn-full" id="recalc-btn" onclick="recalculate()" style="font-size:13px;">
+            ↻ Recalculate (Delete & Redo)
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="flex-between mb-10">
+            <div class="card-title">Calculation Log</div>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('calc-log').innerHTML=''">Clear</button>
+          </div>
+          <div class="calc-log-wrap" id="calc-log" style="min-height:280px;">
+            <div class="calc-log-line" style="color:var(--text3);">Select a match and click Calculate…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ OVERRIDES ════ -->
+    <div class="admin-panel" id="panel-overrides">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Point Overrides</div>
+          <div class="section-sub">Manual adjustments — fully audited, non-destructive</div>
+        </div>
+      </div>
+
+      <div class="admin-2col">
+        <div class="card">
+          <div class="card-title">New Adjustment</div>
+          <div class="form-group"><label class="form-label">Match (optional)</label>
+            <select class="form-select" id="ovr-match-sel"><option value="">— Season-wide —</option></select></div>
+          <div class="form-group"><label class="form-label">Team</label>
+            <select class="form-select" id="ovr-team-sel"><option value="">— Select team —</option></select></div>
+          <div class="form-group"><label class="form-label">Points (+/−)</label>
+            <input class="form-input font-mono" type="number" id="ovr-pts" placeholder="e.g. 50 or -25"></div>
+          <div class="form-group"><label class="form-label">Reason (required)</label>
+            <input class="form-input" id="ovr-reason" placeholder="e.g. Scoring correction — misrecorded extras"></div>
+          <div class="form-error" id="ovr-error" style="min-height:16px;margin-bottom:8px;"></div>
+          <button class="btn btn-gold" onclick="submitOverride()">Apply Adjustment</button>
+        </div>
+
+        <div class="card">
+          <div class="flex-between mb-12">
+            <div class="card-title">Adjustment History</div>
+            <button class="btn btn-ghost btn-sm" onclick="loadAdjustments()">↻</button>
+          </div>
+          <div id="adj-history" style="max-height:380px;overflow-y:auto;">
+            <div class="skel skel-row"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ INJURIES ════ -->
+    <div class="admin-panel" id="panel-injuries">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Injuries & Replacements</div>
+          <div class="section-sub">Manage player injuries and temporary replacements across all teams</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadInjuries()">↻ Refresh</button>
+      </div>
+
+      <div class="admin-2col">
+        <!-- Mark injured -->
+        <div class="card">
+          <div class="card-title">Mark Player Injured / Clear</div>
+          <div class="form-group"><label class="form-label">Search Player</label>
+            <div class="player-search-wrap">
+              <input class="form-input" id="inj-player-input" placeholder="Player name…" autocomplete="off"
+                oninput="searchInjuryPlayer(this.value)" onblur="setTimeout(()=>closeInjSearch(),200)">
+              <div class="player-search-results" id="inj-search-results"></div>
+            </div>
+            <input type="hidden" id="inj-player-id">
+          </div>
+          <div id="inj-player-info" style="display:none;" class="injury-player-card mb-8"></div>
+          <div class="form-group"><label class="form-label">Injury Note</label>
+            <input class="form-input" id="inj-note" placeholder="e.g. Hamstring strain — out 2 matches"></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-danger btn-sm" onclick="markInjured()">🏥 Mark Injured</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearInjury()">✓ Clear Injury</button>
+          </div>
+        </div>
+
+        <!-- Assign replacement -->
+        <div class="card">
+          <div class="card-title">Assign Replacement</div>
+          <div class="form-group"><label class="form-label">Team</label>
+            <select class="form-select" id="rep-team-sel" onchange="loadTeamSquad()"><option value="">— Select —</option></select></div>
+          <div class="form-group"><label class="form-label">Injured Player</label>
+            <select class="form-select" id="rep-injured-sel" onchange="loadSameRolePlayers()"><option value="">— Select —</option></select></div>
+          <div class="form-group"><label class="form-label">Replacement Player (same role)</label>
+            <select class="form-select" id="rep-player-sel"><option value="">— Select —</option></select></div>
+          <div class="form-group"><label class="form-label">Reason (optional)</label>
+            <input class="form-input" id="rep-reason" placeholder="Optional note"></div>
+          <button class="btn btn-accent" onclick="setReplacement()">Set Replacement</button>
+        </div>
+      </div>
+
+      <!-- Active injuries/replacements -->
+      <div class="card mt-20">
+        <div class="card-title">Active Injuries & Replacements</div>
+        <div id="injuries-list"><div class="skel skel-row"></div></div>
+      </div>
+    </div>
+
+    <!-- ════ SQUAD MANAGEMENT ════ -->
+    <div class="admin-panel" id="panel-squads">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Squad Management</div>
+          <div class="section-sub">View and manage captain, VC, impact assignments</div>
+        </div>
+      </div>
+
+      <div class="card mb-20">
+        <div class="form-inline-row">
+          <div class="form-group">
+            <label class="form-label">Select Team</label>
+            <select class="form-select" id="squad-team-sel" onchange="loadSquadAdmin()">
+              <option value="">— Select team —</option>
+            </select>
+          </div>
+          <div style="padding-bottom:0;">
+            <button class="btn btn-ghost btn-sm" onclick="loadSquadAdmin()">Load Squad</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="squad-admin-view" style="display:none;">
+        <div class="card">
+          <div class="card-title">Squad Players — <span id="squad-team-label"></span></div>
+          <div class="table-wrap">
+            <table class="data-table" id="squad-admin-table">
+              <thead><tr>
+                <th>Player</th><th>Role</th><th>IPL Team</th>
+                <th>Captain</th><th>VC</th><th>Impact</th><th>OS</th>
+              </tr></thead>
+              <tbody id="squad-admin-tbody"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:8px;">
+            <button class="btn btn-accent btn-sm" onclick="saveSquadRoles()">Save Role Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ BLOGS ════ -->
+    <div class="admin-panel" id="panel-blogs">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Blog Manager</div>
+          <div class="section-sub">Create, review, and publish blog posts</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="showAIGen()">✨ AI Generate</button>
+          <button class="btn btn-accent btn-sm" onclick="newBlogPost()">+ New Post</button>
+        </div>
+      </div>
+
+      <!-- AI gen panel -->
+      <div id="ai-gen-panel" class="card mb-16" style="display:none;background:rgba(167,139,250,.06);border-color:rgba(167,139,250,.3);">
+        <div class="card-title" style="color:var(--purple);">✨ AI Blog Generator</div>
+        <div class="admin-2col" style="gap:10px;">
+          <div class="form-group"><label class="form-label">Topic / Title</label>
+            <input class="form-input" id="ai-title" placeholder="e.g. CSK vs RCB Preview"></div>
+          <div class="form-group"><label class="form-label">Category</label>
+            <select class="form-select" id="ai-category">
+              <option value="preview">Match Preview</option><option value="recap">Match Recap</option>
+              <option value="tips">Strategy Tips</option><option value="announcement">Announcement</option>
+            </select></div>
+        </div>
+        <div class="form-group"><label class="form-label">Context / Notes (optional)</label>
+          <input class="form-input" id="ai-context" placeholder="Extra context for the AI…"></div>
+        <button class="btn btn-ghost btn-sm" id="ai-gen-btn" onclick="generateAIBlog()">
+          <span id="ai-gen-icon">✨</span> Generate Draft
+        </button>
+      </div>
+
+      <div class="admin-2col">
+        <!-- Blog list -->
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div style="padding:14px 18px 10px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm active" id="bfilt-all" onclick="filterBlogs('all',this)">All</button>
+            <button class="btn btn-ghost btn-sm" id="bfilt-draft" onclick="filterBlogs('draft',this)">Drafts</button>
+            <button class="btn btn-ghost btn-sm" id="bfilt-published" onclick="filterBlogs('published',this)">Published</button>
+          </div>
+          <div id="blog-admin-list" style="max-height:540px;overflow-y:auto;">
+            <div style="padding:20px;text-align:center;color:var(--text3);">Loading…</div>
+          </div>
+        </div>
+
+        <!-- Blog editor -->
+        <div class="card blog-editor">
+          <div class="card-title" id="blog-editor-title">New Post</div>
+          <input type="hidden" id="blog-id">
+          <div class="form-group"><label class="form-label">Title</label>
+            <input class="form-input" id="b-title" placeholder="Post title…"></div>
+          <div class="form-group"><label class="form-label">Excerpt</label>
+            <input class="form-input" id="b-excerpt" placeholder="One-line preview…"></div>
+          <div class="admin-2col" style="gap:10px;">
+            <div class="form-group"><label class="form-label">Category</label>
+              <select class="form-select" id="b-category">
+                <option value="general">General</option><option value="preview">Match Preview</option>
+                <option value="tips">Strategy Tips</option><option value="announcement">Announcement</option>
+                <option value="recap">Match Recap</option>
+              </select></div>
+            <div class="form-group"><label class="form-label">Status</label>
+              <select class="form-select" id="b-status">
+                <option value="draft">Draft</option><option value="review">Under Review</option>
+                <option value="published">Published</option>
+              </select></div>
+          </div>
+          <div class="form-group"><label class="form-label">Content</label>
+            <textarea class="form-input" id="b-content" style="min-height:180px;resize:vertical;" placeholder="Write post here…"></textarea></div>
+          <div class="form-error" id="blog-error" style="min-height:16px;margin-bottom:8px;"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-accent btn-sm" onclick="saveBlog()">Save</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--green);" onclick="publishBlog()">🚀 Publish</button>
+            <button class="btn btn-danger btn-sm" id="blog-delete-btn" style="display:none;" onclick="deleteBlog()">Delete</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearBlogForm()">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ USERS ════ -->
+    <div class="admin-panel" id="panel-users">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">User Management</div>
+          <div class="section-sub">View teams, manage access</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="loadUsers()">↻ Refresh</button>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr>
+              <th>#</th><th>Team Name</th><th>Owner</th>
+              <th>Rank</th><th>Points</th><th>Matches</th><th>Actions</th>
+            </tr></thead>
+            <tbody id="users-tbody"><tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════ AUDIT LOG ════ -->
+    <div class="admin-panel" id="panel-audit">
+      <div class="section-hdr">
+        <div>
+          <div class="section-title">Audit Log</div>
+          <div class="section-sub">Full history of all admin actions</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <select class="form-select" id="audit-filter" onchange="loadAuditLog()" style="width:180px;">
+            <option value="">All Actions</option>
+            <option value="stat_entry">Stat Entry</option>
+            <option value="match_edit">Match Edit</option>
+            <option value="adjustment">Adjustment</option>
+            <option value="injury_set">Injury</option>
+            <option value="replacement_created">Replacement</option>
+            <option value="blog_published">Blog</option>
+            <option value="match_abandoned">Abandoned</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="loadAuditLog()">↻</button>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div class="table-wrap">
+          <table class="data-table" style="min-width:600px;">
+            <thead><tr>
+              <th>Time</th><th>Action</th><th>Entity</th><th>ID</th><th>By</th><th>Undo</th>
+            </tr></thead>
+            <tbody id="audit-tbody"><tr><td colspan="6"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── CSV UPLOAD MODAL ── -->
+<div class="modal-overlay" id="csv-modal" style="display:none;" onclick="if(event.target===this)closeCSVModal()">
+  <div class="modal-card" style="max-width:580px;">
+    <div class="modal-header">
+      <div class="modal-title">Bulk Stats Upload (CSV)</div>
+      <button class="modal-close" onclick="closeCSVModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:8px;background:var(--bg3);padding:8px 12px;border-radius:6px;font-family:var(--f-mono);overflow-x:auto;white-space:nowrap;">
+        player_name, runs, balls_faced, fours, sixes, not_out, wickets, overs_bowled, runs_conceded, maidens, catches, run_outs, stumpings
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px;">Also accepts <code>player_id</code> (UUID) instead of name. Match selected in stats panel.</div>
+      <div class="dropzone-admin" id="csv-dropzone"
+        onclick="document.getElementById('csv-file-input').click()"
+        ondragover="event.preventDefault();this.classList.add('drag-over')"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="onCSVDrop(event)">
+        <input type="file" id="csv-file-input" accept=".csv" style="display:none;" onchange="onCSVFile(event)">
+        <div style="font-size:28px;margin-bottom:8px;">📤</div>
+        <div style="font-family:var(--f-ui);font-weight:700;color:var(--text2);">Drop CSV or click to browse</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px;">Max 100 rows</div>
+      </div>
+      <div id="csv-preview" style="display:none;margin-top:12px;"></div>
     </div>
   </div>
-
-</div><!-- /container -->
-</main>
 </div>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js" crossorigin="anonymous"></script>
@@ -318,12 +1008,11 @@
   <div class="footer-divider"></div>
   <div class="footer-content">
     <div class="footer-logos">
-      <img src="images\bfl\bfl-logo.png" alt="BFL Logo" class="footer-logo footer-logo-bfl">
-      <img src="images\ipl\ipl-logo.png" alt="IPL Logo" class="footer-logo footer-logo-t20">
+      <img src="images/bfl/bfl-logo.png" alt="BFL Logo" class="footer-logo footer-logo-bfl">
+      <img src="images/ipl/ipl-logo.png"  alt="IPL Logo" class="footer-logo footer-logo-t20">
     </div>
     <p class="footer-copy">Copyright 2026 BFL. All rights reserved.</p>
   </div>
 </footer>
-</div>
 </body>
 </html>

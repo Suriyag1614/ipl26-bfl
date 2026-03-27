@@ -120,6 +120,9 @@ CREATE TABLE public.matches (
   deadline_time timestamp with time zone,
   auto_lock_mins integer DEFAULT 15,
   status text DEFAULT 'upcoming'::text CHECK (status = ANY (ARRAY['upcoming'::text, 'locked'::text, 'live'::text, 'completed'::text, 'processed'::text])),
+  lock_time timestamp with time zone,
+  is_abandoned boolean NOT NULL DEFAULT false,
+  is_dls_applied boolean NOT NULL DEFAULT false,
   CONSTRAINT matches_pkey PRIMARY KEY (id),
   CONSTRAINT matches_player_of_match_fkey FOREIGN KEY (player_of_match) REFERENCES public.players(id)
 );
