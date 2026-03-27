@@ -54,3 +54,6 @@ const Auth = {
     return teamName.toLowerCase().replace(/\s+/g, '_') + '@bfl.in';
   },
 };
+
+// Expose for inline handlers / other scripts
+window.Auth = Auth;

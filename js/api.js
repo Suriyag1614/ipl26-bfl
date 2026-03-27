@@ -142,11 +142,19 @@ const API = {
   },
 
   async upsertMatch(match) {
-    if (!match.deadline_time && match.match_date) {
-      const d = new Date(match.match_date);
-      d.setMinutes(d.getMinutes() - (match.auto_lock_mins || 15));
-      match.deadline_time = d.toISOString();
+    if (match.match_date) {
+      // Auto-lock means "minutes after match start"
+      if (!match.deadline_time) {
+        const d = new Date(match.match_date);
+        d.setMinutes(d.getMinutes() + (match.auto_lock_mins || 15));
+        match.deadline_time = d.toISOString();
+      }
+      // Keep lock_time aligned to deadline + 5 min if not explicitly set
+      if (!match.lock_time && match.deadline_time) {
+        match.lock_time = new Date(new Date(match.deadline_time).getTime() + 5 * 60 * 1000).toISOString();
+      }
     }
+
     const { data: before } = await sb.from('matches').select('*').eq('id', match.id || '').maybeSingle();
     const { data, error } = await sb.from('matches').upsert(match, { onConflict: 'id' }).select().single();
     if (error) throw error;
@@ -883,13 +891,17 @@ async fetchTeams() {
 
 /**
  * Returns the effective lock timestamp for a match.
- * Priority: explicit lock_time → deadline_time + 5min → match_date - 10min
+ * Priority: explicit lock_time → deadline_time + 5min → match_date + auto_lock_mins + 5min
  */
 getLockTime(match) {
     if (!match) return null;
     if (match.lock_time)     return new Date(match.lock_time);
     if (match.deadline_time) return new Date(new Date(match.deadline_time).getTime() + 5 * 60 * 1000);
-    if (match.match_date)    return new Date(new Date(match.match_date).getTime() - 10 * 60 * 1000);
+    // Fallback: if deadline_time is missing, use match start + auto_lock_mins + 5 min
+    if (match.match_date) {
+      const mins = Number(match.auto_lock_mins || 15);
+      return new Date(new Date(match.match_date).getTime() + (mins * 60 * 1000) + (5 * 60 * 1000));
+    }
     return null;
   },
 
@@ -1190,3 +1202,6 @@ getLockTime(match) {
     await this._log('predictions_locked', 'match', matchId, null, { matchId });
   },
 };
+
+// Expose for inline usage and cross-file access.
+window.API = API;

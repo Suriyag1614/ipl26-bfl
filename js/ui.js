@@ -409,6 +409,10 @@ const UI = {
   },
 };
 
+// Expose for inline handlers (e.g. onclick="UI.toggleTheme()").
+// Top-level `const UI` is not a `window` property in browsers.
+window.UI = UI;
+
 // PWA Registration
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

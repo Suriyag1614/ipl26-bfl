@@ -67,7 +67,8 @@ async function init() {
   try {
     var sess = await Auth.requireAuth();
     if (!sess) return;
-    if (!Auth.isAdmin(sess.user)) { window.location.href = 'dashboard.html'; return; }
+    var isAdmin = Auth.isAdmin(sess.user);
+    if (!isAdmin) { window.location.href = 'dashboard.html'; return; }
 
     await initNavbar('admin');
 
@@ -383,7 +384,8 @@ async function saveFixture() {
 
   if (!team1||!team2) { UI.toast('Select both teams','warn'); return; }
   var matchDate = date ? new Date(date+'T'+time+':00+05:30').toISOString() : null;
-  var deadline  = matchDate ? new Date(new Date(matchDate).getTime() - al*60000).toISOString() : null;
+  // Auto-lock means "minutes after match start"
+  var deadline  = matchDate ? new Date(new Date(matchDate).getTime() + al*60000).toISOString() : null;
 
   var match = {
     match_title: 'Match '+(no||'') + ' · ' + tShort(team1)+' vs '+tShort(team2),
