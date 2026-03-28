@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#c8f135">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPL 2026 — BFL Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .guide-hero { text-align:center;padding:40px 20px;margin-bottom:32px; }
+    .guide-hero-title { font-family:var(--f-display);font-weight:900;font-size:40px;letter-spacing:.5px;margin-bottom:8px; }
+    .guide-hero-sub { font-size:15px;color:var(--text2);max-width:500px;margin:0 auto; }
+    .guide-section { margin-bottom:40px; }
+    .guide-section-header { display:flex;align-items:center;gap:14px;margin-bottom:20px; }
+    .guide-section-icon { font-size:32px;flex-shrink:0; }
+    .guide-section-title { font-family:var(--f-display);font-weight:900;font-size:24px; }
+    .guide-section-sub { font-size:13px;color:var(--text2);margin-top:3px; }
+    .step-list { display:flex;flex-direction:column;gap:16px; }
+    .step-item { display:flex;align-items:flex-start;gap:16px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;transition:all var(--t);animation:fade-up .4s ease both; }
+    .step-item:hover { border-color:var(--border-h); }
+    .step-num { width:36px;height:36px;border-radius:50%;background:var(--accent);color:#000;font-family:var(--f-display);font-weight:900;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+    .step-content { flex:1; }
+    .step-title { font-family:var(--f-ui);font-weight:700;font-size:14px;margin-bottom:5px; }
+    .step-desc { font-size:13px;color:var(--text2);line-height:1.6; }
+    .rule-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px; }
+    .rule-card { background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;transition:all var(--t);animation:fade-up .4s ease both; }
+    .rule-card:hover { border-color:var(--border-h);transform:translateY(-2px); }
+    .rule-card-icon { font-size:24px;margin-bottom:10px; }
+    .rule-card-title { font-family:var(--f-ui);font-weight:700;font-size:13px;margin-bottom:8px;color:var(--accent); }
+    .rule-card-list { list-style:none;padding:0; }
+    .rule-card-list li { font-size:13px;color:var(--text2);padding:3px 0;display:flex;gap:7px;align-items:flex-start;line-height:1.5; }
+    .rule-card-list li::before { content:'→';color:var(--accent);flex-shrink:0;margin-top:1px; }
+    .pts-table { width:100%;border-collapse:collapse;font-size:14px; }
+    .pts-table th { font-family:var(--f-ui);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text3);padding:10px 14px;text-align:left;border-bottom:2px solid var(--border); }
+    .pts-table td { padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text2); }
+    .pts-table tr:last-child td { border-bottom:none; }
+    .pts-table .pts-val { font-family:var(--f-mono);font-weight:700;color:var(--accent); }
+    .pts-table .pts-neg { color:var(--red); }
+    .pts-section-title { font-family:var(--f-ui);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);padding:10px 14px;background:var(--bg3);border-bottom:1px solid var(--border); }
+    .example-chip { display:inline-flex;align-items:center;gap:7px;background:var(--accent-dim);border:1px solid rgba(200,241,53,.2);border-radius:8px;padding:8px 14px;font-size:13px;color:var(--text2);margin-top:10px; }
+    .example-chip strong { color:var(--accent); }
+    .impact-viz { display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px; }
+    .impact-box { background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;text-align:center; }
+    .impact-box.on { border-color:var(--cyan);background:rgba(56,217,245,.06); }
+    .impact-box.off { border-color:rgba(255,77,109,.3);background:var(--red-dim); }
+    .impact-mult { font-family:var(--f-display);font-weight:900;font-size:34px; }
+    .impact-box.on .impact-mult { color:var(--cyan); }
+    .impact-box.off .impact-mult { color:var(--red); }
+    @media(max-width:600px) { .guide-hero-title{font-size:28px;} .impact-viz{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+<nav class="navbar" id="navbar"></nav>
+<div class="bottom-nav"><div class="bottom-nav-inner" id="bottom-nav-inner"></div></div>
+
+<div class="page-content-wrap" id="page-content-wrap">
+<div class="page-wrap">
+<main class="main">
+<div class="container">
+
+  <div class="guide-hero">
+    <div class="guide-hero-title">BFL Fantasy Guide</div>
+    <div class="guide-hero-sub">Everything you need to know about how to play, score points, and win the league.</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs" style="margin-bottom:32px;">
+    <button class="tab-btn active" onclick="switchTab('instructions')">📘 How to Play</button>
+    <button class="tab-btn" onclick="switchTab('rules')">📜 Rules</button>
+    <button class="tab-btn" onclick="switchTab('points')">🧮 Points System</button>
+  </div>
+
+  <!-- ════ HOW TO PLAY ════ -->
+  <div class="tab-panel active" id="tab-instructions">
+
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-icon">🚀</div>
+        <div>
+          <div class="guide-section-title">Getting Started</div>
+          <div class="guide-section-sub">Simple steps to begin playing BFL Fantasy Cricket</div>
+        </div>
+      </div>
+      <div class="step-list">
+        <div class="step-item" style="animation-delay:.05s">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Sign in to your team account</div>
+            <div class="step-desc">Use the password provided by your league admin. Select your team from the dropdown on the login page. Each team has a unique password.</div>
+          </div>
+        </div>
+        <div class="step-item" style="animation-delay:.1s">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">View your squad on the My Squad page</div>
+            <div class="step-desc">Your 12-player squad has been set by the admin. You'll see your Captain (2×), Vice-Captain (1.5×), and Impact Player (3× or 0×). These multipliers apply during point calculation.</div>
+          </div>
+        </div>
+        <div class="step-item" style="animation-delay:.15s">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Submit your prediction before the deadline</div>
+            <div class="step-desc">For each match, predict: (1) the target score (first innings total + 1), and (2) which team will win. You can also activate your Impact Player for a 3× multiplier — or keep them OFF to save the usage.</div>
+          </div>
+        </div>
+        <div class="step-item" style="animation-delay:.2s">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-title">Watch the match and check your points</div>
+            <div class="step-desc">Once the admin enters stats and calculates points, your score appears in the leaderboard and your match breakdown. Check Analytics for a deep dive into your season performance.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-icon">🎯</div>
+        <div>
+          <div class="guide-section-title">How Predictions Work</div>
+          <div class="guide-section-sub">Earn bonus points by predicting match outcomes</div>
+        </div>
+      </div>
+      <div class="card mb-16">
+        <div style="font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:14px;">
+          Before each match, you have a window to submit your prediction. The window <strong style="color:var(--text);">closes automatically</strong> at the deadline (usually just before toss). You cannot change your prediction after it locks.
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:14px;">
+            <div style="font-family:var(--f-ui);font-weight:700;font-size:12px;color:var(--accent);margin-bottom:8px;">WHAT TO PREDICT</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.7;">• Target score (Team A total + 1)<br>• Winning team<br>• Impact Player ON or OFF</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:14px;">
+            <div style="font-family:var(--f-ui);font-weight:700;font-size:12px;color:var(--gold);margin-bottom:8px;">POINTS YOU CAN EARN</div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.7;">• Exact target → +250<br>• Off by ±1 → +150<br>• Correct winner → +25</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-icon">⚡</div>
+        <div>
+          <div class="guide-section-title">The Impact Player</div>
+          <div class="guide-section-sub">Your most powerful per-match tool — use it wisely</div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-size:14px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
+          Your squad has one designated <strong style="color:var(--cyan);">Impact Player</strong> (set by the admin). Before each match, you decide whether to <strong style="color:var(--cyan);">activate</strong> them or not.
+        </div>
+        <div class="impact-viz">
+          <div class="impact-box on">
+            <div class="impact-mult">3×</div>
+            <div style="font-family:var(--f-ui);font-weight:700;font-size:13px;color:var(--cyan);margin-top:6px;">Impact ON</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:5px;">Player's base points are multiplied by 3. Uses 1 of your 8 seasonal activations.</div>
+          </div>
+          <div class="impact-box off">
+            <div class="impact-mult">0×</div>
+            <div style="font-family:var(--f-ui);font-weight:700;font-size:13px;color:var(--red);margin-top:6px;">Impact OFF</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:5px;">Player scores 0 for this match. No activation used. Save it for bigger games.</div>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding:12px;background:var(--bg3);border-radius:var(--radius);font-size:13px;color:var(--text2);">
+          ⚠️ <strong style="color:var(--text);">Max 8 activations per season.</strong> Abandoned matches don't count. Plan your activations around strong batting pitches and your player's form.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ════ RULES ════ -->
+  <div class="tab-panel" id="tab-rules">
+
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-icon">👥</div>
+        <div>
+          <div class="guide-section-title">Squad Composition</div>
+          <div class="guide-section-sub">Your team structure and constraints</div>
+        </div>
+      </div>
+      <div class="rule-grid">
+        <div class="rule-card">
+          <div class="rule-card-icon">🏏</div>
+          <div class="rule-card-title">Squad Size</div>
+          <ul class="rule-card-list">
+            <li>Exactly 12 players per squad</li>
+            <li>Squad set by admin via auction</li>
+            <li>No transfers during the season</li>
+            <li>Injured players can be replaced temporarily</li>
+          </ul>
+        </div>
+        <div class="rule-card">
+          <div class="rule-card-icon">🌏</div>
+          <div class="rule-card-title">Overseas Limit</div>
+          <ul class="rule-card-list">
+            <li>Maximum 4 overseas players</li>
+            <li>Same limit as IPL rules</li>
+            <li>Overseas players shown with 🌏 badge</li>
+          </ul>
+        </div>
+        <div class="rule-card">
+          <div class="rule-card-icon">🎭</div>
+          <div class="rule-card-title">Role Requirements</div>
+          <ul class="rule-card-list">
+            <li>Min. 2 Batters</li>
+            <li>Min. 3 Bowlers</li>
+            <li>Min. 2 All-Rounders</li>
+            <li>Min. 1 Wicket-Keeper</li>
+          </ul>
+        </div>
+        <div class="rule-card">
+          <div class="rule-card-icon">👑</div>
+          <div class="rule-card-title">Special Roles</div>
+          <ul class="rule-card-list">
+            <li>Captain: 2× multiplier on all points</li>
+            <li>Vice-Captain: 1.5× multiplier</li>
+            <li>Impact Player: 3× if activated, 0× if not</li>
+            <li>C and VC cannot also be Impact Player</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-icon">⏰</div>
+        <div>
+          <div class="guide-section-title">Prediction Rules</div>
+          <div class="guide-section-sub">Deadlines and what happens when they pass</div>
+        </div>
+      </div>
+      <div class="rule-grid">
+        <div class="rule-card">
+          <div class="rule-card-icon">⏳</div>
+          <div class="rule-card-title">Deadlines</div>
+          <ul class="rule-card-list">
+            <li>Deadline is typically 15 mins before match start</li>
+            <li>Admin can extend or reopen if needed</li>
+            <li>A countdown timer shows when it's closing</li>
+          </ul>
+        </div>
+        <div class="rule-card">
+          <div class="rule-card-icon">🔒</div>
+          <div class="rule-card-title">After Locking</div>
+          <ul class="rule-card-list">
+            <li>Predictions cannot be changed</li>
+            <li>No new predictions accepted</li>
+            <li>Your last submission is final</li>
+          </ul>
+        </div>
+        <div class="rule-card">
+          <div class="rule-card-icon">☔</div>
+          <div class="rule-card-title">Abandoned Matches</div>
+          <ul class="rule-card-list">
+            <li>No prediction points awarded</li>
+            <li>Squad points are also 0</li>
+            <li>Impact activations are refunded (don't count)</li>
+          </ul>
+        </div>
+        <div class="rule-card">
+          <div class="rule-card-icon">🌧</div>
+          <div class="rule-card-title">DLS Matches</div>
+          <ul class="rule-card-list">
+            <li>DLS revised target is used for scoring</li>
+            <li>Prediction scoring applies normally</li>
+            <li>DLS badge shown on match cards</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-icon">⚡</div>
+        <div>
+          <div class="guide-section-title">Impact Player Rules</div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:13px;color:var(--text2);line-height:1.8;">
+          <div>
+            <div style="font-family:var(--f-ui);font-weight:700;color:var(--accent);margin-bottom:8px;">✅ ALLOWED</div>
+            <ul style="list-style:none;padding:0;">
+              <li>→ Toggle ON/OFF before deadline</li>
+              <li>→ Different choice each match</li>
+              <li>→ OFF = save the use for later</li>
+              <li>→ Abandoned matches refund the use</li>
+            </ul>
+          </div>
+          <div>
+            <div style="font-family:var(--f-ui);font-weight:700;color:var(--red);margin-bottom:8px;">❌ NOT ALLOWED</div>
+            <ul style="list-style:none;padding:0;">
+              <li>→ Cannot change after deadline</li>
+              <li>→ Captain cannot be Impact Player</li>
+              <li>→ Vice-Captain cannot be Impact Player</li>
+              <li>→ Only 8 total ON uses per season</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ════ POINTS SYSTEM ════ -->
+  <div class="tab-panel" id="tab-points">
+
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-icon">🏏</div>
+        <div>
+          <div class="guide-section-title">Batting Points</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="pts-table">
+          <thead><tr><th>Event</th><th>Points</th></tr></thead>
+          <tbody>
+            <tr><td>Each run scored</td><td class="pts-val">+1</td></tr>
+            <tr><td>25 runs milestone</td><td class="pts-val">+50</td></tr>
+            <tr><td>50 runs milestone</td><td class="pts-val">+100</td></tr>
+            <tr><td>100 runs milestone</td><td class="pts-val">+200</td></tr>
+            <tr><td>150 runs milestone</td><td class="pts-val">+300</td></tr>
+            <tr><td>10+ boundaries (4s + 6s)</td><td class="pts-val">+100</td></tr>
+            <tr><td>Strike rate ≥ 200 (min 10 balls)</td><td class="pts-val">+100</td></tr>
+            <tr><td>60+ balls faced</td><td class="pts-val">+100</td></tr>
+            <tr><td>Not out</td><td class="pts-val">+25</td></tr>
+            <tr><td>Duck (0 runs, out)</td><td class="pts-val pts-neg">−25</td></tr>
+            <tr><td>Single digit score (1–9, out)</td><td class="pts-val pts-neg">−10</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="example-chip">Example: 65 runs, 42 balls, 3×4, 4×6, not out → <strong>65 + 100(50-milestone) + 100(10 boundaries) + 25(not out) = 290 pts</strong></div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-icon">🎳</div>
+        <div>
+          <div class="guide-section-title">Bowling Points</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="pts-table">
+          <thead><tr><th>Event</th><th>Points</th></tr></thead>
+          <tbody>
+            <tr><td>Each wicket taken</td><td class="pts-val">+50</td></tr>
+            <tr><td>3-wicket haul bonus</td><td class="pts-val">+100</td></tr>
+            <tr><td>5-wicket haul bonus</td><td class="pts-val">+200</td></tr>
+            <tr><td>7-wicket haul bonus</td><td class="pts-val">+300</td></tr>
+            <tr><td>9+ wickets bonus</td><td class="pts-val">+400</td></tr>
+            <tr><td>Maiden over</td><td class="pts-val">+50</td></tr>
+            <tr><td>Economy ≤ 5.00 (min 1 over)</td><td class="pts-val">+100</td></tr>
+            <tr><td>Economy ≥ 10.00</td><td class="pts-val pts-neg">−50</td></tr>
+            <tr><td>0 wickets in 2+ overs</td><td class="pts-val pts-neg">−25</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="example-chip">Example: 3 wickets, 4 overs, 22 runs → <strong>150 (3 wickets) + 100 (3W bonus) + 100 (eco 5.5 — not ≤5) = 250 pts</strong></div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-icon">🧤</div>
+        <div>
+          <div class="guide-section-title">Fielding Points</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="pts-table">
+          <thead><tr><th>Event</th><th>Points</th></tr></thead>
+          <tbody>
+            <tr><td>Catch</td><td class="pts-val">+25</td></tr>
+            <tr><td>3+ catches in a match (bonus)</td><td class="pts-val">+50</td></tr>
+            <tr><td>Run out (direct hit or assist)</td><td class="pts-val">+50</td></tr>
+            <tr><td>Stumping (wicket-keeper)</td><td class="pts-val">+50</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-icon">🏆</div>
+        <div>
+          <div class="guide-section-title">Bonus Points</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="pts-table">
+          <thead><tr><th>Event</th><th>Points</th></tr></thead>
+          <tbody>
+            <tr><td>Player of the Match (PoM)</td><td class="pts-val">+100</td></tr>
+            <tr><td>Player of the Series / Tournament (PoT)</td><td class="pts-val">+500</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-icon">🎯</div>
+        <div>
+          <div class="guide-section-title">Prediction Points</div>
+        </div>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden;">
+        <table class="pts-table">
+          <thead><tr><th>Accuracy</th><th>Points</th></tr></thead>
+          <tbody>
+            <tr class="pts-section-title"><td colspan="2">🎯 Target Score</td></tr>
+            <tr><td>Exact target (diff = 0)</td><td class="pts-val">+250</td></tr>
+            <tr><td>Within ±1 run</td><td class="pts-val">+150</td></tr>
+            <tr><td>Within ±2–5 runs</td><td class="pts-val">+100</td></tr>
+            <tr><td>Within ±6–10 runs</td><td class="pts-val">+50</td></tr>
+            <tr><td>Off by more than 10 runs</td><td class="pts-val">+0</td></tr>
+            <tr class="pts-section-title"><td colspan="2">🏆 Winner Prediction</td></tr>
+            <tr><td>Correct winner</td><td class="pts-val">+25</td></tr>
+            <tr><td>Wrong winner</td><td class="pts-val">+0</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="example-chip">Best possible prediction: Exact target + Correct winner = <strong>+275 points</strong></div>
+    </div>
+
+    <div class="guide-section">
+      <div class="guide-section-header">
+        <div class="guide-section-icon">✖️</div>
+        <div>
+          <div class="guide-section-title">Role Multipliers</div>
+          <div class="guide-section-sub">Applied to squad points only — not prediction or PoM/PoT bonuses</div>
+        </div>
+      </div>
+      <div class="rule-grid">
+        <div class="rule-card" style="text-align:center;">
+          <div style="font-family:var(--f-display);font-weight:900;font-size:36px;color:var(--gold);">2×</div>
+          <div class="rule-card-title">Captain</div>
+          <div style="font-size:13px;color:var(--text2);">All batting, bowling, fielding points doubled. Best if your captain performs well.</div>
+        </div>
+        <div class="rule-card" style="text-align:center;">
+          <div style="font-family:var(--f-display);font-weight:900;font-size:36px;color:var(--cyan);">1.5×</div>
+          <div class="rule-card-title">Vice-Captain</div>
+          <div style="font-size:13px;color:var(--text2);">All points multiplied by 1.5. A good pick if captain fails.</div>
+        </div>
+        <div class="rule-card" style="text-align:center;">
+          <div style="font-family:var(--f-display);font-weight:900;font-size:36px;color:var(--accent);">3×</div>
+          <div class="rule-card-title">Impact (ON)</div>
+          <div style="font-size:13px;color:var(--text2);">Triple points when activated. High risk — if player flops, you lose the activation.</div>
+        </div>
+        <div class="rule-card" style="text-align:center;">
+          <div style="font-family:var(--f-display);font-weight:900;font-size:36px;color:var(--red);">0×</div>
+          <div class="rule-card-title">Impact (OFF)</div>
+          <div style="font-size:13px;color:var(--text2);">Player contributes zero points. Saves the seasonal activation for a better game.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+</main>
+</div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2.39.3/dist/umd/supabase.js" crossorigin="anonymous"></script>
+<script src="js/supabase.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/api.js"></script>
+<script src="js/navbar.js"></script>
+<script>
+'use strict';
+async function init() {
+  var sess = await Auth.requireAuth(); if(!sess) return;
+  await initNavbar('instructions');
+}
+function switchTab(tab) {
+  var order=['instructions','rules','points'];
+  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',order[i]===tab);});
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  var panel = document.getElementById('tab-'+tab);
+  if(panel) panel.classList.add('active');
+}
+init();
+</script>
+</div>
+<footer class="site-footer">
+  <div class="footer-divider"></div>
+  <div class="footer-content">
+    <div class="footer-logos">
+      <img src="images/bfl/bfl-logo.png" alt="BFL" class="footer-logo footer-logo-bfl">
+      <img src="images/ipl/ipl-logo.png"  alt="IPL" class="footer-logo footer-logo-t20">
+    </div>
+    <p class="footer-copy">Copyright 2026 BFL. All rights reserved.</p>
+  </div>
+</footer>
+</body>
+</html>

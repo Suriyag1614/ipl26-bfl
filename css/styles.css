@@ -880,3 +880,170 @@ input:focus + .slider { box-shadow: 0 0 1px var(--cyan); }
   .footer-copy     { font-size: 12px; }
   .footer-content  { padding: 16px 16px 14px; gap: 10px; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   BFL Fantasy IPL 2026 — CSS Additions for Team Panel
+   Add these rules to the END of css/styles.css
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Sidebar section labels ─────────────────────────────────── */
+.sb-section-lbl {
+  display: block;
+  font-family: var(--f-ui); font-size: 9px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 1.8px; color: var(--text3);
+  padding: 14px 18px 4px;
+}
+
+/* ── Topbar right region ─────────────────────────────────────── */
+.topbar-right {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px; flex-wrap: nowrap;
+}
+
+/* ── Sidebar toggle button ──────────────────────────────────── */
+.sb-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 8px;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text2); flex-shrink: 0;
+  transition: all var(--t); cursor: pointer;
+}
+.sb-toggle:hover { background: var(--bg3); color: var(--text); border-color: var(--border-h); }
+.sb-toggle svg   { display: block; }
+
+/* ── Page content shifted when sidebar open (desktop) ──────── */
+@media (min-width: 900px) {
+  .page-content-wrap.sidebar-open {
+    margin-left: var(--sb-w, 220px);
+  }
+}
+
+/* ── Streak cards (analytics) ─────────────────────────────── */
+.streak-card {
+  display: flex; align-items: center; gap: 18px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px 22px;
+  animation: fade-up .4s ease both;
+}
+.streak-card:hover { border-color: var(--border-h); }
+.streak-num   { font-family: var(--f-display); font-weight: 900; font-size: 40px; line-height: 1; min-width: 52px; text-align: center; }
+.streak-label { font-size: 12px; color: var(--text2); margin-top: 3px; }
+
+/* ── Badge cards (analytics) ──────────────────────────────── */
+.badge-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px; text-align: center;
+  transition: all var(--t); animation: fade-up .4s ease both;
+  position: relative; overflow: hidden;
+}
+.badge-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--badge-color, var(--accent)); }
+.badge-card:hover { border-color: var(--badge-color, var(--accent)); transform: translateY(-3px); }
+.badge-card.locked { opacity: .45; filter: grayscale(.8); }
+.badge-icon  { font-size: 32px; display: block; margin-bottom: 8px; }
+.badge-name  { font-family: var(--f-display); font-weight: 800; font-size: 15px; margin-bottom: 5px; }
+.badge-desc  { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+/* ── Chart wrap ─────────────────────────────────────────────── */
+.chart-wrap { position: relative; min-height: 80px; }
+.chart-wrap canvas { display: block; width: 100% !important; border-radius: 8px; }
+
+/* ── Player bar (analytics) ─────────────────────────────────── */
+.player-pts-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.player-pts-name { font-size: 13px; font-weight: 600; min-width: 80px; max-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track   { flex: 1; height: 7px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.bar-fill    { height: 100%; background: var(--accent); border-radius: 4px; transition: width 1s ease; }
+.bar-pts     { font-family: var(--f-mono); font-weight: 700; font-size: 13px; min-width: 36px; text-align: right; }
+
+/* ── My rank banner (leaderboard) ───────────────────────────── */
+.my-rank-banner {
+  display: flex; align-items: center; gap: 20px;
+  padding: 16px 22px;
+  background: var(--accent-dim); border: 1px solid rgba(200,241,53,.25);
+  border-radius: var(--radius-lg); margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+/* ── Rank badges (leaderboard) ──────────────────────────────── */
+.rank-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 50%;
+  font-family: var(--f-display); font-weight: 900; font-size: 13px;
+}
+.rank-1 { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(245,200,66,.3); }
+.rank-2 { background: rgba(148,163,184,.1); color: #94a3b8; border: 1px solid rgba(148,163,184,.2); }
+.rank-3 { background: rgba(180,83,9,.12); color: #b45309; border: 1px solid rgba(180,83,9,.2); }
+.rank-n { background: var(--bg2); color: var(--text3); border: 1px solid var(--border); }
+
+/* ── Guide / Instructions page ──────────────────────────────── */
+.step-item {
+  display: flex; align-items: flex-start; gap: 16px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px;
+  transition: all var(--t); animation: fade-up .4s ease both;
+}
+.step-item:hover { border-color: var(--border-h); }
+.step-num {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--accent); color: #000;
+  font-family: var(--f-display); font-weight: 900; font-size: 16px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.rule-card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 18px;
+  transition: all var(--t); animation: fade-up .4s ease both;
+}
+.rule-card:hover { border-color: var(--border-h); transform: translateY(-2px); }
+.rule-card-icon  { font-size: 24px; margin-bottom: 10px; }
+.rule-card-title { font-family: var(--f-ui); font-weight: 700; font-size: 13px; margin-bottom: 8px; color: var(--accent); }
+.rule-card-list  { list-style: none; padding: 0; }
+.rule-card-list li { font-size: 13px; color: var(--text2); padding: 3px 0; display: flex; gap: 7px; align-items: flex-start; line-height: 1.5; }
+.rule-card-list li::before { content: '→'; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+
+/* ── Points table (guide) ───────────────────────────────────── */
+.pts-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.pts-table th { font-family: var(--f-ui); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+.pts-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text2); }
+.pts-table tr:last-child td { border-bottom: none; }
+.pts-table .pts-val { font-family: var(--f-mono); font-weight: 700; color: var(--accent); }
+.pts-table .pts-neg { color: var(--red); }
+
+/* ── Section divider in pts table ───────────────────────────── */
+.pts-section-title { font-family: var(--f-ui); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; color: var(--text3); padding: 10px 14px; background: var(--bg3); border-bottom: 1px solid var(--border); }
+
+/* ── Example chip (guide) ───────────────────────────────────── */
+.example-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--accent-dim); border: 1px solid rgba(200,241,53,.2);
+  border-radius: 8px; padding: 8px 14px; font-size: 13px; color: var(--text2); margin-top: 10px;
+  flex-wrap: wrap;
+}
+.example-chip strong { color: var(--accent); }
+
+/* ── Metric row (analytics panel) ──────────────────────────── */
+.metric-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.metric-row:last-child { border-bottom: none; }
+.metric-label { font-size: 13px; color: var(--text2); font-family: var(--f-body); }
+.metric-val   { font-family: var(--f-display); font-weight: 800; font-size: 17px; }
+
+/* ── Impact pick rows ───────────────────────────────────────── */
+.impact-pick-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.impact-pick-row:last-child { border-bottom: none; }
+
+/* ── Page grid helpers ──────────────────────────────────────── */
+.col-2-auto { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 700px) { .col-2-auto { grid-template-columns: 1fr; } }
+
+/* ── Dashboard performer cards ──────────────────────────────── */
+.performer-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--bg3); flex-shrink: 0; border: 2px solid var(--border); }
+
+/* ── nav-logo fix ───────────────────────────────────────────── */
+.nav-logo { font-family: var(--f-display); font-weight: 900; font-size: 16px; display: flex; align-items: center; gap: 7px; text-decoration: none; color: var(--text); flex-shrink: 0; }
+.nav-logo-text { display: inline; }
+
+/* ── Light mode overrides ───────────────────────────────────── */
+[data-theme="light"] .streak-card { background: var(--bg2); }
+[data-theme="light"] .rule-card   { background: var(--bg2); }
+[data-theme="light"] .badge-card  { background: var(--bg2); }
+[data-theme="light"] .step-item   { background: var(--bg2); }

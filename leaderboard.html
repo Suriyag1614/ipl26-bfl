@@ -5,10 +5,35 @@
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPL 2026 - BFL Leaderboard</title>
+  <title>IPL 2026 — BFL Standings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .rank-badge { display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;font-family:var(--f-display);font-weight:900;font-size:13px; }
+    .rank-1 { background:var(--gold-dim);color:var(--gold);border:1px solid rgba(245,200,66,.3); }
+    .rank-2 { background:rgba(148,163,184,.1);color:#94a3b8;border:1px solid rgba(148,163,184,.2); }
+    .rank-3 { background:rgba(180,83,9,.12);color:#b45309;border:1px solid rgba(180,83,9,.2); }
+    .rank-n { background:var(--bg2);color:var(--text3);border:1px solid var(--border); }
+    .lb-row { display:grid; grid-template-columns:50px 1fr auto; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid var(--border); transition:background var(--t); cursor:default; }
+    .lb-row:hover { background:rgba(255,255,255,.02); }
+    .lb-row.me { background:rgba(200,241,53,.04); }
+    .lb-row.me .lb-team { color:var(--accent); }
+    .lb-team { font-family:var(--f-ui);font-weight:700;font-size:14px; }
+    .lb-sub { font-size:11px;color:var(--text2);margin-top:1px; }
+    .lb-pts { font-family:var(--f-display);font-weight:900;font-size:20px;color:var(--accent); }
+    .lb-pts-label { font-size:10px;color:var(--text3);text-align:right;font-family:var(--f-ui);font-weight:700;text-transform:uppercase;letter-spacing:.5px; }
+    .podium-wrap { display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:24px;padding:0 8px; }
+    .podium-slot { display:flex;flex-direction:column;align-items:center;gap:6px;flex:1;max-width:140px; }
+    .podium-crown { font-size:24px;line-height:1; }
+    .podium-pts { font-family:var(--f-display);font-weight:900;font-size:17px;color:var(--accent); }
+    .podium-name { font-family:var(--f-display);font-size:12px;font-weight:700;text-align:center;word-break:break-word; }
+    .podium-block { width:100%;border-radius:var(--radius) var(--radius) 0 0;display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:900;font-size:26px;border:1px solid var(--border); }
+    .podium-1 .podium-block { height:100px;background:linear-gradient(180deg,rgba(245,200,66,.2),transparent);border-color:rgba(245,200,66,.4); }
+    .podium-2 .podium-block { height:74px;background:linear-gradient(180deg,rgba(148,163,184,.12),transparent); }
+    .podium-3 .podium-block { height:54px;background:linear-gradient(180deg,rgba(180,83,9,.1),transparent); }
+    .my-rank-banner { display:flex;align-items:center;gap:20px;padding:16px 22px;background:var(--accent-dim);border:1px solid rgba(200,241,53,.25);border-radius:var(--radius-lg);margin-bottom:22px; }
+  </style>
 </head>
 <body>
 <div id="toast-container"></div>
@@ -18,72 +43,65 @@
 
 <div class="page-content-wrap" id="page-content-wrap">
 <div class="page-wrap">
-<main class="main" style="position:relative;z-index:1;">
+<main class="main">
 <div class="container">
 
   <div class="page-header flex-between">
     <div>
-      <div class="page-title">Leaderboard</div>
-      <div class="page-sub">Season standings &amp; per-match rankings</div>
+      <div class="page-title">Standings</div>
+      <div class="page-sub">Season rankings · Match-wise scores</div>
     </div>
     <a href="match-center.html" class="btn btn-ghost btn-sm">Match Center →</a>
   </div>
 
-  <!-- My rank chip -->
-  <div id="my-rank-chip" style="display:none;margin-bottom:24px;">
-    <div class="stat-chip gold" style="display:inline-flex;gap:20px;align-items:center;padding:16px 24px;">
-      <div><div class="stat-chip-val" id="my-rank-val" style="font-size:28px;">—</div><div class="stat-chip-lbl">Your Rank</div></div>
-      <div><div class="stat-chip-val" id="my-pts-val" style="font-size:28px;color:var(--text);">—</div><div class="stat-chip-lbl">Season Pts</div></div>
+  <!-- My rank banner -->
+  <div id="my-rank-banner" style="display:none;" class="my-rank-banner">
+    <div style="font-family:var(--f-display);font-weight:900;font-size:36px;color:var(--accent);line-height:1;" id="my-rank-big">—</div>
+    <div>
+      <div style="font-family:var(--f-ui);font-weight:700;font-size:14px;" id="my-rank-name">—</div>
+      <div style="font-size:12px;color:var(--text2);" id="my-rank-detail">— pts · — matches</div>
+    </div>
+    <div style="margin-left:auto;text-align:right;">
+      <div style="font-size:11px;color:var(--text2);">Season Total</div>
+      <div style="font-family:var(--f-display);font-weight:900;font-size:24px;color:var(--accent);" id="my-rank-pts">—</div>
     </div>
   </div>
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('overall')">Season Standings</button>
-    <button class="tab-btn"        onclick="switchTab('matchwise')">Match-wise</button>
-    <button class="tab-btn"        onclick="switchTab('breakdown')">My Breakdown</button>
+    <button class="tab-btn active" onclick="switchTab('season')">Season</button>
+    <button class="tab-btn" onclick="switchTab('matchwise')">Match-wise</button>
+    <button class="tab-btn" onclick="switchTab('breakdown')">My History</button>
   </div>
 
-  <!-- ════ OVERALL ════ -->
-  <div class="tab-panel active" id="tab-overall">
-    <div id="podium-wrap" style="margin-bottom:28px;"><div class="skel skel-card" style="height:200px;border-radius:16px;"></div></div>
+  <!-- SEASON -->
+  <div class="tab-panel active" id="tab-season">
+    <div id="podium-wrap" style="margin-bottom:20px;">
+      <div class="skel skel-card" style="height:180px;border-radius:16px;"></div>
+    </div>
     <div class="card" style="padding:0;overflow:hidden;">
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead><tr><th style="width:48px;">#</th><th>Team</th><th>Played</th><th>Avg</th><th>Total Pts</th></tr></thead>
-          <tbody id="lb-tbody"><tr><td colspan="5"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
-        </table>
-      </div>
+      <div id="season-lb"><div class="skel skel-row" style="margin:12px;"></div><div class="skel skel-row" style="margin:12px;"></div></div>
     </div>
   </div>
 
-  <!-- ════ MATCH-WISE ════ -->
+  <!-- MATCH-WISE -->
   <div class="tab-panel" id="tab-matchwise">
-    <div class="form-group" style="max-width:320px;">
+    <div class="form-group" style="max-width:320px;margin-bottom:16px;">
       <label class="form-label">Select Match</label>
-      <select class="form-select" id="matchwise-select" onchange="loadMatchLB(this.value)">
+      <select class="form-select" id="mw-match-sel" onchange="loadMatchLB(this.value)">
         <option value="">— Select match —</option>
       </select>
     </div>
-    <div id="matchwise-lb" class="card" style="padding:0;overflow:hidden;display:none;">
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead><tr><th style="width:48px;">#</th><th>Team</th><th>Squad</th><th>Pred</th><th>Total</th></tr></thead>
-          <tbody id="matchwise-tbody"></tbody>
-        </table>
-      </div>
+    <div id="mw-lb-wrap" style="display:none;" class="card" style="padding:0;overflow:hidden;">
+      <div id="mw-lb-inner"></div>
     </div>
-    <div id="matchwise-empty" class="empty-state mt-24" style="display:none;">
-      <div class="empty-state-icon">📊</div>
-      <div class="empty-state-text">Select a match to see its leaderboard</div>
-    </div>
-    <div class="empty-state mt-24" id="matchwise-placeholder">
+    <div id="mw-placeholder" class="empty-state mt-24">
       <div class="empty-state-icon">📊</div>
       <div class="empty-state-text">Select a match above</div>
     </div>
   </div>
 
-  <!-- ════ BREAKDOWN ════ -->
+  <!-- MY HISTORY -->
   <div class="tab-panel" id="tab-breakdown">
     <div class="card" style="padding:0;overflow:hidden;">
       <div class="table-wrap">
@@ -115,93 +133,92 @@ async function init() {
   await initNavbar('leaderboard');
   var team=await Auth.fetchTeam(sess.user.id); if(!team) return;
   _myTeamId=team.id;
-  await Promise.all([loadLeaderboard(),populateMatchSelect()]);
+  await Promise.all([loadLeaderboard(), populateMatchSel()]);
 }
 
 async function loadLeaderboard() {
   try {
-    _lb=await API.fetchLeaderboard();
-    renderPodium(); renderTable();
+    _lb = await API.fetchLeaderboard();
+    renderPodium();
+    renderSeasonTable();
     var myRow=_lb.find(function(r){return r.fantasy_team_id===_myTeamId;});
     if(myRow){
-      document.getElementById('my-rank-chip').style.display='';
-      document.getElementById('my-rank-val').textContent=UI.ordinal(myRow.rank);
-      UI.countUp(document.getElementById('my-pts-val'),myRow.total_points,900);
+      var banner=$('#my-rank-banner'); if(banner) banner.style.display='flex';
+      var ordinal=UI.ordinal(myRow.rank);
+      document.getElementById('my-rank-big').textContent=ordinal;
+      document.getElementById('my-rank-name').textContent=myRow.team?myRow.team.team_name:'—';
+      document.getElementById('my-rank-detail').textContent=myRow.matches_played+' matches played';
+      var ptsEl=document.getElementById('my-rank-pts'); if(ptsEl){ptsEl.textContent=myRow.total_points;UI.countUp(ptsEl,myRow.total_points,900);}
     }
-  } catch(e){UI.toast('Could not load leaderboard','error');}
+  } catch(e){ UI.toast('Could not load leaderboard','error'); }
 }
 
 function renderPodium() {
   var top3=_lb.slice(0,3), wrap=document.getElementById('podium-wrap');
   if(!top3.length){wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">🏆</div><div class="empty-state-text">No results yet</div></div>';return;}
   var order=[top3[1],top3[0],top3[2]].filter(Boolean);
-  var emojis=['🥈','🥇','🥉'], slots=[2,1,3];
-  wrap.innerHTML='<div class="podium">'+
+  var emojis=['🥈','🥇','🥉']; var slots=[2,1,3];
+  wrap.innerHTML='<div class="podium-wrap">'+
     order.map(function(r,i){
-      return '<div class="podium-slot podium-'+slots[i]+'" style="animation:fade-up .4s ease '+(i*.1)+'s both;">' +
-        '<div class="podium-crown">'+emojis[i]+'</div>' +
-        '<div class="podium-pts">'+r.total_points+'</div>' +
-        '<div class="podium-name">'+UI.esc(r.team?r.team.team_name:'—')+'</div>' +
+      return '<div class="podium-slot podium-'+slots[i]+'" style="animation:fade-up .4s ease '+(i*.1)+'s both;">'+
+        '<div class="podium-crown">'+emojis[i]+'</div>'+
+        '<div class="podium-pts">'+r.total_points+'</div>'+
+        '<div class="podium-name">'+UI.esc(r.team?r.team.team_name:'—')+'</div>'+
         '<div class="podium-block">'+slots[i]+'</div>'+
       '</div>';
     }).join('')+
   '</div>';
 }
 
-function renderTable() {
-  var tbody=document.getElementById('lb-tbody');
+function renderSeasonTable() {
   var medals={1:'🥇',2:'🥈',3:'🥉'};
-  if(!_lb.length){tbody.innerHTML='<tr><td colspan="5" class="empty-state">No results yet</td></tr>';return;}
-  tbody.innerHTML=_lb.map(function(r,i){
+  if(!_lb.length){document.getElementById('season-lb').innerHTML='<div class="empty-state" style="padding:24px;"><div class="empty-state-text">No results yet</div></div>';return;}
+  document.getElementById('season-lb').innerHTML=_lb.map(function(r){
     var isMe=r.fantasy_team_id===_myTeamId;
     var avg=r.matches_played?(r.total_points/r.matches_played).toFixed(1):'—';
-    return '<tr class="'+(isMe?'highlight-me':'')+'" style="animation:row-in .28s ease '+(.04*i)+'s both;">' +
-      '<td class="rank">'+(medals[r.rank]||r.rank)+'</td>' +
-      '<td style="font-family:var(--f-ui);font-weight:400;">'+UI.esc(r.team?r.team.team_name:'—')+
-        (r.team&&r.team.owner_name?'<span style="font-size:12px;color:var(--text2);font-weight:400;"> · '+UI.esc(r.team.owner_name)+'</span>':'')+
-        (isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'')+
-      '</td>'+
-      '<td style="color:var(--text2);">'+r.matches_played+'</td>'+
-      '<td class="font-mono">'+avg+'</td>'+
-      '<td class="pts">'+r.total_points+'</td>'+
-    '</tr>';
+    var rCls=r.rank<=3?'rank-'+r.rank:'rank-n';
+    return '<div class="lb-row'+(isMe?' me':'')+'">'+
+      '<div style="display:flex;justify-content:center;"><span class="rank-badge '+rCls+'">'+(medals[r.rank]||r.rank)+'</span></div>'+
+      '<div><div class="lb-team">'+UI.esc(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
+        '<div class="lb-sub">'+r.matches_played+' matches · avg '+avg+'</div></div>'+
+      '<div><div class="lb-pts">'+r.total_points+'</div><div class="lb-pts-label">pts</div></div>'+
+    '</div>';
   }).join('');
 }
 
-async function populateMatchSelect() {
+async function populateMatchSel() {
   var matches=await API.fetchMatches({limit:74});
-  var sel=document.getElementById('matchwise-select');
+  var sel=document.getElementById('mw-match-sel');
   sel.innerHTML='<option value="">— Select match —</option>'+
     matches.filter(function(m){return m.is_locked;}).map(function(m){
-      return '<option value="'+m.id+'">M'+(m.match_no||'')+'  · '+UI.esc(m.match_title||m.team1+' vs '+m.team2)+'</option>';
+      return '<option value="'+m.id+'">M'+(m.match_no||'')+' · '+UI.esc(m.match_title||m.team1+' vs '+m.team2)+'</option>';
     }).join('');
 }
 
 async function loadMatchLB(matchId) {
-  document.getElementById('matchwise-placeholder').style.display='none';
-  document.getElementById('matchwise-empty').style.display='none';
-  document.getElementById('matchwise-lb').style.display='none';
+  document.getElementById('mw-placeholder').style.display='none';
+  document.getElementById('mw-lb-wrap').style.display='none';
   if(!matchId) return;
   try {
     var lb=await API.fetchMatchLeaderboard(matchId);
-    if(!lb.length){document.getElementById('matchwise-empty').style.display='';return;}
-    document.getElementById('matchwise-lb').style.display='';
+    if(!lb.length){document.getElementById('mw-placeholder').style.display='';return;}
+    document.getElementById('mw-lb-wrap').style.display='';
     var medals={1:'🥇',2:'🥈',3:'🥉'};
-    document.getElementById('matchwise-tbody').innerHTML=lb.map(function(r){
+    document.getElementById('mw-lb-inner').innerHTML=lb.map(function(r){
       var isMe=r.fantasy_team_id===_myTeamId;
-      return '<tr class="'+(r.match_rank===1?'highlight-me ':isMe?'highlight-me ':'')+(isMe?'':'')+'">'+
-        '<td class="rank">'+(medals[r.match_rank]||r.match_rank)+'</td>'+
-        '<td style="font-family:var(--f-ui);font-weight:400;">'+UI.esc(r.team?.team_name||'—')+(isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'')+'</td>'+
-        '<td class="font-mono">'+r.squad_points+'</td>'+
-        '<td class="font-mono">'+r.prediction_points+'</td>'+
-        '<td class="pts">'+r.total_points+'</td>'+
-      '</tr>';
+      var rCls=r.match_rank<=3?'rank-'+(r.match_rank):'rank-n';
+      return '<div class="lb-row'+(isMe?' me':'')+'">'+
+        '<div style="display:flex;justify-content:center;"><span class="rank-badge '+rCls+'">'+(medals[r.match_rank]||r.match_rank)+'</span></div>'+
+        '<div><div class="lb-team">'+UI.esc(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
+          '<div class="lb-sub">Squad: '+r.squad_points+' · Pred: '+r.prediction_points+'</div></div>'+
+        '<div><div class="lb-pts">'+r.total_points+'</div><div class="lb-pts-label">pts</div></div>'+
+      '</div>';
     }).join('');
-  } catch(e){UI.toast('Failed to load: '+e.message,'error');}
+  } catch(e){ UI.toast('Failed: '+e.message,'error'); }
 }
 
 function switchTab(tab) {
-  var order=['overall','matchwise','breakdown'];
+  var order=['season','matchwise','breakdown'];
   document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',order[i]===tab);});
   document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
   document.getElementById('tab-'+tab).classList.add('active');
@@ -216,8 +233,8 @@ async function loadBreakdown() {
     var total=logs.reduce(function(s,l){return s+(l.total_points||0);},0);
     tbody.innerHTML=logs.slice().reverse().map(function(l){
       return '<tr>'+
-        '<td style="font-weight:400;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+UI.esc(l.match?(l.match.match_title||l.match.team1+' vs '+l.match.team2):'—')+'</td>'+
-        '<td style="font-size:12px;color:var(--text2);">'+UI.shortDate(l.match&&l.match.match_date)+'</td>'+
+        '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+UI.esc(l.match?(l.match.match_title||l.match.team1+' vs '+l.match.team2):'—')+'</td>'+
+        '<td style="font-size:11px;color:var(--text2);">'+UI.shortDate(l.match&&l.match.match_date)+'</td>'+
         '<td class="font-mono" style="color:#f87171;">'+(l.batting_pts||0)+'</td>'+
         '<td class="font-mono" style="color:#60a5fa;">'+(l.bowling_pts||0)+'</td>'+
         '<td class="font-mono" style="color:#34d399;">'+(l.fielding_pts||0)+'</td>'+
@@ -225,10 +242,13 @@ async function loadBreakdown() {
         '<td class="pts">'+l.total_points+'</td>'+
       '</tr>';
     }).join('')+
-    '<tr style="border-top:2px solid var(--border);"><td colspan="6" style="font-family:var(--f-ui);font-weight:400;text-align:right;color:var(--text2);">Season Total</td><td class="pts">'+total+'</td></tr>';
-  } catch(e){tbody.innerHTML='<tr><td colspan="7" style="color:var(--red);padding:24px;">Failed to load</td></tr>';}
+    '<tr style="border-top:2px solid var(--border);"><td colspan="6" style="text-align:right;font-family:var(--f-ui);font-weight:700;color:var(--text2);">Season Total</td><td class="pts">'+total+'</td></tr>';
+  } catch(e){tbody.innerHTML='<tr><td colspan="7" style="color:var(--red);padding:16px;">Failed to load</td></tr>';}
 }
 
+function $(sel){return document.getElementById(sel)||document.querySelector(sel);}
+function $$(sel){return document.querySelector(sel);}
+var $=function(sel){return sel.startsWith('#')?document.getElementById(sel.slice(1)):document.querySelector(sel);};
 init();
 </script>
 </div>
@@ -236,8 +256,8 @@ init();
   <div class="footer-divider"></div>
   <div class="footer-content">
     <div class="footer-logos">
-      <img src="images\bfl\bfl-logo.png" alt="BFL Logo" class="footer-logo footer-logo-bfl">
-      <img src="images\ipl\ipl-logo.png" alt="IPL Logo" class="footer-logo footer-logo-t20">
+      <img src="images/bfl/bfl-logo.png" alt="BFL" class="footer-logo footer-logo-bfl">
+      <img src="images/ipl/ipl-logo.png"  alt="IPL" class="footer-logo footer-logo-t20">
     </div>
     <p class="footer-copy">Copyright 2026 BFL. All rights reserved.</p>
   </div>

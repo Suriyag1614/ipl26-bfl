@@ -6,14 +6,47 @@
   <link rel="icon" type="image/png" href="images/bfl/bfl-logo.png">
   <meta name="theme-color" content="#c8f135">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IPL 2026 - BFL Dashboard</title>
+  <title>IPL 2026 — BFL Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <style>
     .clickable-row { cursor:pointer; transition:background var(--t); }
     .clickable-row:hover { background:var(--bg3); }
-    .clickable-row:active { background:var(--bg2); }
+    .widget-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-bottom:22px; }
+    .widget-card {
+      background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg);
+      padding:16px; position:relative; overflow:hidden; cursor:default;
+      transition:all var(--t); animation:fade-up .4s ease both;
+    }
+    .widget-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--wc,var(--accent)); }
+    .widget-card:hover { border-color:var(--border-h); transform:translateY(-3px); box-shadow:var(--shadow); }
+    .widget-val { font-family:var(--f-display); font-weight:900; font-size:30px; color:var(--wc,var(--accent)); line-height:1; margin-bottom:5px; }
+    .widget-lbl { font-family:var(--f-ui); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--text3); }
+    .widget-sub { font-size:11px; color:var(--text2); margin-top:4px; }
+    .hero-banner {
+      background:linear-gradient(135deg,var(--bg2) 0%,rgba(200,241,53,.08) 100%);
+      border:1px solid var(--border); border-radius:var(--radius-xl);
+      padding:24px 28px; display:flex; align-items:center; justify-content:space-between;
+      gap:20px; flex-wrap:wrap; margin-bottom:22px; position:relative; overflow:hidden;
+      animation:fade-up .4s ease both;
+    }
+    .hero-banner::after { content:''; position:absolute; right:-40px; top:-40px; width:200px; height:200px; border-radius:50%; background:var(--accent-dim); pointer-events:none; }
+    .hero-greeting { font-size:13px; color:var(--text2); margin-bottom:4px; }
+    .hero-name { font-family:var(--f-display); font-weight:900; font-size:28px; letter-spacing:.3px; }
+    .hero-rank-chip { background:var(--gold-dim); border:1px solid rgba(245,200,66,.3); border-radius:14px; padding:14px 22px; text-align:center; flex-shrink:0; }
+    .hero-rank-val { font-family:var(--f-display); font-size:32px; font-weight:900; color:var(--gold); line-height:1; }
+    .hero-rank-lbl { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; font-family:var(--f-ui); font-weight:700; margin-top:2px; }
+    .next-match-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; animation:fade-up .4s ease .1s both; }
+    .main-2col { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+    .performer-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+    .performer-row:last-child { border-bottom:none; }
+    .performer-avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; background:var(--bg3); flex-shrink:0; border:2px solid var(--border); }
+    .performer-info { flex:1; }
+    .performer-name { font-family:var(--f-ui); font-weight:700; font-size:13px; }
+    .performer-sub { font-size:11px; color:var(--text2); }
+    .performer-pts { font-family:var(--f-display); font-weight:900; font-size:18px; color:var(--accent); }
+    @media(max-width:700px) { .main-2col { grid-template-columns:1fr; } .hero-banner { padding:18px; } }
   </style>
 </head>
 <body>
@@ -27,81 +60,87 @@
 <main class="main" style="position:relative;z-index:1;">
 <div class="container">
 
-  <div class="page-header flex-between">
+  <!-- Hero Banner -->
+  <div class="hero-banner" id="hero-banner">
     <div>
-      <div style="font-size:13px;color:var(--text2);margin-bottom:4px;" id="welcome-date">—</div>
-      <div class="page-title" id="welcome-title">Loading…</div>
-    </div>
-    <div id="rank-chip" style="display:none;">
-      <div style="background:var(--gold-dim);border:1px solid rgba(245,200,66,.25);border-radius:12px;padding:12px 20px;text-align:center;">
-        <div style="font-family:var(--f-display);font-size:28px;font-weight:600;color:var(--gold);" id="rank-val">—</div>
-        <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;">Current Rank</div>
+      <div class="hero-greeting" id="hero-greeting">Good evening · <span id="hero-date">—</span></div>
+      <div class="hero-name" id="hero-name">Loading…</div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;" id="hero-badges">
+        <div class="skel" style="width:80px;height:22px;border-radius:20px;"></div>
       </div>
     </div>
+    <div class="hero-rank-chip" id="hero-rank-chip" style="display:none;">
+      <div class="hero-rank-val" id="hero-rank-val">—</div>
+      <div class="hero-rank-lbl">Current Rank</div>
+    </div>
   </div>
 
-  <!-- Stats -->
-  <div class="stat-grid mb-24" id="stat-grid">
+  <!-- Key Stats -->
+  <div class="widget-grid" id="stat-widgets">
     <div class="skel skel-chip"></div><div class="skel skel-chip"></div>
     <div class="skel skel-chip"></div><div class="skel skel-chip"></div>
   </div>
 
-  <!-- Main grid -->
-  <div id="main-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-
-    <!-- LEFT col -->
+  <div class="main-2col">
+    <!-- Left column -->
     <div style="display:flex;flex-direction:column;gap:16px;">
 
-      <!-- Next match with countdown -->
-      <div class="card" id="next-match-card">
+      <!-- Next match -->
+      <div class="next-match-card" id="next-match-card">
         <div class="card-title">Next Match</div>
-        <div class="skel skel-card" style="height:130px;"></div>
+        <div class="skel skel-card" style="height:110px;"></div>
       </div>
 
-      <!-- Badges earned -->
+      <!-- Performance widgets -->
       <div class="card">
-        <div class="flex-between mb-16">
-          <div class="card-title" style="margin:0;">Badges</div>
-          <a href="analytics.html#badges" class="btn btn-ghost btn-sm">View All</a>
+        <div class="flex-between mb-12">
+          <div class="card-title">This Season</div>
+          <a href="analytics.html" class="btn btn-ghost btn-sm">Analytics →</a>
         </div>
-        <div id="badges-preview" style="display:flex;flex-wrap:wrap;gap:8px;">
-          <div class="skel" style="width:48px;height:48px;border-radius:10px;"></div>
-          <div class="skel" style="width:48px;height:48px;border-radius:10px;"></div>
+        <div id="season-stats-wrap">
+          <div class="skel skel-row"></div><div class="skel skel-row"></div>
         </div>
       </div>
 
       <!-- Impact usage -->
       <div class="card">
         <div class="flex-between mb-8">
-          <div class="card-title" style="margin:0;">Impact Player Uses</div>
-          <a href="predictions.html" class="btn btn-ghost btn-sm">Use Now</a>
+          <div class="card-title">Impact Uses</div>
+          <a href="predictions.html" class="btn btn-ghost btn-sm">Use Now →</a>
         </div>
         <div style="display:flex;align-items:center;gap:16px;">
           <div>
-            <div style="font-family:var(--f-display);font-weight:600;font-size:34px;" id="impact-left">—</div>
-            <div style="font-size:12px;color:var(--text2);">remaining</div>
+            <div style="font-family:var(--f-display);font-weight:900;font-size:38px;line-height:1;" id="impact-remaining">—</div>
+            <div style="font-size:12px;color:var(--text2);">remaining of 8</div>
           </div>
-          <div style="display:flex;gap:4px;flex-wrap:wrap;max-width:150px;" id="impact-pips"></div>
+          <div style="display:flex;gap:5px;flex-wrap:wrap;" id="impact-pips"></div>
         </div>
       </div>
 
     </div>
 
-    <!-- RIGHT col -->
+    <!-- Right column -->
     <div style="display:flex;flex-direction:column;gap:16px;">
 
-      <!-- Recent matches -->
-      <div class="card" style="flex:1;">
-        <div class="flex-between mb-16">
-          <div class="card-title" style="margin:0;">Recent Results</div>
-          <a href="leaderboard.html" class="btn btn-ghost btn-sm">Full Standings</a>
+      <!-- Top & worst performer -->
+      <div class="card">
+        <div class="flex-between mb-12">
+          <div class="card-title">Player Spotlight</div>
+          <a href="squad.html" class="btn btn-ghost btn-sm">Full Squad →</a>
         </div>
-        <div id="history-wrap">
-          <div class="skel skel-row"></div><div class="skel skel-row"></div><div class="skel skel-row"></div>
-        </div>
+        <div id="performer-list"><div class="skel skel-row"></div><div class="skel skel-row"></div></div>
       </div>
 
-      <!-- Latest blog post -->
+      <!-- Recent match results -->
+      <div class="card" style="flex:1;">
+        <div class="flex-between mb-12">
+          <div class="card-title">Recent Results</div>
+          <a href="leaderboard.html" class="btn btn-ghost btn-sm">Standings →</a>
+        </div>
+        <div id="recent-results"><div class="skel skel-row"></div><div class="skel skel-row"></div></div>
+      </div>
+
+      <!-- Latest blog -->
       <div class="card" id="latest-blog-card">
         <div class="card-title">Latest from Blog</div>
         <div class="skel skel-row"></div>
@@ -113,12 +152,10 @@
   <!-- Mini leaderboard -->
   <div class="card mt-24">
     <div class="flex-between mb-16">
-      <div class="card-title" style="margin:0;">Top 5 Teams</div>
-      <a href="leaderboard.html" class="btn btn-ghost btn-sm">View All</a>
+      <div class="card-title">Top 5 Teams</div>
+      <a href="leaderboard.html" class="btn btn-ghost btn-sm">View All →</a>
     </div>
-    <div id="mini-lb-wrap">
-      <div class="skel skel-row"></div><div class="skel skel-row"></div><div class="skel skel-row"></div>
-    </div>
+    <div id="mini-leaderboard"><div class="skel skel-row"></div><div class="skel skel-row"></div></div>
   </div>
 
 </div>
@@ -136,133 +173,177 @@
 var _myTeam=null, _myTeamId=null, _matchLogs=[];
 
 async function init() {
-  var sess=await Auth.requireAuth(); if(!sess) return;
-  if(Auth.isAdmin(sess.user)){window.location.href='admin.html';return;}
+  var sess = await Auth.requireAuth(); if(!sess) return;
+  if(Auth.isAdmin(sess.user)) { window.location.href='admin.html'; return; }
   await initNavbar('dashboard');
-  _myTeam=await Auth.fetchTeam(sess.user.id);
-  if(!_myTeam){UI.toast('Team not linked. Contact admin.','error');return;}
-  _myTeamId=_myTeam.id;
-  document.getElementById('welcome-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  document.getElementById('welcome-title').textContent='Welcome, '+_myTeam.team_name+' 👋';
-  await Promise.all([loadStats(),loadNextMatch(),loadImpactUsage(),loadHistory(),loadMiniLB(),loadBadgesPreview(),loadLatestBlog()]);
+  _myTeam = await Auth.fetchTeam(sess.user.id);
+  if(!_myTeam) { UI.toast('Team not linked. Contact admin.','error'); return; }
+  _myTeamId = _myTeam.id;
+
+  var now = new Date();
+  var hr = now.getHours();
+  var greet = hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
+  document.getElementById('hero-greeting').innerHTML = greet + ' · <span id="hero-date">'+now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})+'</span>';
+  document.getElementById('hero-name').textContent = 'Welcome back, ' + _myTeam.team_name + ' 👋';
+
+  await Promise.all([loadStats(), loadNextMatch(), loadImpact(), loadPerformers(), loadRecent(), loadMiniLB(), loadBlog()]);
   await API.checkAndAwardBadges(_myTeamId);
   fixGrid();
 }
 
 async function loadStats() {
   try {
-    var [lb,breakdown]=await Promise.all([API.fetchLeaderboard(),API.fetchPointsBreakdown(_myTeamId)]);
-    var myRow=lb.find(function(r){return r.fantasy_team_id===_myTeamId;});
-    var rank=myRow?myRow.rank:null, total=myRow?myRow.total_points:0, played=myRow?myRow.matches_played:0;
-    var avg=played?(total/played).toFixed(1):'—';
-    if(rank){document.getElementById('rank-chip').style.display='';UI.el('rank-val').textContent=UI.ordinal(rank);}
-    var grid=document.getElementById('stat-grid');
-    grid.innerHTML=
-      '<div class="stat-chip" style="animation-delay:0s"><div class="stat-chip-val" id="chip-pts">0</div><div class="stat-chip-lbl">Total Points</div></div>'+
-      '<div class="stat-chip gold" style="animation-delay:.07s"><div class="stat-chip-val" style="color:var(--gold);">'+(rank?UI.ordinal(rank):'—')+'</div><div class="stat-chip-lbl">Rank</div></div>'+
-      '<div class="stat-chip cyan" style="animation-delay:.14s"><div class="stat-chip-val" style="color:var(--cyan);">'+played+'</div><div class="stat-chip-lbl">Matches</div></div>'+
-      '<div class="stat-chip" style="animation-delay:.21s"><div class="stat-chip-val">'+avg+'</div><div class="stat-chip-lbl">Avg / Match</div></div>';
-    UI.countUp(document.getElementById('chip-pts'),total,1200);
-  } catch(e){}
+    var [lb, breakdown] = await Promise.all([API.fetchLeaderboard(), API.fetchPointsBreakdown(_myTeamId)]);
+    var myRow = lb.find(function(r){return r.fantasy_team_id===_myTeamId;});
+    var total=myRow?myRow.total_points:0, rank=myRow?myRow.rank:null, played=myRow?myRow.matches_played:0;
+    var avg = played ? (total/played).toFixed(1) : '—';
+    var lastMatch = breakdown.length ? breakdown[breakdown.length-1] : null;
+    var lastPts = lastMatch ? lastMatch.total_points : '—';
+
+    // Rank chip
+    if(rank){ var rc=$('#hero-rank-chip'); rc.style.display=''; $('#hero-rank-val').textContent=UI.ordinal(rank); }
+
+    // Badges
+    var badges = '';
+    if(rank===1) badges+='<span class="badge badge-gold">🥇 Leader</span> ';
+    if(played>0) badges+='<span class="badge badge-accent">'+played+' matches</span> ';
+    $('#hero-badges').innerHTML = badges || '<span style="font-size:12px;color:var(--text3);">Season just started!</span>';
+
+    var widgets = [
+      { val:total, lbl:'Season Points', sub:'All matches combined', c:'var(--accent)', anim:true },
+      { val:rank?UI.ordinal(rank):'—', lbl:'Current Rank', sub:'Out of '+lb.length+' teams', c:'var(--gold)' },
+      { val:lastPts, lbl:'Last Match', sub:lastMatch&&lastMatch.match?'vs '+(lastMatch.match.team1||''):'' , c:'var(--cyan)' },
+      { val:avg, lbl:'Avg / Match', sub:'Points per game', c:'var(--purple)' },
+    ];
+    $('#stat-widgets').innerHTML = widgets.map(function(w,i){
+      return '<div class="widget-card" style="--wc:'+w.c+';animation-delay:'+(i*.08)+'s">'+
+        '<div class="widget-val" id="wval-'+i+'">'+(w.anim?0:w.val)+'</div>'+
+        '<div class="widget-lbl">'+w.lbl+'</div>'+
+        (w.sub?'<div class="widget-sub">'+UI.esc(w.sub)+'</div>':'')+
+      '</div>';
+    }).join('');
+    if(widgets[0].anim) UI.countUp($('#wval-0'), total, 1200);
+
+    // Season stats
+    _matchLogs = breakdown;
+    var batTotal=0,bowlTotal=0,fldTotal=0,predTotal=0;
+    breakdown.forEach(function(l){batTotal+=(l.batting_pts||0);bowlTotal+=(l.bowling_pts||0);fldTotal+=(l.fielding_pts||0);predTotal+=(l.prediction_points||0);});
+    var rows=[
+      {lbl:'🏏 Batting',val:batTotal,c:'#f87171'},
+      {lbl:'🎳 Bowling',val:bowlTotal,c:'#60a5fa'},
+      {lbl:'🧤 Fielding',val:fldTotal,c:'#34d399'},
+      {lbl:'🎯 Predictions',val:predTotal,c:'var(--gold)'},
+    ];
+    var maxV = Math.max(batTotal,bowlTotal,fldTotal,predTotal,1);
+    $('#season-stats-wrap').innerHTML = rows.map(function(r){
+      return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">'+
+        '<div style="min-width:110px;font-size:12px;color:var(--text2);">'+r.lbl+'</div>'+
+        '<div style="flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;">'+
+          '<div style="height:100%;background:'+r.c+';width:'+Math.round((r.val/maxV)*100)+'%;border-radius:3px;transition:width 1s ease;"></div>'+
+        '</div>'+
+        '<div style="min-width:40px;text-align:right;font-family:var(--f-mono);font-size:12px;font-weight:700;">'+r.val+'</div>'+
+      '</div>';
+    }).join('');
+  } catch(e) { console.warn(e); }
 }
 
 async function loadNextMatch() {
-  var card=document.getElementById('next-match-card');
+  var card = $('#next-match-card');
   try {
-    var matches=await API.fetchMatches({upcoming:true,limit:1});
-    var m=matches[0];
-    if(!m){card.innerHTML='<div class="card-title">Next Match</div><div class="empty-state" style="padding:24px;"><div class="empty-state-text">No upcoming matches</div></div>';return;}
-    var pred=await API.fetchPrediction(m.id,_myTeamId);
-    var isOpen=API.isMatchOpen(m);
-    var deadlineBadge=isOpen?('<div class="deadline-badge'+(API.secondsToDeadline(m)<300?' urgent':'')+'" style="margin-top:8px;display:inline-flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Closes <span class="countdown" id="next-match-cd">…</span></div>'):'<span class="match-status status-locked">🔒 Predictions Locked</span>';
-    card.innerHTML=
-      '<div class="flex-between mb-8"><div class="card-title" style="margin:0;">Next Match</div><span class="match-status '+(pred?'status-done':'status-open')+'">'+(pred?'✓ Predicted':'Open')+'</span></div>'+
-      '<div class="match-teams mb-8"><div class="match-team">'+UI.esc(m.team1)+'</div><div class="match-vs">VS</div><div class="match-team">'+UI.esc(m.team2)+'</div></div>'+
-      '<div class="match-meta">'+
-        (m.match_date?'<span>📅 '+UI.fmtDate(m.match_date)+'</span>':'')+
-        (m.venue?'<span>📍 '+UI.esc(m.venue)+'</span>':'')+
-      '</div>'+
-      deadlineBadge+
-      '<a href="predictions.html" class="btn '+(pred?'btn-ghost':'btn-accent')+' btn-full btn-sm" style="margin-top:12px;">'+(pred?'View Prediction':'Make Prediction →')+'</a>';
-    if(isOpen&&m.deadline_time) UI.startCountdown('next-match-cd',m.deadline_time);
-  } catch(e){card.innerHTML='<div class="card-title">Next Match</div><div style="color:var(--text3);font-size:13px;">Could not load.</div>';}
+    var matches = await API.fetchMatches({upcoming:true, limit:1});
+    var m = matches[0];
+    if(!m) { card.innerHTML='<div class="card-title">Next Match</div><div class="empty-state" style="padding:20px;"><div class="empty-state-text">No upcoming matches</div></div>'; return; }
+    var pred = await API.fetchPrediction(m.id, _myTeamId);
+    var isOpen = API.isMatchOpen(m);
+    var cdId = 'next-cd';
+    var deadline_badge = isOpen
+      ? '<div class="deadline-badge'+(API.secondsToDeadline(m)<300?' urgent':'')+'" style="margin-top:8px;display:inline-flex;align-items:center;gap:5px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Closes <span class="countdown" id="'+cdId+'">…</span></div>'
+      : '<span class="match-status status-locked" style="margin-top:8px;display:inline-block;">🔒 Predictions Locked</span>';
+    card.innerHTML =
+      '<div class="flex-between mb-8"><div class="card-title">Next Match</div><span class="match-status '+(pred?'status-done':'status-open')+'">'+(pred?'✓ Predicted':'Open')+'</span></div>'+
+      '<div class="match-teams mb-6"><div class="match-team">'+UI.esc(m.team1)+'</div><div class="match-vs">VS</div><div class="match-team">'+UI.esc(m.team2)+'</div></div>'+
+      '<div class="match-meta">'+(m.match_date?'<span>📅 '+UI.fmtDate(m.match_date)+'</span>':'')+(m.venue?'<span>📍 '+UI.esc(m.venue)+'</span>':'')+'</div>'+
+      deadline_badge+
+      '<a href="predictions.html" class="btn '+(pred?'btn-ghost':'btn-accent')+' btn-sm btn-full" style="margin-top:12px;">'+(pred?'View Prediction':'Make Prediction →')+'</a>';
+    if(isOpen && m.deadline_time) UI.startCountdown(cdId, m.deadline_time);
+  } catch(e) { card.innerHTML='<div class="card-title">Next Match</div><div style="color:var(--text3);font-size:13px;">Could not load.</div>'; }
 }
 
-async function loadImpactUsage() {
+async function loadImpact() {
   try {
-    var stats=await API.fetchImpactStats(_myTeamId);
-    var count=stats.used;
-    var left=Math.max(0,8-count);
-    var el=document.getElementById('impact-left');
-    if(el){el.textContent=left;el.style.color=left===0?'var(--red)':left<=2?'#f59e0b':'var(--accent)';}
+    var stats = await API.fetchImpactStats(_myTeamId);
+    var left = Math.max(0,8-(stats.used||0));
+    var el = $('#impact-remaining');
+    if(el){ el.textContent=left; el.style.color=left===0?'var(--red)':left<=2?'var(--gold)':'var(--accent)'; }
     var pips='';
-    for(var i=0;i<8;i++) pips+='<div title="'+(i<count?'Used':'Available')+'" style="width:16px;height:16px;border-radius:50%;background:'+(i<count?'var(--accent)':'var(--bg3)')+';border:1px solid '+(i<count?'var(--accent)':'var(--border)')+';transition:all var(--t);cursor:default;" onmouseover="this.style.transform=\'scale(1.2)\'" onmouseout="this.style.transform=\'\'"></div>';
-    document.getElementById('impact-pips').innerHTML=pips;
-  } catch(e){}
+    for(var i=0;i<8;i++) pips+='<div title="'+(i<(stats.used||0)?'Used':'Available')+'" style="width:16px;height:16px;border-radius:50%;background:'+(i<(stats.used||0)?'var(--accent)':'var(--bg3)')+';border:1px solid '+(i<(stats.used||0)?'var(--accent)':'var(--border)')+';transition:all var(--t);"></div>';
+    $('#impact-pips').innerHTML = pips;
+  } catch(e) {}
 }
 
-async function loadBadgesPreview() {
+async function loadPerformers() {
   try {
-    var badges=await API.fetchUserBadges(_myTeamId);
-    var el=document.getElementById('badges-preview');
-    if(!badges.length){el.innerHTML='<div style="color:var(--text3);font-size:13px;">No badges yet — keep playing!</div>';return;}
-    el.innerHTML=badges.slice(0,6).map(function(b){
-      return '<div title="'+UI.esc(b.badge?.name||'')+'" style="width:48px;height:48px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;cursor:default;transition:all var(--t);" onmouseover="this.style.transform=\'scale(1.15) rotate(-5deg)\';this.style.borderColor=\''+UI.esc(b.badge?.color||'var(--accent)')+'\'" onmouseout="this.style.transform=\'\';this.style.borderColor=\'var(--border)\'">'+UI.esc(b.badge?.icon||'🏅')+'</div>';
-    }).join('');
-  } catch(e){}
+    var breakdown = await API.fetchPointsBreakdown(_myTeamId);
+    var pts = {};
+    breakdown.forEach(function(l){
+      (l.breakdown&&l.breakdown.players||[]).forEach(function(p){
+        if(!pts[p.name]) pts[p.name]={name:p.name,img:null,ipl:p.ipl_team,role:p.role,total:0};
+        pts[p.name].total += (p.final||0);
+      });
+    });
+    var list = Object.values(pts).sort(function(a,b){return b.total-a.total;});
+    var top = list[0], worst = list[list.length-1];
+    var rows = [];
+    if(top)   rows.push({...top, label:'🔥 Top', color:'var(--accent)'});
+    if(worst && worst!==top) rows.push({...worst, label:'📉 Low', color:'var(--red)'});
+    var squad = await API.fetchSquad(_myTeamId);
+    var avatar = function(name){ var sp=squad.find(function(s){return s.player&&s.player.name===name;}); return sp&&sp.player&&sp.player.image_url?sp.player.image_url:''; };
+    $('#performer-list').innerHTML = !rows.length
+      ? '<div style="color:var(--text3);font-size:13px;padding:8px;">No match data yet.</div>'
+      : rows.map(function(r){
+          return '<div class="performer-row">'+
+            '<img class="performer-avatar" src="'+UI.esc(avatar(r.name)||'https://ui-avatars.com/api/?name='+encodeURIComponent(r.name)+'&background=1a2035&color=c8f135&size=80')+'" alt="" onerror="this.src=\'https://ui-avatars.com/api/?name=P&background=1a2035&color=c8f135\'" >'+
+            '<div class="performer-info"><div class="performer-name">'+UI.esc(r.name)+'</div><div class="performer-sub">'+UI.esc(r.role||'')+' · '+UI.esc(r.ipl||'')+'</div></div>'+
+            '<div style="text-align:right;"><div class="performer-pts" style="color:'+r.color+'">'+Math.round(r.total)+'</div><div style="font-size:10px;color:var(--text3);">'+r.label+'</div></div>'+
+          '</div>';
+        }).join('');
+  } catch(e) {}
 }
 
-async function loadHistory() {
-  var wrap=document.getElementById('history-wrap');
+async function loadRecent() {
   try {
-    var logs=await API.fetchPointsBreakdown(_myTeamId);
-    _matchLogs=logs;
-    if(!logs.length){wrap.innerHTML='<div style="text-align:center;color:var(--text3);padding:24px;font-size:14px;">No match results yet</div>';return;}
-    wrap.innerHTML='<div class="table-wrap"><table class="data-table"><thead><tr><th>Match</th><th>Squad</th><th>Pred</th><th>Total</th></tr></thead><tbody>'+
-      logs.slice().reverse().slice(0,6).map(function(l){
-        return '<tr class="clickable-row" onclick="showMatchBreakdown(\''+l.id+'\')"><td style="font-weight:400;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+UI.esc(l.match?(l.match.match_title||l.match.team1+' vs '+l.match.team2):'—')+'</td><td class="font-mono">'+l.squad_points+'</td><td class="font-mono">'+l.prediction_points+'</td><td class="pts">'+l.total_points+'</td></tr>';
+    var logs = await API.fetchPointsBreakdown(_myTeamId);
+    if(!logs.length){ $('#recent-results').innerHTML='<div style="text-align:center;color:var(--text3);padding:16px;font-size:14px;">No match results yet</div>'; return; }
+    $('#recent-results').innerHTML='<div class="table-wrap"><table class="data-table"><thead><tr><th>Match</th><th>Squad</th><th>Pred</th><th>Total</th></tr></thead><tbody>'+
+      logs.slice().reverse().slice(0,5).map(function(l){
+        return '<tr class="clickable-row" onclick="showBreakdown(\''+l.id+'\')"><td style="font-weight:400;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+UI.esc(l.match?(l.match.match_title||l.match.team1+' vs '+l.match.team2):'—')+'</td><td class="font-mono">'+l.squad_points+'</td><td class="font-mono">'+l.prediction_points+'</td><td class="pts">'+l.total_points+'</td></tr>';
       }).join('')+'</tbody></table></div>';
-  } catch(e){wrap.innerHTML='<div style="color:var(--text3);font-size:13px;">Could not load history.</div>';}
+  } catch(e) {}
 }
 
-function showMatchBreakdown(logId) {
-  var log=_matchLogs.find(function(l){return l.id===logId;});
-  if(!log || !log.breakdown || !log.breakdown.players) { UI.toast('No breakdown data available','warn'); return; }
-  
-  var players=log.breakdown.players;
-  var html='<div class="table-wrap" style="margin:-10px 0;"><table class="data-table" style="font-size:13px;"><thead><tr><th>Player</th><th>Role</th><th>Multi</th><th>Pts</th></tr></thead><tbody>';
-  
+function showBreakdown(logId) {
+  var log = _matchLogs.find(function(l){return l.id===logId;});
+  if(!log||!log.breakdown||!log.breakdown.players){ UI.toast('No breakdown data','warn'); return; }
+  var players = log.breakdown.players;
+  var html='<div class="table-wrap"><table class="data-table" style="font-size:13px;"><thead><tr><th>Player</th><th>Role</th><th>Mult</th><th>Pts</th></tr></thead><tbody>';
   players.forEach(function(p){
-    var roleLabel=p.isCaptain?'(C)':p.isVC?'(VC)':p.isImpact?'(IP)':'';
-    var multi=p.multiplier?(p.multiplier+'x'):'—';
-    var nameStyle=p.isImpact||p.isCaptain||p.isVC?'font-weight:600;color:var(--text)':'';
-    html+='<tr>'+
-      '<td><div style="'+nameStyle+'">'+UI.esc(p.name)+'</div><div style="font-size:10px;color:var(--text3);">'+UI.esc(p.ipl_team||'—')+'</div></td>'+
-      '<td><span style="font-size:11px;font-weight:600;color:var(--text2);">'+UI.esc(p.role?p.role.substring(0,3).toUpperCase():'—')+' <span style="color:var(--accent);">'+roleLabel+'</span></span></td>'+
-      '<td class="font-mono">'+multi+'</td>'+
-      '<td class="font-mono" style="font-weight:600;color:var(--accent);">'+(p.final||p.points||0)+'</td>'+
-    '</tr>';
+    var rl=p.isCaptain?'(C)':p.isVC?'(VC)':p.isImpact?'(IP)':'';
+    html+='<tr><td><div style="font-weight:'+(p.isCaptain||p.isVC||p.isImpact?'700':'400')+'">'+UI.esc(p.name)+'</div><div style="font-size:10px;color:var(--text3);">'+UI.esc(p.ipl_team||'—')+'</div></td>'+
+      '<td style="font-size:11px;">'+UI.esc((p.role||'').substring(0,3).toUpperCase())+' <span style="color:var(--accent);">'+rl+'</span></td>'+
+      '<td class="font-mono">'+(p.multiplier?p.multiplier+'x':'—')+'</td>'+
+      '<td class="font-mono" style="font-weight:700;color:var(--accent);">'+(p.final||0)+'</td></tr>';
   });
-  
-  html+='</tbody></table></div>';
-  html+='<div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">'+
-    '<div style="font-size:12px;color:var(--text3);">Prediction Bonus: <span style="color:var(--text2);font-weight:600;">+'+(log.prediction_points||0)+'</span></div>'+
-    '<div style="font-size:16px;font-weight:600;">Total: <span style="color:var(--accent);">'+log.total_points+'</span></div>'+
-  '</div>';
-
-  UI.showModal({
-    title: log.match?(log.match.match_title||log.match.team1+' vs '+log.match.team2):'Match Breakdown',
-    content: html
-  });
+  html+='</tbody></table></div><div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">'+
+    '<div style="font-size:12px;color:var(--text3);">Prediction: <span style="color:var(--text2);font-weight:600;">+'+(log.prediction_points||0)+'</span></div>'+
+    '<div style="font-size:16px;font-weight:700;">Total: <span style="color:var(--accent);">'+log.total_points+'</span></div></div>';
+  UI.showModal({title:log.match?(log.match.match_title||log.match.team1+' vs '+log.match.team2):'Match Breakdown', content:html});
 }
 
 async function loadMiniLB() {
-  var wrap=document.getElementById('mini-lb-wrap');
   try {
-    var lb=await API.fetchLeaderboard();
-    if(!lb.length){wrap.innerHTML='<div style="color:var(--text3);font-size:13px;">No data yet.</div>';return;}
+    var lb = await API.fetchLeaderboard();
     var medals={1:'🥇',2:'🥈',3:'🥉'};
-    wrap.innerHTML='<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Team</th><th>Played</th><th>Points</th></tr></thead><tbody>'+
+    $('#mini-leaderboard').innerHTML='<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Team</th><th>Played</th><th>Points</th></tr></thead><tbody>'+
       lb.slice(0,5).map(function(r){
         var isMe=r.fantasy_team_id===_myTeamId;
         return '<tr'+(isMe?' class="highlight-me"':'')+'>'+
@@ -271,28 +352,30 @@ async function loadMiniLB() {
           '<td style="color:var(--text2);">'+r.matches_played+'</td>'+
           '<td class="pts">'+r.total_points+'</td></tr>';
       }).join('')+'</tbody></table></div>';
-  } catch(e){}
+  } catch(e) {}
 }
 
-async function loadLatestBlog() {
-  var card=document.getElementById('latest-blog-card');
+async function loadBlog() {
+  var card = $('#latest-blog-card');
   try {
-    var blogs=await API.fetchBlogs({limit:1,publishedOnly:true});
-    var b=blogs[0];
-    if(!b){card.innerHTML='<div class="card-title">Latest from Blog</div><div style="color:var(--text3);font-size:13px;">No posts yet.</div>';return;}
+    var blogs = await API.fetchBlogs({limit:1,publishedOnly:true});
+    var b = blogs[0];
+    if(!b){ card.innerHTML='<div class="card-title">Latest from Blog</div><div style="color:var(--text3);font-size:13px;">No posts yet.</div>'; return; }
     card.innerHTML='<div class="card-title">Latest from Blog</div>'+
       '<div style="cursor:pointer;" onclick="window.location.href=\'blogs.html?slug='+UI.esc(b.slug||b.id)+'\'">'+
-        '<div style="font-family:var(--f-display);font-weight:400;font-size:16px;margin-bottom:6px;transition:color var(--t);" onmouseover="this.style.color=\'var(--accent)\'" onmouseout="this.style.color=\'\'">'+UI.esc(b.title)+'</div>'+
+        '<div style="font-family:var(--f-display);font-weight:700;font-size:15px;margin-bottom:5px;transition:color var(--t);" onmouseover="this.style.color=\'var(--accent)\'" onmouseout="this.style.color=\'\'">'+UI.esc(b.title)+'</div>'+
         '<div style="font-size:12px;color:var(--text2);">'+UI.esc(b.excerpt||'')+'</div>'+
         '<div style="font-size:11px;color:var(--text3);margin-top:6px;">'+UI.shortDate(b.created_at)+' · '+UI.esc(b.category||'general')+'</div>'+
       '</div>';
-  } catch(e){}
+  } catch(e) {}
 }
 
 function fixGrid() {
-  var g=document.getElementById('main-grid');
-  if(g) g.style.gridTemplateColumns=window.innerWidth<700?'1fr':'1fr 1fr';
+  var g=$('#stat-widgets');
+  // handled via CSS auto-fill
 }
+
+function $(sel){ return document.getElementById(sel)||document.querySelector(sel); }
 window.addEventListener('resize',fixGrid);
 init();
 </script>
@@ -301,8 +384,8 @@ init();
   <div class="footer-divider"></div>
   <div class="footer-content">
     <div class="footer-logos">
-      <img src="images\bfl\bfl-logo.png" alt="BFL Logo" class="footer-logo footer-logo-bfl">
-      <img src="images\ipl\ipl-logo.png" alt="IPL Logo" class="footer-logo footer-logo-t20">
+      <img src="images/bfl/bfl-logo.png" alt="BFL" class="footer-logo footer-logo-bfl">
+      <img src="images/ipl/ipl-logo.png"  alt="IPL" class="footer-logo footer-logo-t20">
     </div>
     <p class="footer-copy">Copyright 2026 BFL. All rights reserved.</p>
   </div>
