@@ -80,7 +80,7 @@ function buildNavbar(activePage, isAdmin) {
       '<div class="sb-logo-wrap">' +
         '<a href="dashboard.html" class="sb-logo">' +
           '<img src="images/bfl/bfl-logo.png" alt="BFL" style="height:36px;width:36px;object-fit:contain;" onerror="this.style.display=\'none\'">' +
-          '<span>BFL Fantasy</span>' +
+          '<span>IPL26 - BFL</span>' +
         '</a>' +
       '</div>' +
       '<nav class="sb-nav">' +
