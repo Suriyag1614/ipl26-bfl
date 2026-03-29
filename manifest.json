@@ -6,7 +6,7 @@
   "scope": "/",
   "display": "standalone",
   "background_color": "#070910",
-  "theme_color": "#c8f135",
+  "theme_color": "#f0b429",
   "orientation": "portrait-primary",
   "icons": [
     { "src": "images/bfl/bfl-logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },

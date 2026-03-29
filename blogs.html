@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#c8f135">
+  <meta name="theme-color" content="#f0b429">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IPL 2026 - BFL Blogs</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -171,7 +171,7 @@ async function loadBlogs(category) {
       grid.innerHTML=''; noEl.style.display=''; return;
     }
     noEl.style.display = 'none';
-    var catColors = {preview:'#38d9f5',tips:'#c8f135',announcement:'#f5c842',recap:'#a78bfa',general:'#94a3b8'};
+    var catColors = {preview:'#38d9f5',tips:'#f0b429',announcement:'#f5c842',recap:'#a78bfa',general:'#94a3b8'};
     var catEmojis = {preview:'🏏',tips:'🧠',announcement:'📣',recap:'📊',general:'📝'};
     grid.innerHTML = blogs.map(function(b, i) {
       var col = catColors[b.category]||'#94a3b8';
@@ -205,7 +205,7 @@ async function showDetail(slugOrId) {
   try {
     var blog = await API.fetchBlog(slugOrId);
     if (!blog) { wrap.innerHTML='<div class="empty-state"><div class="empty-state-icon">❌</div><div class="empty-state-text">Post not found</div></div>'; return; }
-    var catColors = {preview:'#38d9f5',tips:'#c8f135',announcement:'#f5c842',recap:'#a78bfa',general:'#94a3b8'};
+    var catColors = {preview:'#38d9f5',tips:'#f0b429',announcement:'#f5c842',recap:'#a78bfa',general:'#94a3b8'};
     var col = catColors[blog.category]||'#94a3b8';
     wrap.innerHTML =
       '<span class="blog-category" style="background:'+col+'22;color:'+col+';">'+UI.esc(blog.category||'general')+'</span>' +

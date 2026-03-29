@@ -169,7 +169,7 @@ const UI = {
     const toY = v  => pad.top + (H - pad.top - pad.bottom) * (1 - (v - minV) / range);
 
     // Area fill
-    const accent = options.color || '#c8f135';
+    const accent = options.color || '#f0b429';
     const grad   = ctx.createLinearGradient(0, pad.top, 0, H-pad.bottom);
     grad.addColorStop(0, accent + '44');
     grad.addColorStop(1, accent + '04');
@@ -237,7 +237,7 @@ const UI = {
 
     const barW  = Math.min(32, (W-pad.left-pad.right)/vals.length*0.65);
     const xStep = (W-pad.left-pad.right)/Math.max(vals.length,1);
-    const colors = options.colors || [options.color || '#c8f135'];
+    const colors = options.colors || [options.color || '#f0b429'];
 
     vals.forEach((v,i) => {
       const x = pad.left + i*xStep + xStep/2 - barW/2;
@@ -273,7 +273,7 @@ const UI = {
       ctx.moveTo(cx,cy);
       ctx.arc(cx,cy,r,start,start+sweep);
       ctx.closePath();
-      ctx.fillStyle = sl.color || '#c8f135';
+      ctx.fillStyle = sl.color || '#f0b429';
       ctx.fill();
       start += sweep;
     });

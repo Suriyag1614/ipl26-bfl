@@ -175,7 +175,7 @@ async function exportSquadPDF(){
     body{font-family:Arial,sans-serif; font-size:13px; padding:20px} 
     h1{font-size:18px} 
     table{width:100%; border-collapse:collapse}
-    th{background:#1a1a2e; color:#c8f135; padding:7px 9px; text-align:left; font-size:10px} 
+    th{background:#1a1a2e; color:#f0b429; padding:7px 9px; text-align:left; font-size:10px} 
     td{padding:6px 9px; border-bottom:1px solid #eee}
   </style>
 </head>

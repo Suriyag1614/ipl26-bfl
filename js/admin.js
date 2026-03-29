@@ -28,7 +28,7 @@ var TEAM_COLORS = {
 };
 
 var ACTION_COLORS = {
-  stat_entry:'#60a5fa', match_edit:'#c8f135', adjustment:'#f5c842',
+  stat_entry:'#60a5fa', match_edit:'#f0b429', adjustment:'#f5c842',
   injury_set:'#f87171', replacement_created:'#38d9f5', blog_published:'#34d399',
   match_abandoned:'#a78bfa', deadline_extended:'#fbbf24', dls_target_set:'#fbbf24',
   squad_roles_updated:'#a78bfa', predictions_locked:'#f87171'

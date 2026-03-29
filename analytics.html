@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#c8f135">
+  <meta name="theme-color" content="#f0b429">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IPL 2026 — BFL Analytics</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -286,7 +286,7 @@ function renderPlayers() {
   };
   if(topEl) topEl.innerHTML=all.length?all.slice(0,5).map(function(p){return barHtml(p);}).join(''):'<div class="empty-state" style="padding:20px;"><div class="empty-state-text">No data yet</div></div>';
   if(worstEl) worstEl.innerHTML=(ps.worst||[]).length?ps.worst.map(function(p){return barHtml(p,'var(--red)');}).join(''):'<div style="padding:12px;color:var(--text3);font-size:13px;">Not enough data</div>';
-  if(all.length) setTimeout(function(){UI.drawBarChart('chart-all-players',all.map(function(p){return{label:(p.name||'').split(' ')[0],value:p.total};}),{height:200,colors:['#c8f135','#38d9f5','#a78bfa','#f87171','#fbbf24','#34d399','#60a5fa','#f97316']});},150);
+  if(all.length) setTimeout(function(){UI.drawBarChart('chart-all-players',all.map(function(p){return{label:(p.name||'').split(' ')[0],value:p.total};}),{height:200,colors:['#f0b429','#38d9f5','#a78bfa','#f87171','#fbbf24','#34d399','#60a5fa','#f97316']});},150);
 }
 
 function renderPredictions() {
@@ -368,7 +368,7 @@ async function renderBadges() {
     grid.innerHTML=allDefs.map(function(def){
       var isEarned=earnedIds.has(def.id);
       var earnRow=(Array.isArray(earned)?earned:[]).find(function(e){return e.badge_id===def.id;});
-      return '<div class="badge-card'+(isEarned?'':' locked')+'" style="--badge-color:'+(def.color||'#c8f135')+';"><span class="badge-icon">'+(def.icon||'🏅')+'</span><div class="badge-name">'+UI.esc(def.name||'')+'</div><div class="badge-desc">'+UI.esc(def.description||'')+'</div>'+(isEarned&&earnRow?'<div style="font-size:10px;color:var(--accent);margin-top:5px;font-family:var(--f-ui);font-weight:700;">Earned '+UI.shortDate(earnRow.earned_at)+'</div>':'')+'</div>';
+      return '<div class="badge-card'+(isEarned?'':' locked')+'" style="--badge-color:'+(def.color||'#f0b429')+';"><span class="badge-icon">'+(def.icon||'🏅')+'</span><div class="badge-name">'+UI.esc(def.name||'')+'</div><div class="badge-desc">'+UI.esc(def.description||'')+'</div>'+(isEarned&&earnRow?'<div style="font-size:10px;color:var(--accent);margin-top:5px;font-family:var(--f-ui);font-weight:700;">Earned '+UI.shortDate(earnRow.earned_at)+'</div>':'')+'</div>';
     }).join('');
   } catch(e){
     var grid=document.getElementById('badges-grid');

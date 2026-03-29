@@ -278,7 +278,7 @@ async function exportSquadPDF(){
     }).join('');
     var parts=['<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+UI.esc(_myTeam.team_name)+'</title>',
       '<style>body{font-family:Arial,sans-serif;font-size:13px;padding:20px}h1{font-size:18px}table{width:100%;border-collapse:collapse}',
-      'th{background:#1a1a2e;color:#c8f135;padding:7px 9px;text-align:left;font-size:10px}td{padding:6px 9px;border-bottom:1px solid #eee}</style></head><body>',
+      'th{background:#1a1a2e;color:#f0b429;padding:7px 9px;text-align:left;font-size:10px}td{padding:6px 9px;border-bottom:1px solid #eee}</style></head><body>',
       '<h1>'+UI.esc(_myTeam.team_name)+'</h1><p style="font-size:12px;color:#666">BFL IPL 2026 &middot; '+new Date().toLocaleString('en-IN')+'</p>',
       '<p>Players: '+list.length+'/12 &nbsp; OS: '+os+'/4 &nbsp; Retained: '+rtn+' &nbsp; Spent: Rs.'+totalSpent.toFixed(1)+'Cr</p>',
       '<table><thead><tr><th>#</th><th>Player</th><th>Role</th><th>IPL</th><th>Cap</th><th>Base</th><th>Paid</th></tr></thead><tbody>'+rowsHtml+'</tbody></table></body></html>'];
