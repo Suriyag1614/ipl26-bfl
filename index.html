@@ -13,12 +13,19 @@
   <style>
     .role-tab { flex:1;padding:9px 0;background:transparent;border:none;border-radius:7px;font-family:var(--f-ui);font-size:14px;font-weight:600;color:var(--text2);cursor:pointer;transition:all var(--t); }
     .role-tab.active { background:var(--accent);color:#000; }
+    .login-theme-corner { position:fixed; top:max(12px, env(safe-area-inset-top)); right:max(12px, env(safe-area-inset-right)); z-index:300; }
+    @media (max-width:480px) {
+      .login-wrap { padding:16px max(12px, env(safe-area-inset-left)) 24px max(12px, env(safe-area-inset-right)); }
+      .login-logo img { height:72px !important; }
+      .login-logo-text { font-size:clamp(20px, 6vw, 30px) !important; }
+      .role-tab { font-size:13px; padding:8px 4px; }
+    }
   </style>
 </head>
 <body>
 <div id="toast-container"></div>
 <div class="bg-orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
-<div style="position:fixed;top:16px;right:16px;z-index:300;">
+<div class="login-theme-corner">
   <button class="btn btn-ghost btn-sm theme-toggle" onclick="UI.toggleTheme()" style="padding:6px 8px;min-width:34px;" title="Toggle theme"></button>
 </div>
 

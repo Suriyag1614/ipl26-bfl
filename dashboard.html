@@ -46,7 +46,17 @@
     .performer-name { font-family:var(--f-ui); font-weight:700; font-size:13px; }
     .performer-sub { font-size:11px; color:var(--text2); }
     .performer-pts { font-family:var(--f-display); font-weight:900; font-size:18px; color:var(--accent); }
-    @media(max-width:700px) { .main-2col { grid-template-columns:1fr; } .hero-banner { padding:18px; } }
+    @media(max-width:700px) {
+      .main-2col { grid-template-columns:1fr; }
+      .hero-banner { padding:18px; }
+      .widget-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
+      .widget-val { font-size:clamp(22px, 8vw, 30px); }
+    }
+    @media(max-width:420px) {
+      .widget-grid { grid-template-columns:1fr; }
+      .hero-name { font-size:clamp(20px, 7vw, 28px); }
+      .hero-rank-val { font-size:clamp(24px, 9vw, 32px); }
+    }
   </style>
 </head>
 <body>

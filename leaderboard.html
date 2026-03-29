@@ -32,7 +32,12 @@
     .podium-1 .podium-block { height:100px;background:linear-gradient(180deg,rgba(245,200,66,.2),transparent);border-color:rgba(245,200,66,.4); }
     .podium-2 .podium-block { height:74px;background:linear-gradient(180deg,rgba(148,163,184,.12),transparent); }
     .podium-3 .podium-block { height:54px;background:linear-gradient(180deg,rgba(180,83,9,.1),transparent); }
-    .my-rank-banner { display:flex;align-items:center;gap:20px;padding:16px 22px;background:var(--accent-dim);border:1px solid rgba(200,241,53,.25);border-radius:var(--radius-lg);margin-bottom:22px; }
+    .my-rank-banner { display:flex;align-items:center;gap:20px;padding:16px 22px;background:var(--accent-dim);border:1px solid rgba(200,241,53,.25);border-radius:var(--radius-lg);margin-bottom:22px;flex-wrap:wrap; }
+    @media(max-width:700px){
+      .lb-row { grid-template-columns:40px 1fr auto; gap:8px; padding:10px 12px; }
+      .lb-pts { font-size:clamp(16px, 5vw, 20px); }
+      .podium-wrap { flex-wrap:wrap; justify-content:center; }
+    }
   </style>
 </head>
 <body>

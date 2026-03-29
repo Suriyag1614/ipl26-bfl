@@ -3,15 +3,15 @@
 'use strict';
 
 var NAV_LINKS = [
-  { href:'dashboard.html',    label:'Dashboard',   page:'dashboard',      bnav:true,
+  { href:'dashboard.html',    label:'Dashboard',   page:'dashboard',      bnav:true, bnavLabel:'Home',
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>' },
-  { href:'squad.html',        label:'My Squad',    page:'squad',          bnav:true,
+  { href:'squad.html',        label:'My Squad',    page:'squad',          bnav:true, bnavLabel:'Squad',
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75"/><path d="M21 21v-2a4 4 0 00-3-3.85"/></svg>' },
-  { href:'predictions.html',  label:'Predictions', page:'predictions',    bnav:true,
+  { href:'predictions.html',  label:'Predictions', page:'predictions',    bnav:true, bnavLabel:'Preds',
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>' },
-  { href:'match-center.html', label:'Matches',     page:'match-center',   bnav:true,
+  { href:'match-center.html', label:'Matches',     page:'match-center',   bnav:true, bnavLabel:'Match',
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>' },
-  { href:'leaderboard.html',  label:'Standings',   page:'leaderboard',    bnav:true,
+  { href:'leaderboard.html',  label:'Standings',   page:'leaderboard',    bnav:true, bnavLabel:'Rank',
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>' },
   { href:'analytics.html',    label:'Analytics',   page:'analytics',      bnav:false,
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' },
@@ -56,7 +56,7 @@ function buildNavbar(activePage, isAdmin) {
       '</button>' +
       '<a href="dashboard.html" class="nav-logo">' +
         '<img src="images/bfl/bfl-logo.png" alt="BFL" style="height:36px;width:36px;object-fit:contain;" onerror="this.style.display=\'none\'">' +
-        '<span class="nav-logo-text">BISHOPIANS FANTASY LEAGUE</span>' +
+        '<span class="nav-logo-text">BFL</span>' +
       '</a>' +
       '<div class="topbar-right">' +
         '<button class="btn btn-ghost btn-sm theme-toggle" onclick="UI.toggleTheme()" title="Toggle theme" style="padding:5px 7px;min-width:32px;"></button>' +
@@ -64,8 +64,6 @@ function buildNavbar(activePage, isAdmin) {
           '<div class="nav-avatar" id="nav-avatar">?</div>' +
           '<span id="nav-team-name">—</span>' +
         '</div>' +
-        '<button class="btn btn-ghost btn-sm" onclick="doLogout()">Logout</button>' +
-      '</div>' +
     '</div>';
 
   // Build sidebar
@@ -112,8 +110,9 @@ function buildNavbar(activePage, isAdmin) {
   if (bnavEl) {
     var bnavLinks = links.filter(function(l){ return l.bnav; }).slice(0,5);
     bnavEl.innerHTML = bnavLinks.map(function(l) {
+      var bl = l.bnavLabel || l.label;
       return '<a href="' + l.href + '" class="bnav-link' + (activePage === l.page ? ' active' : '') + '">' +
-        l.icon + '<span>' + l.label + '</span></a>';
+        l.icon + '<span>' + bl + '</span></a>';
     }).join('');
   }
 

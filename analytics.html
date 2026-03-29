@@ -24,7 +24,10 @@
     .impact-pick-row { display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border); }
     .impact-pick-row:last-child { border-bottom:none; }
     .impact-rank-num { font-family:var(--f-display);font-weight:900;font-size:20px;color:var(--accent);min-width:28px; }
-    @media(max-width:700px){ .metrics-row{grid-template-columns:repeat(2,1fr);} }
+    @media(max-width:700px){
+      .metrics-row{grid-template-columns:repeat(2,1fr);}
+      .analytics-chart-row { grid-template-columns:1fr !important; }
+    }
   </style>
 </head>
 <body>
@@ -63,7 +66,7 @@
 
   <!-- OVERVIEW -->
   <div class="tab-panel active" id="tab-overview">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:18px;">
+    <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin-bottom:18px;">
       <div class="card">
         <div class="card-title">Points Per Match</div>
         <div class="chart-wrap"><canvas id="chart-pts-per-match" style="height:170px;"></canvas></div>
@@ -90,7 +93,7 @@
 
   <!-- PLAYERS -->
   <div class="tab-panel" id="tab-players">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:18px;">
+    <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin-bottom:18px;">
       <div class="card">
         <div class="card-title">Top Performers</div>
         <div id="top-players-list"><div class="skel skel-row"></div></div>
@@ -108,7 +111,7 @@
 
   <!-- PREDICTIONS -->
   <div class="tab-panel" id="tab-predictions">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:18px;">
+    <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin-bottom:18px;">
       <div class="card">
         <div class="card-title">Prediction Stats</div>
         <div id="pred-stats-wrap"><div class="skel skel-row"></div></div>
@@ -131,7 +134,7 @@
 
   <!-- IMPACT -->
   <div class="tab-panel" id="tab-impact">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:18px;">
+    <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin-bottom:18px;">
       <div class="card">
         <div class="card-title">Impact Summary</div>
         <div id="impact-summary-wrap"><div class="skel skel-row"></div></div>

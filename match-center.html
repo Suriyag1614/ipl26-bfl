@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    .match-selector { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; margin-bottom:28px; }
+    .match-selector { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr)); gap:14px; margin-bottom:28px; }
     .match-pill {
       background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg);
       padding:14px 16px; cursor:pointer; transition:all var(--t);
@@ -18,7 +18,7 @@
     }
     .match-pill:hover { border-color:var(--border-h); transform:translateY(-3px); box-shadow:var(--shadow); }
     .match-pill.selected { border-color:var(--accent); background:var(--accent-dim); }
-    .match-pill-teams { font-family:var(--f-display); font-weight:400; font-size:15px; }
+    .match-pill-teams { font-family:var(--f-display); font-weight:400; font-size:clamp(13px, 3.5vw, 15px); line-height:1.25; }
     .match-pill-date  { font-size:11px; color:var(--text3); }
     .winner-bar { display:flex; border-radius:6px; overflow:hidden; height:24px; margin-top:8px; }
     .winner-bar-seg { display:flex; align-items:center; justify-content:center; font-family:var(--f-ui); font-size:11px; font-weight:400; transition:flex .8s ease; min-width:30px; }
@@ -26,7 +26,7 @@
     .leaderboard-rank-1 td:first-child { border-left:3px solid var(--gold); }
     .mc-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
     .pred-winner-bar { height:8px; border-radius:4px; background:var(--bg3); overflow:hidden; display:flex; margin-top:6px; }
-    @media(max-width:700px){.mc-grid{grid-template-columns:1fr;}}
+    @media(max-width:700px){ .mc-grid{grid-template-columns:1fr;} .match-selector{grid-template-columns:1fr; gap:10px;} }
   </style>
 </head>
 <body>

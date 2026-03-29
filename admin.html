@@ -259,6 +259,26 @@
       .kpi-grid { grid-template-columns: repeat(2,1fr); }
       .stats-form-grid { grid-template-columns: repeat(2,1fr); }
     }
+    @media (max-width: 640px) {
+      .admin-topbar {
+        flex-wrap: wrap;
+        height: auto;
+        min-height: var(--topbar-h);
+        padding: 8px max(10px, env(safe-area-inset-left)) 10px max(10px, env(safe-area-inset-right));
+        align-items: center;
+      }
+      .topbar-badge { display: none; }
+      .topbar-logo span { font-size: clamp(13px, 3.6vw, 17px); }
+      .topbar-right {
+        width: auto;
+        margin-left: 0;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .section-title { font-size: clamp(20px, 6vw, 26px); }
+      .kpi-val { font-size: clamp(26px, 9vw, 36px); }
+    }
     @media (min-width: 901px) {
       .sb-overlay { display: none !important; }
     }
@@ -285,8 +305,6 @@
       <span class="topbar-user-dot"></span>
       <span id="topbar-admin-name">Admin</span>
     </div>
-    <a href="dashboard.html" class="btn btn-ghost btn-sm">← User View</a>
-    <button class="btn btn-danger btn-sm" onclick="doLogout()">Sign Out</button>
   </div>
 </div>
 
@@ -357,7 +375,6 @@
   </div>
 
   <div class="sb-footer">
-    <a href="dashboard.html" class="btn btn-ghost btn-sm btn-full">← User View</a>
     <button class="btn btn-danger btn-sm btn-full" onclick="doLogout()">Sign Out</button>
   </div>
 </aside>

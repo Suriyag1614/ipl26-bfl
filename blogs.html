@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    .blog-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(310px,1fr)); gap:20px; }
+    .blog-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr)); gap:20px; }
     .blog-card {
       background:var(--bg1); border:1px solid var(--border); border-radius:var(--radius-lg);
       overflow:hidden; transition:all var(--t); cursor:pointer; animation:fade-up .4s ease both;
@@ -28,11 +28,12 @@
     .blog-meta { font-size:12px; color:var(--text3); display:flex; gap:12px; }
     /* Detail view */
     .blog-detail { max-width:740px; margin:0 auto; }
-    .blog-detail-title { font-family:var(--f-display); font-weight:600; font-size:36px; line-height:1.2; margin-bottom:14px; }
+    .blog-detail-title { font-family:var(--f-display); font-weight:600; font-size:clamp(22px, 6vw, 36px); line-height:1.2; margin-bottom:14px; }
     .blog-content { font-size:15px; line-height:1.8; color:var(--text2); white-space:pre-wrap; }
     .blog-content p { margin-bottom:14px; }
     /* Editor */
     .editor-wrap textarea { min-height:260px; font-family:var(--f-body); font-size:14px; resize:vertical; }
+    @media(max-width:600px){ .blog-body{padding:14px;} .blog-title{font-size:16px;} .blog-grid{gap:14px;} }
     .cat-tag { display:inline-block; padding:4px 12px; border-radius:20px; font-family:var(--f-ui); font-size:12px; font-weight:600; cursor:pointer; border:1px solid var(--border); color:var(--text2); background:transparent; transition:all var(--t); margin:2px; }
     .cat-tag:hover,cat-tag.active { background:var(--accent); color:#000; border-color:var(--accent); }
     .cat-tag.active { background:var(--accent); color:#000; border-color:var(--accent); }

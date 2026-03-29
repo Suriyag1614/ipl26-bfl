@@ -49,7 +49,13 @@
     .impact-mult { font-family:var(--f-display);font-weight:900;font-size:34px; }
     .impact-box.on .impact-mult { color:var(--cyan); }
     .impact-box.off .impact-mult { color:var(--red); }
-    @media(max-width:600px) { .guide-hero-title{font-size:28px;} .impact-viz{grid-template-columns:1fr;} }
+    @media(max-width:700px) { .rule-grid{grid-template-columns:1fr;} .guide-section-title{font-size:clamp(18px, 5vw, 24px);} }
+    @media(max-width:600px) {
+      .guide-hero { padding:24px 14px; }
+      .guide-hero-title { font-size:clamp(22px, 7vw, 28px); }
+      .impact-viz { grid-template-columns:1fr; }
+      .step-item { flex-direction:column; align-items:stretch; }
+    }
   </style>
 </head>
 <body>
