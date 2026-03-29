@@ -921,9 +921,12 @@ input:focus + .slider { box-shadow: 0 0 1px var(--cyan); }
   .footer-logo-bfl { height: 38px; }
   .footer-logo-t20 { height: 34px; }
   .footer-copy     { font-size: 12px; }
-  .footer-content  { padding: 16px 16px 14px; gap: 10px; }
+  .footer-content  { padding: 16px 16px 75px; gap: 10px; }
 }
 
+@media (max-width: 900px) {
+  .footer-content { padding: 16px 16px 75px; gap: 10px; } 
+}
 /* ══════════════════════════════════════════════════════════════
    BFL Fantasy IPL 2026 — CSS Additions for Team Panel
    Add these rules to the END of css/styles.css
