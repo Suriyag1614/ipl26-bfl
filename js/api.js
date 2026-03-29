@@ -378,12 +378,13 @@ const API = {
   },
 
   async refreshLeaderboard() {
-    const { data: logs, error: le } = await sb.from('points_log').select('fantasy_team_id,total_points');
+    const { data: logs, error: le } = await sb.from('points_log').select('fantasy_team_id,squad_points,prediction_points');
     if (le) throw le;
     const agg = {};
     (logs || []).forEach(r => {
       if (!agg[r.fantasy_team_id]) agg[r.fantasy_team_id] = { total_points: 0, matches_played: 0 };
-      agg[r.fantasy_team_id].total_points   += Number(r.total_points || 0);
+      // Explicitly sum squad + prediction to guarantee prediction points are included
+      agg[r.fantasy_team_id].total_points   += Number(r.squad_points || 0) + Number(r.prediction_points || 0);
       agg[r.fantasy_team_id].matches_played += 1;
     });
     const rows = Object.entries(agg).map(([id, v]) => ({
@@ -453,16 +454,24 @@ const API = {
   calcBattingPoints(s) {
     if (!s) return 0;
     let pts = 0;
-    const runs = Number(s.runs || 0), balls = Number(s.balls_faced || 0);
-    pts += runs;
-    if      (runs >= 150) pts += 300; else if (runs >= 100) pts += 200;
-    else if (runs >= 50)  pts += 100; else if (runs >= 25)  pts += 50;
-    if ((Number(s.fours || 0) + Number(s.sixes || 0)) >= 10) pts += 100;
-    if (balls >= 10 && (runs / balls) * 100 >= 200) pts += 100;
-    if (balls >= 60) pts += 100;
-    if (!s.not_out) { if (runs === 0) pts -= 25; else if (runs < 10) pts -= 10; }
+    const runs = (s.runs === null || s.runs === undefined || s.runs === '') ? null : Number(s.runs);
+    const balls = (s.balls_faced === null || s.balls_faced === undefined || s.balls_faced === '') ? null : Number(s.balls_faced);
+    
+    if (runs !== null) {
+      pts += runs;
+      if      (runs >= 150) pts += 300; else if (runs >= 100) pts += 200;
+      else if (runs >= 50)  pts += 100; else if (runs >= 25)  pts += 50;
+      if ((Number(s.fours || 0) + Number(s.sixes || 0)) >= 10) pts += 100;
+      if (balls >= 10 && (runs / balls) * 100 >= 200) pts += 100;
+      if (balls >= 60) pts += 100;
+    }
+
+    if (!s.not_out) { 
+      if (runs === 0) pts -= 25; 
+      else if (runs > 0 && runs < 10 && balls > 1) pts -= 10; 
+    }
     if (s.not_out)  pts += 25;
-    return Math.max(0, pts);
+    return pts;
   },
 
   calcBowlingPoints(s) {
@@ -473,9 +482,13 @@ const API = {
     if      (wickets >= 9) pts += 400; else if (wickets >= 7) pts += 300;
     else if (wickets >= 5) pts += 200; else if (wickets >= 3) pts += 100;
     pts += Number(s.maidens || 0) * 50;
-    if (overs >= 1) { const eco = runs / overs; if (eco <= 5) pts += 100; if (eco >= 10) pts -= 50; }
-    if (overs >= 2 && wickets === 0) pts -= 25;
-    return Math.max(0, pts);
+    if (overs >= 1) { 
+      const eco = runs / overs; 
+      if (eco <= 6) pts += 100; 
+      if (eco >= 12) pts -= 50; 
+    }
+    if (overs >= 1 && wickets === 0) pts -= 25;
+    return pts;
   },
 
   calcFieldingPoints(s) {
@@ -534,6 +547,9 @@ const API = {
     const statMap = {}, predMap = {};
     allStats.forEach(s => { statMap[s.player_id] = s; });
     allPredictions.forEach(p => { predMap[p.fantasy_team_id] = p; });
+
+    onLog?.(`Match: Winner="${match.winner || 'NOT SET'}", Target=${match.actual_target ?? 'NOT SET'}, DLS=${match.is_dls_applied || false}`);
+    onLog?.(`Found ${allPredictions.length} predictions, ${allStats.length} stat rows, PoM=${pomPlayerId ? 'yes' : 'no'}`, 'good');
 
     const { data: actRows } = await sb.from('impact_activations')
       .select('fantasy_team_id,is_active').eq('match_id', matchId);
@@ -600,6 +616,11 @@ const API = {
       bonPts = playerResults.reduce((s, p) => s + p.bon, 0);
 
       const predPts = this.calcPredictionPoints(pred, match);
+      if (pred) {
+        onLog?.(`  → ${team.team_name}: Pred target=${pred.target_score} winner="${pred.predicted_winner}" → ${predPts}pts`);
+      } else {
+        onLog?.(`  → ${team.team_name}: ⚠ No prediction submitted`, 'warn');
+      }
       onLog?.(`  → ${team.team_name}: Squad ${Math.round(squadPts)} + Pred ${predPts} = ${Math.round(squadPts + predPts)}`, 'good');
       logs.push({
         match_id: matchId, fantasy_team_id: team.id,

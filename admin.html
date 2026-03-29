@@ -462,7 +462,7 @@
           </select>
         </div>
         <div class="col-2" style="gap:10px;">
-          <div class="form-group"><label class="form-label">Auto-lock (mins before start)</label><input class="form-input font-mono" type="number" id="fx-autolock" value="15" min="5" max="120"></div>
+          <div class="form-group"><label class="form-label">Auto-lock (mins after start)</label><input class="form-input font-mono" type="number" id="fx-autolock" value="15" min="5" max="120"></div>
           <div class="form-group"><label class="form-label">Status</label>
             <select class="form-select" id="fx-status">
               <option value="upcoming">Upcoming</option>
@@ -585,12 +585,10 @@
           <select class="form-select" id="stats-team-filter" onchange="filterStatPlayers()"><option value="">Both Teams</option></select>
         </div>
         <div class="form-group" style="flex:2;">
-          <label class="form-label">Player Search</label>
-          <div class="psr-wrap">
-            <input class="form-input" id="stats-player-input" placeholder="Type player name…" autocomplete="off"
-              oninput="searchStatPlayers(this.value)" onblur="setTimeout(closePlayerSearch,180)">
-            <div class="psr-results" id="psr-results"></div>
-          </div>
+          <label class="form-label">Select Player</label>
+          <select class="form-select" id="stats-player-select" onchange="onStatPlayerSelectChange()">
+            <option value="">— Select player to enter stats —</option>
+          </select>
           <input type="hidden" id="stats-player-id">
         </div>
       </div>
@@ -628,10 +626,10 @@
       <div style="margin-bottom:16px;">
         <div style="font-family:var(--f-ui);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#60a5fa;margin-bottom:8px;">🎳 Bowling</div>
         <div class="stats-form-grid">
-          <div class="stat-group"><label>Wickets</label><input class="form-input font-mono" type="number" id="s-wickets" min="0" oninput="recalcLive()"></div>
           <div class="stat-group"><label>Overs</label><input class="form-input font-mono" type="number" id="s-overs" min="0" step="0.1" oninput="recalcLive()"></div>
-          <div class="stat-group"><label>Runs Conceded</label><input class="form-input font-mono" type="number" id="s-runsc" min="0" oninput="recalcLive()"></div>
           <div class="stat-group"><label>Maidens</label><input class="form-input font-mono" type="number" id="s-maidens" min="0" oninput="recalcLive()"></div>
+          <div class="stat-group"><label>Runs Conceded</label><input class="form-input font-mono" type="number" id="s-runsc" min="0" oninput="recalcLive()"></div>
+          <div class="stat-group"><label>Wickets</label><input class="form-input font-mono" type="number" id="s-wickets" min="0" oninput="recalcLive()"></div>
         </div>
       </div>
       <div>

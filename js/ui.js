@@ -391,7 +391,6 @@ const UI = {
     return `<span class="role-tag ${r.cls}">${r.s}</span>`;
   },
 
-  // Generate HTML for deadline countdown badge
   deadlineBadge(match, onExpireId) {
     if (!match) return '';
     if (!API.isMatchOpen(match)) {
@@ -406,6 +405,21 @@ const UI = {
       const el2 = document.getElementById(onExpireId); if (el2) el2.classList.add('locked');
     } : null), 50);
     return `<span class="match-status ${cls}"><span class="countdown" id="${id}">…</span></span>`;
+  },
+
+  getTeamLogo(teamName) {
+    if (!teamName) return null;
+    const codes = {
+      CHENNAISUPERKINGS:'CSK', DELHICAPITALS:'DC', GUJARATTITANS:'GT',
+      KOLKATAKNIGHTRIDERS:'KKR', LUCKNOWSUPERGIANTS:'LSG', MUMBAIINDIANS:'MI',
+      PUNJABKINGS:'PBKS', RAJASTHANROYALS:'RR', ROYALCHALLENGERSBENGALURU:'RCB',
+      SUNRISERSHYDERABAD:'SRH', SUPREMERAJAS:'SURA'
+    };
+    // Match common abbreviations directly too
+    if (codes[teamName.toUpperCase()]) return 'images/teams/' + codes[teamName.toUpperCase()] + 'outline.png';
+    const clean = String(teamName).toUpperCase().replace(/[^A-Z]/g, '');
+    const code = codes[clean] || (Object.values(codes).includes(clean) ? clean : null);
+    return code ? 'images/teams/' + code + 'outline.png' : null;
   },
 };
 

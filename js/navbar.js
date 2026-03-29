@@ -186,8 +186,7 @@ async function initNavbar(page, customLinks) {
         initials = name.split(' ').map(function(w){ return w[0]; }).join('').substring(0,2).toUpperCase();
         var codes = {CHENNAISUPERKINGS:'CSK',DELHICAPITALS:'DC',GUJARATTITANS:'GT',KOLKATAKNIGHTRIDERS:'KKR',LUCKNOWSUPERGIANTS:'LSG',MUMBAIINDIANS:'MI',PUNJABKINGS:'PBKS',RAJASTHANROYALS:'RR',ROYALCHALLENGERSBENGALURU:'RCB',SUNRISERSHYDERABAD:'SRH',SUPREMERAJAS:'SURA'};
         var cleanName = name.toUpperCase().replace(/\s+/g,'');
-        var code = codes[cleanName] || null;
-        var logo = code ? 'images/teams/' + code + 'outline.png' : null;
+        var logo = UI.getTeamLogo(name);
         setNavUser(name, initials, null, logo);
       }
       // Auto-close sidebar on mobile after link click

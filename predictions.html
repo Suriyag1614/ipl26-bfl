@@ -749,7 +749,7 @@ function buildImpactBanner(m) {
       imgTag(p.image_url, p.name, '', 'width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;') +
       '<div class="impact-player-info">' +
         '<div class="impact-player-name">' + UI.esc(p.name || '—') + '</div>' +
-        '<div class="impact-player-sub">' + UI.esc(p.role || '') + (p.ipl_team ? ' · ' + UI.esc(p.ipl_team) : '') + (p.is_overseas ? ' · 🌏 OS' : '') + '</div>' +
+        '<div class="impact-player-sub">' + UI.esc(p.role || '') + (p.ipl_team ? ' · ' + UI.esc(p.ipl_team) : '') + (p.is_overseas ? ' · ✈️ OS' : '') + '</div>' +
         '<div style="font-size:11px;color:var(--text3);margin-top:3px;">' + (exhausted ? '⛔ Limit reached (8/8)' : _impactActive ? '<span style="color:var(--cyan);font-weight:700;">ACTIVE — 3× multiplier</span>' : 'OFF — excluded from scoring') + '</div>' +
       '</div>' +
       '<div class="impact-multiplier-badge ' + (_impactActive ? 'on' : 'off') + '">' + (_impactActive ? '3×' : '0×') + '</div>' +

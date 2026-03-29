@@ -1,5 +1,5 @@
 // sw.js — BFL Fantasy IPL 2026
-const CACHE_NAME = 'bfl-cache-v1.2';
+const CACHE_NAME = 'bfl-cache-v1.13';
 const ASSETS = [
   '/',
   '/index.html',
@@ -9,11 +9,13 @@ const ASSETS = [
   '/leaderboard.html',
   '/analytics.html',
   '/blogs.html',
+  '/admin.html',
   '/css/styles.css',
   '/js/supabase.js',
   '/js/auth.js',
   '/js/ui.js',
   '/js/api.js',
+  '/js/admin.js',
   '/js/navbar.js',
   '/images/bfl/bfl-logo.png'
 ];
@@ -29,17 +31,45 @@ self.addEventListener('fetch', (e) => {
   var url = new URL(e.request.url);
   if (e.request.method !== 'GET') return; 
   if (!url.protocol.startsWith('http')) return;
+  // DO NOT cache Supabase API calls
+  if (url.hostname.includes('supabase.co')) return;
 
+  // For HTML page navigations use network-first so the browser never
+  // gets a stale cached page (e.g. index.html served for admin.html).
+  const isNavigate = e.request.mode === 'navigate' ||
+    (e.request.headers.get('accept') || '').includes('text/html');
+
+  if (isNavigate) {
+    e.respondWith(
+      fetch(e.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.ok) {
+          caches.open(CACHE_NAME).then(c => c.put(e.request, networkResponse.clone()));
+        }
+        return networkResponse;
+      }).catch(() => caches.match(e.request).then(r => r || new Response('Offline', {status: 408, headers: {'Content-Type':'text/plain'}})))
+    );
+    return;
+  }
+
+  // For other assets (JS, CSS, images) use stale-while-revalidate
   e.respondWith(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.match(e.request).then((cachedResponse) => {
         const fetchedResponse = fetch(e.request).then((networkResponse) => {
-          if (networkResponse.ok) {
+          if (networkResponse && networkResponse.ok) {
             cache.put(e.request, networkResponse.clone());
           }
           return networkResponse;
-        }).catch(() => cachedResponse);
-        return cachedResponse || fetchedResponse;
+        });
+        
+        if (cachedResponse) {
+          fetchedResponse.catch(() => {});
+          return cachedResponse;
+        }
+        
+        return fetchedResponse.catch(() => {
+          return new Response('Offline', {status: 408, headers: { 'Content-Type': 'text/plain' }});
+        });
       });
     })
   );

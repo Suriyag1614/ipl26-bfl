@@ -133,6 +133,11 @@ function applySidebarState() {
    PANEL ROUTER
 ══════════════════════════════════════════════════════════════ */
 function showPanel(id) {
+  // Persist current panel to URL hash and sessionStorage for refresh restore
+  if (id) {
+    location.hash = id;
+    try { sessionStorage.setItem('admin-panel', id); } catch(_){}
+  }
   // Hide all panels
   document.querySelectorAll('.admin-panel').forEach(function(p) { p.classList.remove('active'); });
   // Deactivate all sidebar links
@@ -197,8 +202,14 @@ async function init() {
     // Populate all dropdowns
     populateAllDropdowns();
 
-    // Start on dashboard
-    await loadDashboard();
+    // Restore last active panel from URL hash or sessionStorage, else default to dashboard
+    var startPanel = (location.hash || '').replace('#', '') || '';
+    if (!startPanel) try { startPanel = sessionStorage.getItem('admin-panel') || ''; } catch(_){}
+    if (startPanel && document.getElementById('panel-' + startPanel)) {
+      showPanel(startPanel);
+    } else {
+      await loadDashboard();
+    }
 
   } catch (err) {
     console.error('[admin init]', err);
@@ -223,8 +234,14 @@ async function loadAllPlayers() {
 
 async function loadAllTeams() {
   try {
-    var lb = safeArr(await API.fetchLeaderboard());
-    _teams = lb;
+    var raw = safeArr(await API.fetchTeams());
+    // Create an object format that matches what the admin logic expects
+    _teams = raw.map(function(t) {
+      return {
+        fantasy_team_id: t.id,
+        team: t
+      };
+    });
   } catch(e) { console.error('[loadAllTeams]', e); _teams = []; }
 }
 
@@ -460,7 +477,7 @@ async function saveFixture() {
   var venue=$id('fx-venue').value, status=$id('fx-status').value;
   var al=parseInt($id('fx-autolock').value||15);
   var matchDate = date ? new Date(date+'T'+time+':00+05:30').toISOString() : null;
-  var deadline  = matchDate ? new Date(new Date(matchDate).getTime() - al*60000).toISOString() : null;
+  var deadline  = matchDate ? new Date(new Date(matchDate).getTime() + al*60000).toISOString() : null;
   var lockTime  = deadline  ? new Date(new Date(deadline).getTime() + 5*60000).toISOString() : null;
   var match = { match_no:no, team1, team2, venue, status, match_date:matchDate,
     deadline_time:deadline, lock_time:lockTime, auto_lock_mins:al,
@@ -719,9 +736,11 @@ async function onStatsMatchChange() {
   _statsPlayerId = null;
   $id('stats-form-card').style.display='none';
   $id('stats-saved-card').style.display='none';
-  $id('stats-player-input').value='';
+  var sel = $id('stats-player-select');
+  if (sel) sel.value='';
   $id('stats-player-id').value='';
-  $id('stats-player-chip').style.display='none';
+  var chip = $id('stats-player-chip');
+  if (chip) chip.style.display='none';
   if (!_statsMatchId) return;
 
   var m = _matches.find(function(x){return x.id===_statsMatchId;});
@@ -736,8 +755,13 @@ async function onStatsMatchChange() {
 
   // Filter players to match teams
   _statPlayers = _players.filter(function(p){
-    return !m.team1 && !m.team2 ? true : p.ipl_team===m.team1 || p.ipl_team===m.team2;
+    var pt = p.ipl_team || '';
+    if (!m.team1 && !m.team2) return true;
+    return pt===m.team1 || pt===m.team2 || pt===tCode(m.team1) || pt===tCode(m.team2) || pt===tShort(m.team1) || pt===tShort(m.team2);
   });
+  
+  // Populate the native select dropdown
+  populateStatsPlayerSelect();
 
   $id('stats-saved-label').textContent = tShort(m.team1)+' vs '+tShort(m.team2);
   await loadSavedStats();
@@ -747,41 +771,49 @@ function filterStatPlayers() {
   var team = $id('stats-team-filter').value;
   var m = _matches.find(function(x){return x.id===_statsMatchId;});
   _statPlayers = _players.filter(function(p){
-    if (!team) return m ? (p.ipl_team===m.team1||p.ipl_team===m.team2) : true;
-    return p.ipl_team===team;
+    var pt = p.ipl_team || '';
+    if (!team) return m ? (pt===m.team1 || pt===m.team2 || pt===tCode(m.team1) || pt===tCode(m.team2) || pt===tShort(m.team1) || pt===tShort(m.team2)) : true;
+    return pt===team || pt===tCode(team) || pt===tShort(team);
   });
+  populateStatsPlayerSelect();
 }
 
-function searchStatPlayers(q) {
-  var res = $id('psr-results');
-  if (!q||q.length<2) { res.classList.remove('open'); return; }
-  var hits = _statPlayers.filter(function(p){return p.name.toLowerCase().includes(q.toLowerCase());}).slice(0,10);
-  if (!hits.length) { res.classList.remove('open'); return; }
-  res.innerHTML = hits.map(function(p){
-    var col = tColor(p.ipl_team||'');
-    return '<div class="psr-item" onmousedown="selectStatPlayer(\''+p.id+'\',\''+UI.esc(p.name)+'\',\''+UI.esc(p.role||'')+'\',\''+UI.esc(p.ipl_team||'')+'\')">'+
-      '<span class="psr-dot" style="background:'+col+'"></span>'+
-      '<span style="font-weight:700;">'+UI.esc(p.name)+'</span>'+
-      '<span style="font-size:11px;color:var(--text2);margin-left:auto;">'+UI.esc(p.ipl_team||'')+'</span>'+
-    '</div>';
-  }).join('');
-  res.classList.add('open');
+function populateStatsPlayerSelect() {
+  var sel = $id('stats-player-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Select player to enter stats —</option>' + 
+    _statPlayers.map(function(p){
+      return '<option value="'+p.id+'">'+UI.esc(p.name)+' ('+UI.esc(p.ipl_team||'')+')</option>';
+    }).join('');
+}
+
+async function onStatPlayerSelectChange() {
+  var id = $id('stats-player-select').value;
+  if (!id) {
+    clearStatsFields(false);
+    $id('stats-form-card').style.display='none';
+    var chip = $id('stats-player-chip');
+    if (chip) chip.style.display='none';
+    return;
+  }
+  var p = _statPlayers.find(function(x){return x.id===id;});
+  if (p) selectStatPlayer(id, p.name, p.role, p.ipl_team);
 }
 
 function closePlayerSearch() {
-  var el = $id('psr-results'); if (el) el.classList.remove('open');
+  // deprecated, kept for safety
 }
 
 async function selectStatPlayer(id, name, role, team) {
   _statsPlayerId = id;
   $id('stats-player-id').value = id;
-  $id('stats-player-input').value = name;
-  closePlayerSearch();
 
   var chip = $id('stats-player-chip');
-  chip.innerHTML = '<div style="display:inline-flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:13px;">'+
-    UI.roleBadge(role)+' <strong>'+UI.esc(name)+'</strong> <span style="color:var(--text2);">'+UI.esc(team)+'</span></div>';
-  chip.style.display='';
+  if (chip) {
+    chip.innerHTML = '<div style="display:inline-flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:13px;">'+
+      UI.roleBadge(role)+' <strong>'+UI.esc(name)+'</strong> <span style="color:var(--text2);">'+UI.esc(team)+'</span></div>';
+    chip.style.display='';
+  }
 
   // Load existing stats if any
   if (_statsMatchId) {
@@ -797,13 +829,30 @@ async function selectStatPlayer(id, name, role, team) {
 }
 
 function prefillStats(s) {
-  $id('s-runs').value=s.runs||''; $id('s-balls').value=s.balls_faced||'';
-  $id('s-fours').value=s.fours||''; $id('s-sixes').value=s.sixes||'';
-  $id('s-notout').value=s.not_out?'true':'';
-  $id('s-wickets').value=s.wickets||''; $id('s-overs').value=s.overs_bowled||'';
-  $id('s-runsc').value=s.runs_conceded||''; $id('s-maidens').value=s.maidens||'';
-  $id('s-catches').value=s.catches||''; $id('s-runouts').value=s.run_outs||'';
-  $id('s-stumpings').value=s.stumpings||'';
+  const setVal = function(id, val, isZeroBlank) { 
+    if (isZeroBlank && val === 0) { $id(id).value = ''; return; }
+    $id(id).value = (val !== null && val !== undefined) ? val : ''; 
+  };
+  
+  const isDnb = (s.runs === 0 && s.balls_faced === 0 && s.fours === 0 && s.sixes === 0);
+  setVal('s-runs', s.runs, isDnb); 
+  setVal('s-balls', s.balls_faced, isDnb);
+  setVal('s-fours', s.fours, isDnb); 
+  setVal('s-sixes', s.sixes, isDnb);
+  
+  $id('s-notout').value = s.not_out ? 'true' : '';
+  
+  const isDnbowl = (s.wickets === 0 && s.overs_bowled === 0 && s.runs_conceded === 0 && s.maidens === 0);
+  setVal('s-wickets', s.wickets, isDnbowl); 
+  setVal('s-overs', s.overs_bowled, isDnbowl);
+  setVal('s-runsc', s.runs_conceded, isDnbowl); 
+  setVal('s-maidens', s.maidens, isDnbowl);
+  
+  const isDnf = (s.catches === 0 && s.run_outs === 0 && s.stumpings === 0);
+  setVal('s-catches', s.catches, isDnf); 
+  setVal('s-runouts', s.run_outs, isDnf);
+  setVal('s-stumpings', s.stumpings, isDnf);
+  
   recalcLive();
 }
 
@@ -817,19 +866,21 @@ function clearStatsFields(hide) {
 function clearStatsForm() { clearStatsFields(true); $id('stats-player-input').value=''; $id('stats-player-chip').style.display='none'; }
 
 function getStatsObj() {
+  const getNum = function(id) { var v = $id(id).value; return v === '' ? null : parseInt(v, 10); };
+  const getFlt = function(id) { var v = $id(id).value; return v === '' ? null : parseFloat(v); };
   return {
-    runs:parseInt($id('s-runs').value||0)||0,
-    balls_faced:parseInt($id('s-balls').value||0)||0,
-    fours:parseInt($id('s-fours').value||0)||0,
-    sixes:parseInt($id('s-sixes').value||0)||0,
-    not_out:$id('s-notout').value==='true',
-    wickets:parseInt($id('s-wickets').value||0)||0,
-    overs_bowled:parseFloat($id('s-overs').value||0)||0,
-    runs_conceded:parseInt($id('s-runsc').value||0)||0,
-    maidens:parseInt($id('s-maidens').value||0)||0,
-    catches:parseInt($id('s-catches').value||0)||0,
-    run_outs:parseInt($id('s-runouts').value||0)||0,
-    stumpings:parseInt($id('s-stumpings').value||0)||0,
+    runs: getNum('s-runs'),
+    balls_faced: getNum('s-balls'),
+    fours: getNum('s-fours'),
+    sixes: getNum('s-sixes'),
+    not_out: $id('s-notout').value === 'true',
+    wickets: getNum('s-wickets'),
+    overs_bowled: getFlt('s-overs'),
+    runs_conceded: getNum('s-runsc'),
+    maidens: getNum('s-maidens'),
+    catches: getNum('s-catches'),
+    run_outs: getNum('s-runouts'),
+    stumpings: getNum('s-stumpings'),
   };
 }
 
@@ -889,7 +940,8 @@ async function editSavedStat(playerId, playerName) {
     if (!data) return;
     _statsPlayerId = playerId;
     $id('stats-player-id').value = playerId;
-    $id('stats-player-input').value = playerName;
+    var sel = $id('stats-player-select');
+    if (sel) sel.value = playerId;
     $id('sf-player-name').textContent = playerName;
     var p = data.player||{};
     $id('sf-player-sub').textContent = (p.role||'')+(p.ipl_team?' · '+p.ipl_team:'');
@@ -1197,7 +1249,7 @@ async function loadSquadAdmin() {
         '<td><input type="radio" name="cap-'+teamId+'" value="'+p.id+'" '+(sp.is_captain?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'captain\',\''+p.id+'\')"></td>'+
         '<td><input type="radio" name="vc-'+teamId+'"  value="'+p.id+'" '+(sp.is_vc?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'vc\',\''+p.id+'\')"></td>'+
         '<td><input type="radio" name="ip-'+teamId+'"  value="'+p.id+'" '+(sp.is_impact?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'impact\',\''+p.id+'\')"></td>'+
-        '<td style="font-size:13px;">'+(p.is_overseas?'🌏':'—')+'</td>'+
+        '<td style="font-size:13px;">'+(p.is_overseas?'✈️':'—')+'</td>'+
         '<td style="font-size:13px;">'+(p.is_injured?'🏥':'—')+'</td>'+
       '</tr>';
     }).join('');
@@ -1322,8 +1374,10 @@ async function loadUsers() {
     tbody.innerHTML=lb.map(function(r,i){
       var t=r.team||{};
       var initials=(t.team_name||'?').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
+      var logo = UI.getTeamLogo(t.team_name);
+      var avatarObj = logo ? '<img src="'+logo+'" style="width:100%;height:100%;object-fit:contain;padding:2px;" onerror="this.outerHTML=\''+initials+'\'">' : initials;
       return '<tr style="animation:row-in .2s ease '+(i*.04)+'s both;">'+
-        '<td><div class="user-avatar" style="font-size:11px;">'+initials+'</div></td>'+
+        '<td><div class="user-avatar" style="font-size:11px;">'+avatarObj+'</div></td>'+
         '<td style="font-family:var(--f-ui);font-weight:700;">'+UI.esc(t.team_name||'—')+'</td>'+
         '<td style="font-size:13px;color:var(--text2);">'+UI.esc(t.owner_name||'—')+'</td>'+
         '<td class="rank">'+(medals[r.rank]||r.rank)+'</td>'+
