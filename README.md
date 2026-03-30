@@ -86,11 +86,12 @@ bfl-fantasy/
 | Duck | -25 |
 | Single digit | -10 |
 | Not out | +25 |
-| Wicket | +50 |
 | 3 wickets | +100 |
+| Wicket | +50 |
+| Wicketless | -25 |
 | 5 wickets | +200 |
 | Maiden | +50 |
-| Economy ≤ 5 | +100 |
+| Economy ≤ 6 (min 2 over) | +100 |
 | Catch | +25 |
 | 3+ catches | +50 bonus |
 | Run out | +50 |

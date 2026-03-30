@@ -484,7 +484,7 @@ const API = {
     if      (wickets >= 9) pts += 400; else if (wickets >= 7) pts += 300;
     else if (wickets >= 5) pts += 200; else if (wickets >= 3) pts += 100;
     pts += Number(s.maidens || 0) * 50;
-    if (overs >= 1) { 
+    if (overs >= 2) { 
       const eco = runs / overs; 
       if (eco <= 6) pts += 100; 
       if (eco >= 12) pts -= 50; 
