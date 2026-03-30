@@ -346,7 +346,24 @@ const UI = {
   // ════════════════════════════════════════════════════════════
   fmt(n, dec = 0)  { return Number(n||0).toFixed(dec); },
   fmtDate(iso)     { if (!iso) return '—'; return new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); },
-  shortDate(iso)   { if (!iso) return '—'; return new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short'}); },
+  shortDate: function(d) { if (!d) return '—'; var date = new Date(d); return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }); },
+
+  getOwnerName: function(teamName) {
+    const owners = {
+      'GUJARAT TITANS': 'ABHISHEK',
+      'MUMBAI INDIANS': 'ADHESH',
+      'PUNJAB KINGS': 'ASHIK',
+      'CHENNAI SUPER KINGS': 'GOKUL',
+      'KOLKATA KNIGHT RIDERS': 'JAIAKASH',
+      'DELHI CAPITALS': 'PIERRS',
+      'RAJASTHAN ROYALS': 'SANTHOSH',
+      'SUNRISERS HYDERABAD': 'SANTO',
+      'ROYAL CHALLENGERS BENGALURU': 'SURE',
+      'SUPREME RAJAS': 'SURIYA',
+      'LUCKNOW SUPER GIANTS': 'VICKY'
+    };
+    return owners[(teamName || '').toUpperCase()] || 'Team Manager';
+  },
   esc(s)           { return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); },
   ordinal(n)       { const s=['th','st','nd','rd'],v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); },
   navigate(url)    { document.body.style.opacity='0'; document.body.style.transition='opacity .2s ease'; setTimeout(()=>{window.location.href=url;},210); },

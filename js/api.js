@@ -443,6 +443,8 @@ const API = {
     if (delErr) throw delErr;
     onLog?.('Recalculating player points...');
     const result = await this.calculateMatchPoints(matchId, onLog);
+    onLog?.('Awarding badges...');
+    try { await this.awardBadges(matchId); } catch(e) { console.warn('[Badges]', e.message); }
     try { await sb.rpc('refresh_match_center', { p_match_id: matchId }); } catch (_) {}
     onLog?.('Done! Leaderboard refreshed.', 'good');
     return result;
@@ -633,9 +635,96 @@ const API = {
     }
     const { error: plErr } = await sb.from('points_log').upsert(logs, { onConflict: 'match_id,fantasy_team_id' });
     if (plErr) throw plErr;
+
+    // Mark match as processed so it leaves "Pending Calculation"
+    await sb.from('matches').update({ status: 'processed' }).eq('id', matchId);
+
     await this.refreshLeaderboard();
     await this.lockMatch(matchId);
     return logs;
+  },
+
+  // ══════════════════════════════════════════════════════════════════
+  //  BADGE ENGINE
+  // ══════════════════════════════════════════════════════════════════
+  async awardBadges(matchId) {
+    const [match, logs, preds] = await Promise.all([
+      this.fetchMatch(matchId),
+      sb.from('points_log').select('*').eq('match_id', matchId),
+      sb.from('predictions').select('*').eq('match_id', matchId)
+    ]);
+    if (!match || !logs.data) return;
+
+    const newBadges = [];
+    const existingResult = await sb.from('user_badges').select('fantasy_team_id,badge_id');
+    const existingMap = {};
+    (existingResult.data || []).forEach(b => {
+      if (!existingMap[b.fantasy_team_id]) existingMap[b.fantasy_team_id] = new Set();
+      existingMap[b.fantasy_team_id].add(b.badge_id);
+    });
+
+    for (const log of logs.data) {
+      const teamId = log.fantasy_team_id;
+      const teamExisting = existingMap[teamId] || new Set();
+      const pred = (preds.data || []).find(p => p.fantasy_team_id === teamId);
+
+      // Helper to push if not already owned
+      const give = (bid) => {
+        if (!teamExisting.has(bid)) newBadges.push({ fantasy_team_id: teamId, badge_id: bid });
+      };
+
+      // 1. Centurion (100+ runs by any player)
+      const hasCenturion = (log.breakdown?.players || []).some(p => p.bat >= 100);
+      if (hasCenturion) give('centurion');
+
+      // 2. Five-fer (5+ wickets by any player)
+      const hasFivefer = (log.breakdown?.players || []).some(p => p.bowl >= 250); // 50 * 5 = 250 base pts for 5 wickets
+      if (hasFivefer) give('five-fer');
+
+      // 3. Perfect Pick (Prediction diff = 0)
+      if (pred && match.actual_target && Math.abs(pred.target_score - match.actual_target) === 0) {
+        give('perfect-pick');
+      }
+
+      // 4. Prediction Pro (Correct winner + diff <= 5)
+      if (pred && pred.predicted_winner === match.winner && match.actual_target && Math.abs(pred.target_score - match.actual_target) <= 5) {
+        give('prediction-pro');
+      }
+
+      // 5. High Flyer (Match points >= 250)
+      if (log.total_points >= 250) give('high-flyer');
+    }
+
+    if (newBadges.length) {
+      const { error } = await sb.from('user_badges').insert(newBadges);
+      if (error) throw error;
+    }
+  },
+
+  async checkAndAwardBadges(teamId) {
+    const { data: team, error: tErr } = await sb.from('leaderboard').select('*').eq('fantasy_team_id', teamId).maybeSingle();
+    if (tErr || !team) return;
+
+    const { data: existing, error: eErr } = await sb.from('user_badges').select('badge_id').eq('fantasy_team_id', teamId);
+    if (eErr) return;
+    const owned = new Set((existing || []).map(b => b.badge_id));
+
+    const newBadges = [];
+    const give = (bid) => { if (!owned.has(bid)) newBadges.push({ fantasy_team_id: teamId, badge_id: bid }); };
+
+    // 1. Point Milestones
+    if (team.total_points >= 1000) give('millennium-club');
+    if (team.total_points >= 500) give('half-k-club');
+
+    // 2. Rank Milestones
+    if (team.rank <= 10 && team.matches_played >= 1) give('elite-top-10');
+
+    // 3. Activity
+    if (team.matches_played >= 5) give('season-veteran');
+
+    if (newBadges.length) {
+      await sb.from('user_badges').insert(newBadges);
+    }
   },
 
   // ══════════════════════════════════════════════════════════════════

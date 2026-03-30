@@ -67,7 +67,7 @@
         <div class="card-title">Match Leaderboard</div>
         <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
           <table class="data-table">
-            <thead><tr><th style="width:40px;">#</th><th>Team</th><th>Squad</th><th>Pred</th><th>Total</th></tr></thead>
+            <thead><tr><th style="width:40px;">#</th><th>Team</th><th>Squad</th><th>Pred</th><th>Total</th><th>Season Pts</th></tr></thead>
             <tbody id="match-lb-tbody"></tbody>
           </table>
         </div>
@@ -160,6 +160,12 @@ async function showMatchDetail(matchId) {
 
   try {
     var mc = await API.fetchMatchCenter(matchId);
+    // Fetch current leaderboard to get season totals
+    var seasonLb = await API.fetchLeaderboard();
+    mc.leaderboard.forEach(function(r) {
+      var s = seasonLb.find(function(x) { return x.fantasy_team_id === r.fantasy_team_id; });
+      r.team_season_pts = s ? s.total_points : 0;
+    });
     renderMatchHeader(mc);
     renderMatchLeaderboard(mc);
     renderPredSummary(mc);
@@ -203,6 +209,7 @@ function renderMatchLeaderboard(mc) {
       '<td class="font-mono">'+r.squad_points+'</td>' +
       '<td class="font-mono">'+r.prediction_points+'</td>' +
       '<td class="pts">'+r.total_points+'</td>' +
+      '<td class="pts" style="color:var(--gold);">'+(r.team_season_pts||'—')+'</td>' +
     '</tr>';
   }).join('');
 }

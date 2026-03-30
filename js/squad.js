@@ -127,7 +127,7 @@ function renderSquad(){
       '<div class="player-ipl">'+UI.esc(p.ipl_team||'&mdash;')+'</div>' +
       '<div style="display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;">'+badges+'</div>' +
       (statusBadges?'<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-top:6px;">'+statusBadges+'</div>':'') +
-      (pts>0?'<div class="player-pts-row"><span style="color:var(--text2)">Season</span><span style="font-family:var(--f-mono);font-weight:600;color:var(--accent)">'+pts+'</span></div>':'') +
+      (pts!==0?'<div class="player-pts-row"><span style="color:var(--text2)">Season</span><span style="font-family:var(--f-mono);font-weight:600;color:var(--accent)">'+pts+'</span></div>':'') +
       (isInjured?'<button class="btn btn-sm" style="margin-top:8px;width:100%;background:rgba(56,217,245,.12);color:var(--cyan);border:1px solid rgba(56,217,245,.25);font-size:11px;" onclick="openRepModal(\''+pd+'\');">'+(hasRep?'&#x2194; Change':'+ Set Replacement')+'</button>':'') +
     '</div>';
   }).join('');
@@ -251,43 +251,172 @@ async function submitReplacement(){
   });
 }
 
-async function exportSquadPDF(){
-  try{
-    var result=await sb.from('squad_players').select('player:players(name,role,ipl_team,is_overseas)').eq('fantasy_team_id',_myTeamId);
-    if(result.error) throw result.error;
-    var rows=result.data||[];
-    var list=rows.sort(function(a,b){
-      var sqA=_squad.find(function(s){return s.player&&s.player.name===(a.player&&a.player.name);});
-      var sqB=_squad.find(function(s){return s.player&&s.player.name===(b.player&&b.player.name);});
-      var rA=sqA?(sqA.is_captain?0:sqA.is_vc?1:2):2,rB=sqB?(sqB.is_captain?0:sqB.is_vc?1:2):2;
-      return rA!==rB?rA-rB:((a.player&&a.player.name)||'').localeCompare((b.player&&b.player.name)||'');
+async function exportSquadPDF() {
+  try {
+    var result = await sb.from('squad_players').select('is_captain,is_vc,is_impact,player:players(*)').eq('fantasy_team_id', _myTeamId);
+    if (result.error) throw result.error;
+    var list = (result.data || []).sort(function(a, b) {
+      var rA = a.is_captain ? 0 : a.is_vc ? 1 : a.is_impact ? 2 : 3,
+        rB = b.is_captain ? 0 : b.is_vc ? 1 : b.is_impact ? 2 : 3;
+      return rA !== rB ? rA - rB : ((a.player && a.player.name) || '').localeCompare((b.player && b.player.name) || '');
     });
-    var totalSpent=list.reduce(function(s,r){return s+Number(r.sold_price||0);},0);
-    var os=list.filter(function(r){return r.player&&r.player.is_overseas;}).length;
-    var rtn=list.filter(function(r){return r.is_retained;}).length;
-    var rowsHtml=list.map(function(tp,i){
-      var p=tp.player||{};
-      var sqP=_squad.find(function(s){return s.player&&s.player.name===p.name;});
-      var tags=[tp.is_retained?'RTN':'',tp.is_rtm?'RTM':'',p.is_overseas?'OS':''].filter(Boolean).join(' ');
-      var cap=sqP&&sqP.is_captain,vc=sqP&&sqP.is_vc;
-      return '<tr'+(tp.is_retained?' style="background:#fffbeb"':'')+'><td>'+(i+1)+'</td>'+
-        '<td><strong>'+UI.esc(p.name||'')+'</strong>'+(tags?'<br><small style="color:#888">'+tags+'</small>':'')+'</td>'+
-        '<td>'+UI.esc(p.role||'')+'</td><td>'+UI.esc(p.ipl_team||'')+'</td>'+
-        '<td style="text-align:center">'+(cap?'C':vc?'VC':'')+'</td>'+
-        '<td>Rs.'+(p.base_price||0)+'</td><td style="font-weight:600;color:#b7791f">Rs.'+Number(tp.sold_price||0).toFixed(2)+'</td></tr>';
-    }).join('');
-    var parts=['<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+UI.esc(_myTeam.team_name)+'</title>',
-      '<style>body{font-family:Arial,sans-serif;font-size:13px;padding:20px}h1{font-size:18px}table{width:100%;border-collapse:collapse}',
-      'th{background:#1a1a2e;color:#f0b429;padding:7px 9px;text-align:left;font-size:10px}td{padding:6px 9px;border-bottom:1px solid #eee}</style></head><body>',
-      '<h1>'+UI.esc(_myTeam.team_name)+'</h1><p style="font-size:12px;color:#666">BFL IPL 2026 &middot; '+new Date().toLocaleString('en-IN')+'</p>',
-      '<p>Players: '+list.length+'/12 &nbsp; OS: '+os+'/4 &nbsp; Retained: '+rtn+' &nbsp; Spent: Rs.'+totalSpent.toFixed(1)+'Cr</p>',
-      '<table><thead><tr><th>#</th><th>Player</th><th>Role</th><th>IPL</th><th>Cap</th><th>Base</th><th>Paid</th></tr></thead><tbody>'+rowsHtml+'</tbody></table></body></html>'];
-    var blob=new Blob([parts.join('')],{type:'text/html'});
-    var url=URL.createObjectURL(blob);
-    var w=window.open(url,'_blank');
-    if(!w){UI.toast('Allow popups','warn');return;}
-    setTimeout(function(){URL.revokeObjectURL(url);},60000);
-    UI.toast('PDF opened &mdash; Ctrl+P to print','success',5000);
-  }catch(e){UI.toast('PDF failed: '+e.message,'error');}
+
+    var teamName = (_myTeam && _myTeam.team_name) || 'My Squad';
+    var ownerName = (_myTeam && _myTeam.owner_name) || UI.getOwnerName(teamName);
+    
+    // Fix: Calculate total points from individual player scores to ensure accuracy
+    var totalPts = list.reduce(function(sum, sp) {
+      var pName = (sp.player && sp.player.name) || '';
+      return sum + ((_playerPts[pName] && _playerPts[pName].pts) || 0);
+    }, 0);
+
+    var roleText = function(role) {
+      if (role === 'Batter') return 'Batter';
+      if (role === 'Bowler') return 'Bowler';
+      if (role === 'Wicket-Keeper') return 'Wicket-Keeper';
+      if (role === 'All-Rounder') return 'All-Rounder';
+      return role || '—';
+    };
+
+    var C = { CSK: '#fdb913', MI: '#004ba0', RCB: '#da1818', KKR: '#6a1bac', SRH: '#f26522', DC: '#004c93', PBKS: '#ed1b24', RR: '#ea1a85', GT: '#1c2c5b', LSG: '#ff002b', SURA: '#1a3a8a' };
+    var teamColor = C[(teamName || '').replace(/\s+/g, '').toUpperCase()] || '#1a1a2e';
+
+    var docHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>BFL Squad - ${UI.esc(teamName)}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Barlow+Condensed:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; padding: 0; margin: 0; color: #1e293b; background: #f8fafc; line-height: 1.5; }
+        .page { background: #fff; max-width: 900px; margin: 0 auto; box-shadow: 0 10px 25px rgba(0,0,0,0.05); min-height: 100vh; }
+        .branding-bar { height: 6px; background: linear-gradient(90deg, ${teamColor}, #f0b429); }
+        .header { background: #1a1a2e; color: #fff; padding: 40px; display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; }
+        .header::after { content: 'BFL'; position: absolute; right: -20px; top: -20px; font-size: 160px; font-weight: 900; color: rgba(255,255,255,0.03); font-family: 'Barlow Condensed'; }
+        .team-name { font-size: 36px; font-weight: 800; color: #fff; margin: 0; text-transform: uppercase; letter-spacing: -1px; font-family: 'Barlow Condensed'; }
+        .owner-info { margin-top: 4px; color: #94a3b8; font-size: 14px; text-transform: uppercase; letter-spacing: 2px; }
+        .total-box { text-align: right; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+        .total-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #f0b429; margin-bottom: 5px; }
+        .total-val { font-size: 42px; font-weight: 800; color: #fff; line-height: 1; font-family: 'Barlow Condensed'; }
+        
+        .content { padding: 40px; }
+        .stats-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
+        .stat-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); border-color: ${teamColor}; }
+        .stat-v { font-size: 24px; font-weight: 800; color: #1e293b; display: block; }
+        .stat-l { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; margin-top: 4px; font-weight: 600; }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: -8px; }
+        th { text-align: left; padding: 12px 20px; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
+        td { padding: 16px 20px; background: #fff; border-top: 1px solid #f1f5f9; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
+        td:first-child { border-left: 1px solid #f1f5f9; border-radius: 12px 0 0 12px; }
+        td:last-child { border-right: 1px solid #f1f5f9; border-radius: 0 12px 12px 0; }
+        
+        .p-info { display: flex; align-items: center; gap: 12px; }
+        .p-name { font-weight: 700; color: #0f172a; font-size: 15px; }
+        .p-team { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; }
+        .role-pill { font-size: 11px; padding: 4px 10px; border-radius: 6px; background: #f1f5f9; font-weight: 700; color: #475569; display: inline-block; }
+        .pts-badge { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; color: ${teamColor}; }
+        .pts-badge.neg { color: #ef4444; }
+        
+        .badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 800; margin-left: 8px; vertical-align: middle; }
+        .badge.c { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .badge.vc { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+        .badge.imp { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+        .footer { padding: 40px; text-align: center; color: #94a3b8; font-size: 12px; border-top: 1px solid #f1f5f9; background: #fafafa; }
+        @media print { body { background: #fff; } .page { box-shadow: none; max-width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="branding-bar"></div>
+        <div class="header">
+            <div>
+                <h1 class="team-name">${UI.esc(teamName)}</h1>
+                <div class="owner-info">Manager: ${UI.esc(ownerName)}</div>
+            </div>
+            <div class="total-box">
+                <div class="total-lbl">Season Points</div>
+                <div class="total-val">${Math.round(totalPts)}</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="stats-summary">
+                <div class="stat-card">
+                    <span class="stat-v">${list.length}</span>
+                    <span class="stat-l">Players</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-v">${list.filter(function(r) { return r.player && r.player.is_overseas; }).length}</span>
+                    <span class="stat-l">Overseas</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-v">${list.filter(function(r) { return r.is_captain || r.is_vc; }).length}</span>
+                    <span class="stat-l">Leaders</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-v">${(totalPts / Math.max(1, list.length)).toFixed(1)}</span>
+                    <span class="stat-l">Avg Pts</span>
+                </div>
+            </div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:40px;text-align:center;">#</th>
+                        <th>Player Details</th>
+                        <th>Role</th>
+                        <th style="text-align:right;">Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${list.map(function(sqP, i) {
+                      var p = sqP.player || {};
+                      var pName = p.name || '—';
+                      var pPts = (_playerPts[pName] && _playerPts[pName].pts) || 0;
+                      var role = roleText(p.role);
+                      var rowColor = i % 2 === 0 ? '#fff' : '#fafafa';
+                      return `
+                        <tr>
+                            <td style="text-align:center;color:#94a3b8;font-weight:700;">${i + 1}</td>
+                            <td>
+                                <div class="p-info">
+                                    <div>
+                                        <div class="p-name">
+                                            ${UI.esc(pName)} ${p.is_overseas ? '✈️' : ''}
+                                            ${sqP.is_captain ? '<span class="badge c">C</span>' : sqP.is_vc ? '<span class="badge vc">VC</span>' : sqP.is_impact ? '<span class="badge imp">IMP</span>' : ''}
+                                        </div>
+                                        <div class="p-team">${UI.esc(p.ipl_team || '—')}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="role-pill">${UI.esc(role)}</span></td>
+                            <td style="text-align:right;"><span class="pts-badge ${pPts < 0 ? 'neg' : ''}">${Math.round(pPts)}</span></td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            <strong>BFL FANTASY CRICKET LEAGUE</strong><br>
+            Official Team Squad Report • Generated on ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}<br>
+            <span style="display:inline-block;margin-top:10px;padding:4px 12px;background:#f1f5f9;border-radius:20px;color:#64748b;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:1px;">Verified Authentic</span>
+        </div>
+    </div>
+</body>
+</html>`;
+
+    var blob = new Blob([docHtml], { type: 'text/html' });
+    var url = URL.createObjectURL(blob);
+    var w = window.open(url, '_blank');
+    if (!w) { UI.toast('Allow popups to open PDF', 'warn'); return; }
+    UI.toast('Exported! Press Ctrl+P to save as PDF', 'success', 5000);
+  } catch (e) {
+    UI.toast('Export failed: ' + e.message, 'error');
+  }
 }
 init();

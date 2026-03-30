@@ -222,7 +222,7 @@ async function loadStats() {
     var widgets = [
       { val:total, lbl:'Season Points', sub:'All matches combined', c:'var(--accent)', anim:true },
       { val:rank?UI.ordinal(rank):'—', lbl:'Current Rank', sub:'Out of '+lb.length+' teams', c:'var(--gold)' },
-      { val:lastPts, lbl:'Last Match', sub:lastMatch&&lastMatch.match?'vs '+(lastMatch.match.team1||''):'' , c:'var(--cyan)' },
+      { val:lastPts, lbl:'Last Match', sub:lastMatch&&lastMatch.match?('Match No.'+(lastMatch.match.match_no||'?')+' '+(lastMatch.match.team1||'')+' vs '+(lastMatch.match.team2||'')):'' , c:'var(--cyan)' },
       { val:avg, lbl:'Avg / Match', sub:'Points per game', c:'var(--purple)' },
     ];
     $('#stat-widgets').innerHTML = widgets.map(function(w,i){
