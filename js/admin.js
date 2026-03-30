@@ -445,7 +445,7 @@ function filterFixtures(q) {
 function clearFixtureForm() {
   $id('fx-id').value=''; $id('fx-no').value=''; $id('fx-date').value='';
   ['fx-team1','fx-team2','fx-venue'].forEach(function(id){var e=$id(id);if(e)e.value='';});
-  $id('fx-time').value='19:30'; $id('fx-autolock').value='15'; $id('fx-status').value='upcoming';
+  $id('fx-time').value='19:30'; $id('fx-autolock').value='5'; $id('fx-status').value='upcoming';
   $id('fx-form-title').textContent='New Match'; $id('fx-delete-btn').style.display='none';
 }
 
@@ -457,7 +457,7 @@ function editFixture(matchId) {
   $id('fx-delete-btn').style.display='';
   $id('fx-team1').value=m.team1||''; $id('fx-team2').value=m.team2||'';
   $id('fx-venue').value=m.venue||''; $id('fx-status').value=m.status||'upcoming';
-  $id('fx-autolock').value=m.auto_lock_mins||15;
+  $id('fx-autolock').value=m.auto_lock_mins||5;
   if (m.match_date) {
     var dt = new Date(m.match_date);
     $id('fx-date').value = dt.toLocaleDateString('sv',{timeZone:'Asia/Kolkata'});
@@ -475,7 +475,7 @@ async function saveFixture() {
   var date=$id('fx-date').value, time=$id('fx-time').value||'19:30';
   var no=parseInt($id('fx-no').value||0)||null;
   var venue=$id('fx-venue').value, status=$id('fx-status').value;
-  var al=parseInt($id('fx-autolock').value||15);
+  var al=parseInt($id('fx-autolock').value||5);
   var matchDate = date ? new Date(date+'T'+time+':00+05:30').toISOString() : null;
   var deadline  = matchDate ? new Date(new Date(matchDate).getTime() + al*60000).toISOString() : null;
   var lockTime  = deadline  ? new Date(new Date(deadline).getTime() + 5*60000).toISOString() : null;

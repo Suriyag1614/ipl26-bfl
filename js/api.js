@@ -146,7 +146,7 @@ const API = {
       // Auto-lock means "minutes after match start"
       if (!match.deadline_time) {
         const d = new Date(match.match_date);
-        d.setMinutes(d.getMinutes() + (match.auto_lock_mins || 15));
+        d.setMinutes(d.getMinutes() + (match.auto_lock_mins || 5));
         match.deadline_time = d.toISOString();
       }
       // Keep lock_time aligned to deadline + 5 min if not explicitly set
@@ -920,7 +920,7 @@ getLockTime(match) {
     if (match.deadline_time) return new Date(new Date(match.deadline_time).getTime() + 5 * 60 * 1000);
     // Fallback: if deadline_time is missing, use match start + auto_lock_mins + 5 min
     if (match.match_date) {
-      const mins = Number(match.auto_lock_mins || 15);
+      const mins = Number(match.auto_lock_mins || 5);
       return new Date(new Date(match.match_date).getTime() + (mins * 60 * 1000) + (5 * 60 * 1000));
     }
     return null;
