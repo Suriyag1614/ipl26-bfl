@@ -251,46 +251,7 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   //  IMPACT PLAYER  (strict: max 8, no C/VC, squad-only)
   // ══════════════════════════════════════════════════════════════════
-  async fetchImpactUsage(teamId) {
-    const { data, error } = await sb.from('impact_usage')
-      .select('id,match_id,player_id,used,created_at,player:players(name,role,ipl_team),match:matches(match_title)')
-      .eq('fantasy_team_id', teamId).eq('used', true).order('created_at', { ascending: false });
-    if (error) throw error;
-    return data || [];
-  },
-
-  async fetchImpactCount(teamId) {
-    const { count, error } = await sb.from('impact_usage')
-      .select('id', { count: 'exact', head: true }).eq('fantasy_team_id', teamId).eq('used', true);
-    if (error) throw error;
-    return count || 0;
-  },
-
-  async fetchImpactForMatch(teamId, matchId) {
-    const { data, error } = await sb.from('impact_usage')
-      .select('*,player:players(id,name,role,ipl_team)').eq('fantasy_team_id', teamId).eq('match_id', matchId).maybeSingle();
-    if (error) throw error;
-    return data;
-  },
-
-  validateImpactPlayer(squad, playerId, usageCount) {
-    if (usageCount >= 8) return { valid: false, error: 'Impact Player limit reached (8/8 used)' };
-    const sp = squad.find(s => s.player?.id === playerId);
-    if (!sp)           return { valid: false, error: 'Player not in your squad' };
-    if (sp.is_captain) return { valid: false, error: 'Captain cannot be Impact Player (2\u00d7 already applied)' };
-    if (sp.is_vc)      return { valid: false, error: 'Vice Captain cannot be Impact Player (1.5\u00d7 already applied)' };
-    return { valid: true, error: null };
-  },
-
-  async submitImpactPlayer(teamId, matchId, playerId) {
-    const [squad, count] = await Promise.all([this.fetchSquad(teamId), this.fetchImpactCount(teamId)]);
-    const check = this.validateImpactPlayer(squad, playerId, count);
-    if (!check.valid) throw new Error(check.error);
-    const { data, error } = await sb.rpc('submit_impact_player', { p_team_id: teamId, p_match_id: matchId, p_player_id: playerId });
-    if (error) throw new Error(error.message);
-    if (data && !data.success) throw new Error(data.error || 'Server rejected impact player');
-    return data;
-  },
+  // Removed redundant impact_usage logic — now using impact_activations system
 
   // ══════════════════════════════════════════════════════════════════
   //  PLAYER STATS
@@ -641,6 +602,10 @@ const API = {
 
     await this.refreshLeaderboard();
     await this.lockMatch(matchId);
+    
+    // Award badges (admin-side bypasses RLS)
+    try { await this.awardBadges(matchId); } catch(e) { console.error('[Badges] Awarding failed:', e); }
+    
     return logs;
   },
 
@@ -648,37 +613,47 @@ const API = {
   //  BADGE ENGINE
   // ══════════════════════════════════════════════════════════════════
   async awardBadges(matchId) {
-    const [match, logs, preds] = await Promise.all([
+    // 1. Fetch data
+    const [match, { data: logs }, { data: preds }, lb] = await Promise.all([
       this.fetchMatch(matchId),
       sb.from('points_log').select('*').eq('match_id', matchId),
-      sb.from('predictions').select('*').eq('match_id', matchId)
+      sb.from('predictions').select('*').eq('match_id', matchId),
+      this.fetchLeaderboard() // Need latest standings for career badges
     ]);
-    if (!match || !logs.data) return;
+    if (!match || !logs) return;
 
-    const newBadges = [];
-    const existingResult = await sb.from('user_badges').select('fantasy_team_id,badge_id');
+    // 2. Fetch all existing badges to avoid duplicates
+    const { data: existing } = await sb.from('user_badges').select('fantasy_team_id,badge_id');
     const existingMap = {};
-    (existingResult.data || []).forEach(b => {
+    (existing || []).forEach(b => {
       if (!existingMap[b.fantasy_team_id]) existingMap[b.fantasy_team_id] = new Set();
       existingMap[b.fantasy_team_id].add(b.badge_id);
     });
 
-    for (const log of logs.data) {
+    const newBadges = [];
+    for (const log of logs) {
       const teamId = log.fantasy_team_id;
       const teamExisting = existingMap[teamId] || new Set();
-      const pred = (preds.data || []).find(p => p.fantasy_team_id === teamId);
+      const pred = (preds || []).find(p => p.fantasy_team_id === teamId);
+      const lbRow = (lb || []).find(r => r.fantasy_team_id === teamId);
+      const totalPoints = lbRow ? lbRow.total_points : 0;
+      const rank = lbRow ? lbRow.rank : 999;
 
       // Helper to push if not already owned
       const give = (bid) => {
-        if (!teamExisting.has(bid)) newBadges.push({ fantasy_team_id: teamId, badge_id: bid });
+        if (!teamExisting.has(bid)) {
+          newBadges.push({ fantasy_team_id: teamId, badge_id: bid });
+          teamExisting.add(bid); // Don't add same badge twice in one go
+        }
       };
 
+      // --- Match Specific Badges ---
       // 1. Centurion (100+ runs by any player)
-      const hasCenturion = (log.breakdown?.players || []).some(p => p.bat >= 100);
+      const hasCenturion = (log.breakdown?.players || []).some(p => (p.bat / (p.multiplier || 1)) >= 100);
       if (hasCenturion) give('centurion');
 
-      // 2. Five-fer (5+ wickets by any player)
-      const hasFivefer = (log.breakdown?.players || []).some(p => p.bowl >= 250); // 50 * 5 = 250 base pts for 5 wickets
+      // 2. Five-fer (250+ bowling pts by any player)
+      const hasFivefer = (log.breakdown?.players || []).some(p => (p.bowl / (p.multiplier || 1)) >= 250); 
       if (hasFivefer) give('five-fer');
 
       // 3. Perfect Pick (Prediction diff = 0)
@@ -693,37 +668,74 @@ const API = {
 
       // 5. High Flyer (Match points >= 250)
       if (log.total_points >= 250) give('high-flyer');
+
+      // --- Career Milestones ---
+      // 6. Point Milestones
+      if (totalPoints >= 1000) give('1000-points');
+      if (totalPoints >= 3000) give('3000-points');
+      if (totalPoints >= 5000) give('5000-points');
+
+      // 7. Rank Milestones
+      if (rank === 1) give('rank-1');
+      if (rank <= 3)  give('top-3');
+      if (rank <= 10) give('top-10');
+
+      // 8. Prediction Counts (Approximate from total points if needed, or better fetch all history)
+      // For now we'll stick to points and rank as they are the most important
     }
 
     if (newBadges.length) {
+      console.log(`[Badges] Awarding ${newBadges.length} new badges to ${logs.length} teams`);
       const { error } = await sb.from('user_badges').insert(newBadges);
-      if (error) throw error;
+      if (error) console.error('[Badges] Insert error:', error.message);
     }
   },
 
+
   async checkAndAwardBadges(teamId) {
-    const { data: team, error: tErr } = await sb.from('leaderboard').select('*').eq('fantasy_team_id', teamId).maybeSingle();
-    if (tErr || !team) return;
+    try {
+      const [{ data: team }, lb, breakdown, preds, existing] = await Promise.all([
+        sb.from('leaderboard').select('*').eq('fantasy_team_id', teamId).maybeSingle(),
+        this.fetchLeaderboard(),
+        this.fetchPointsBreakdown(teamId),
+        this.fetchMyPredictions(teamId),
+        this.fetchUserBadges(teamId),
+      ]);
+      if (!team) return;
 
-    const { data: existing, error: eErr } = await sb.from('user_badges').select('badge_id').eq('fantasy_team_id', teamId);
-    if (eErr) return;
-    const owned = new Set((existing || []).map(b => b.badge_id));
+      const earned = new Set(existing.map(b => b.badge_id));
+      const predStats = this._calcPredStats(preds);
+      const myLbRow = (lb || []).find(r => r.fantasy_team_id === teamId);
+      const rank = myLbRow ? myLbRow.rank : 999;
 
-    const newBadges = [];
-    const give = (bid) => { if (!owned.has(bid)) newBadges.push({ fantasy_team_id: teamId, badge_id: bid }); };
+      console.log(`[Badges] Checking for ${teamId}. Current: ${earned.size}. Pts: ${team.total_points}, Rank: ${rank}`);
 
-    // 1. Point Milestones
-    if (team.total_points >= 1000) give('millennium-club');
-    if (team.total_points >= 500) give('half-k-club');
+      const newBadges = [];
+      const give = (bid) => { if (!earned.has(bid)) newBadges.push({ fantasy_team_id: teamId, badge_id: bid }); };
 
-    // 2. Rank Milestones
-    if (team.rank <= 10 && team.matches_played >= 1) give('elite-top-10');
+      // 1. Point Milestones
+      if (team.total_points >= 1000) give('millennium-club');
+      if (team.total_points >= 500)  give('half-k-club');
 
-    // 3. Activity
-    if (team.matches_played >= 5) give('season-veteran');
+      // 2. Rank Milestones
+      if (rank === 1) give('the-champion');
+      if (rank <= 3)  give('podium-finish');
+      if (rank <= 10) give('top-10');
 
-    if (newBadges.length) {
-      await sb.from('user_badges').insert(newBadges);
+      // 3. Prediction Milestones
+      if (preds.some(p => p.match?.actual_target && Number(p.target_score) === Number(p.match.actual_target))) give('perfect-pick');
+      if (predStats.best_streak >= 3) give('streak-3');
+      if (predStats.best_streak >= 5) give('streak-5');
+
+      // 4. Player Milestones
+      if (breakdown.some(log => (log.breakdown?.players || []).some(p => p.isImpact && (p.final || 0) >= 300))) give('impact-master');
+      if (breakdown.some(log => (log.breakdown?.players || []).some(p => p.isCaptain && (p.final || 0) >= 200))) give('captain-king');
+
+      if (newBadges.length) {
+        console.debug('[Badges] New potential badges:', newBadges.length, '. Awarding is handled by admin during match processing.');
+      }
+    } catch (err) {
+      console.debug('[Badges] Prediction stats unavailable or other fetch error:', err.message);
     }
   },
 
@@ -752,16 +764,16 @@ const API = {
   //  ANALYTICS
   // ══════════════════════════════════════════════════════════════════
   async fetchAnalytics(teamId) {
-    const [breakdown, predictions, impactUsage, squad] = await Promise.all([
+    const [breakdown, predictions, impactStats, squad] = await Promise.all([
       this.fetchPointsBreakdown(teamId), this.fetchMyPredictions(teamId),
-      this.fetchImpactUsage(teamId), this.fetchSquad(teamId),
+      this.fetchImpactStats(teamId), this.fetchSquad(teamId),
     ]);
     return {
-      breakdown, predictions, impactUsage, squad,
+      breakdown, predictions, impactUsage: [], squad, // impactUsage redundant now
       rankHistory: this._buildRankHistory(breakdown),
       predStats:   this._calcPredStats(predictions),
       playerStats: this._calcPlayerStats(breakdown),
-      impactStats: this._calcImpactStats(breakdown, impactUsage),
+      impactStats: this._calcImpactStats(breakdown, impactStats),
       streaks:     this._calcStreaks(predictions),
     };
   },
@@ -807,15 +819,33 @@ const API = {
     return { top: list.slice(0, 3), worst: list.length > 1 ? list.slice(-2).reverse() : [], all: list };
   },
 
-  _calcImpactStats(breakdown, impactUsage) {
+  _calcImpactStats(breakdown, impactStats) {
     let totalPts = 0;
     const picks = [];
+    const history = [];
     breakdown.forEach(log => {
-      const ip = log.breakdown?.players?.find(p => p.isImpact);
-      if (ip) { totalPts += ip.final || 0; picks.push({ name: ip.name, pts: ip.final || 0, match: log.match?.match_title }); }
+      const ip = log.breakdown?.players?.find(p => p.isImpact && p.isImpactActive);
+      if (ip) {
+        const pts = ip.final || 0;
+        totalPts += pts;
+        const entry = {
+          match: log.match?.match_title || (log.match?.team1 + ' vs ' + log.match?.team2),
+          name: ip.name,
+          role: ip.role,
+          pts: pts
+        };
+        picks.push(entry);
+        history.push(entry);
+      }
     });
     picks.sort((a, b) => b.pts - a.pts);
-    return { total_pts: totalPts, uses: impactUsage.length, remaining: Math.max(0, 8 - impactUsage.length), best_picks: picks.slice(0, 3) };
+    return {
+      total_pts: totalPts,
+      uses: impactStats.used,
+      remaining: impactStats.remaining,
+      best_picks: picks.slice(0, 3),
+      history: history.reverse()
+    };
   },
 
   _calcStreaks(predictions) {
@@ -941,7 +971,14 @@ const API = {
   },
 
   async awardBadge(teamId, badgeId) {
-    await sb.from('user_badges').upsert({ fantasy_team_id: teamId, badge_id: badgeId }, { onConflict: 'fantasy_team_id,badge_id' });
+    // Only insert if it doesn't exist (handled by checkAndAwardBadges, but safe here too)
+    const { error } = await sb.from('user_badges').insert({ fantasy_team_id: teamId, badge_id: badgeId });
+    if (error) {
+      if (error.code === '23505') return; // Duplicate (if constraint exists)
+      console.error('[awardBadge] Error:', error.message);
+    } else {
+      console.log(`[Badges] Awarded "${badgeId}" to team ${teamId}`);
+    }
   },
 
   /* ── Impact Player (Fixed-Role Activation System) ── */
@@ -952,11 +989,22 @@ const API = {
     return !!data?.is_active;
   },
 
+  /* Impact Stats (Merged & Robust) */
   async fetchImpactStats(teamId) {
-    const { count, error } = await sb.from('impact_activations')
-      .select('*', { count: 'exact', head: true }).eq('fantasy_team_id', teamId).eq('is_active', true);
+    // Join with matches to exclude abandoned
+    const { data, error } = await sb.from('impact_activations')
+      .select('id, is_active, match:matches(status)')
+      .eq('fantasy_team_id', teamId)
+      .eq('is_active', true);
     if (error) throw error;
-    return { used: count || 0, total: 8 };
+
+    const rows = data || [];
+    // Only count non-abandoned matches
+    const used = rows.filter(function(r) {
+      return r.match && r.match.status !== 'abandoned';
+    }).length;
+
+    return { used, total: 8, remaining: Math.max(0, 8 - used) };
   },
 
   async submitImpactActivation(teamId, matchId, isActive) {
@@ -970,21 +1018,7 @@ const API = {
     return true;
   },
 
-  async checkAndAwardBadges(teamId) {
-    try {
-      const [breakdown, preds, existing] = await Promise.all([
-        this.fetchPointsBreakdown(teamId), this.fetchMyPredictions(teamId),
-        this.fetchUserBadges(teamId),
-      ]);
-      const earned = new Set(existing.map(b => b.badge_id));
-      const predStats = this._calcPredStats(preds);
-      if (!earned.has('perfect_pred') && preds.some(p => p.match?.actual_target && Number(p.target_score) === Number(p.match.actual_target))) await this.awardBadge(teamId, 'perfect_pred');
-      if (!earned.has('streak_3') && predStats.best_streak >= 3) await this.awardBadge(teamId, 'streak_3');
-      if (!earned.has('streak_5') && predStats.best_streak >= 5) await this.awardBadge(teamId, 'streak_5');
-      if (!earned.has('impact_master') && breakdown.some(log => (log.breakdown?.players || []).some(p => p.isImpact && (p.final || 0) >= 300))) await this.awardBadge(teamId, 'impact_master');
-      if (!earned.has('captain_king') && breakdown.some(log => (log.breakdown?.players || []).some(p => p.isCaptain && (p.final || 0) >= 200))) await this.awardBadge(teamId, 'captain_king');
-    } catch (e) { console.warn('[Badges]', e.message); }
-  },
+  // Consolidated above
 
   // ══════════════════════════════════════════════════════════════════
   //  MISC
@@ -1093,46 +1127,7 @@ getLockTime(match) {
     return !!data?.is_active;
   },
 
-  /**
-   * Fetch season-wide impact stats.
-   * Abandoned matches are excluded from used count.
-   */
-  async fetchImpactStats(teamId) {
-    // Join with matches to exclude abandoned
-    const { data, error } = await sb.from('impact_activations')
-      .select('id, is_active, match:matches(status)')
-      .eq('fantasy_team_id', teamId)
-      .eq('is_active', true);
-    if (error) throw error;
-
-    const rows = data || [];
-    // Only count non-abandoned matches
-    const used = rows.filter(function(r) {
-      return r.match && r.match.status !== 'abandoned';
-    }).length;
-
-    return { used, total: 8, remaining: Math.max(0, 8 - used) };
-  },
-
-  /**
-   * Submit (or update) impact activation for a match.
-   * Validates: limit (excluding abandoned), match open state.
-   */
-  async submitImpactActivation(teamId, matchId, isActive) {
-    if (isActive) {
-      const stats = await this.fetchImpactStats(teamId);
-      if (stats.used >= stats.total) {
-        throw new Error('Impact Player limit reached (8/8 used across non-abandoned matches).');
-      }
-    }
-    const { error } = await sb.from('impact_activations').upsert(
-      { fantasy_team_id: teamId, match_id: matchId, is_active: isActive },
-      { onConflict: 'fantasy_team_id,match_id' }
-    );
-    if (error) throw error;
-    await this._log('impact_activation', 'team', teamId, null, { matchId, isActive });
-    return true;
-  },
+  // ... Consolidated above
 
   // ----------------------------------------------------------
   //  PREDICTION POINTS  (DLS / abandoned aware)

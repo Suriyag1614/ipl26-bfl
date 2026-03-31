@@ -335,18 +335,13 @@ function renderImpact() {
       '<div style="font-family:var(--f-display);font-weight:900;font-size:17px;color:var(--accent);">'+p.pts+'</div></div>';
   }).join(''):'<div style="padding:12px;color:var(--text3);font-size:13px;">No impact activations yet</div>';
   var tbody=document.getElementById('impact-history-tbody'); if(!tbody) return;
-  var usage=Array.isArray(_analytics.impactUsage)?_analytics.impactUsage:[];
-  if(!usage.length){tbody.innerHTML='<tr><td colspan="4" class="empty-state">No impact uses yet</td></tr>';return;}
-  tbody.innerHTML=usage.map(function(u){
-    var pInLog=null;
-    (_analytics.breakdown||[]).forEach(function(l){
-      var found=((l.breakdown&&l.breakdown.players)||[]).find(function(p){return p.isImpact&&p.name===(u.player&&u.player.name);});
-      if(found) pInLog=found;
-    });
-    return '<tr><td>'+UI.esc((u.match&&u.match.match_title)||'—')+'</td>'+
-      '<td style="font-weight:700;">'+UI.esc((u.player&&u.player.name)||'—')+'</td>'+
-      '<td>'+UI.roleBadge(u.player&&u.player.role)+'</td>'+
-      '<td class="pts">'+(pInLog?pInLog.final:'—')+'</td></tr>';
+  var history = Array.isArray(is.history) ? is.history : [];
+  if(!history.length){tbody.innerHTML='<tr><td colspan="4" class="empty-state">No impact uses yet</td></tr>';return;}
+  tbody.innerHTML=history.map(function(h){
+    return '<tr><td>'+UI.esc(h.match||'—')+'</td>'+
+      '<td style="font-weight:700;">'+UI.esc(h.name||'—')+'</td>'+
+      '<td>'+UI.roleBadge(h.role)+'</td>'+
+      '<td class="pts">'+h.pts+'</td></tr>';
   }).join('');
 }
 

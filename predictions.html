@@ -743,14 +743,9 @@ function buildImpactBanner(m) {
   }
   var p = impact.player || {};
   
-  // Check if it's the match day for the team
-  var matchDate = new Date(m.match_date);
-  var now = new Date();
-  var isMatchDay = matchDate.toDateString() === now.toDateString();
-  
   var exhausted = (_impactStats.used >= 8) && !_impactActive;
-  var disabled = exhausted || !isMatchDay;
-  var cls = 'impact-banner' + (_impactActive ? ' active-state' : '') + (exhausted ? ' exhausted' : '') + (!isMatchDay && !_impactActive ? ' disabled-state' : '');
+  var disabled = exhausted;
+  var cls = 'impact-banner' + (_impactActive ? ' active-state' : '') + (exhausted ? ' exhausted' : '');
   
   return '<div class="' + cls + '">' +
     '<div class="impact-player-row">' +
@@ -758,7 +753,7 @@ function buildImpactBanner(m) {
       '<div class="impact-player-info">' +
         '<div class="impact-player-name">' + UI.esc(p.name || '—') + '</div>' +
         '<div class="impact-player-sub">' + UI.esc(p.role || '') + (p.ipl_team ? ' · ' + UI.esc(p.ipl_team) : '') + (p.is_overseas ? ' · ✈️ OS' : '') + '</div>' +
-        '<div style="font-size:11px;color:var(--text3);margin-top:3px;">' + (exhausted ? '⛔ Limit reached (8/8)' : !isMatchDay && !_impactActive ? '⏳ Only available on match day' : _impactActive ? '<span style="color:var(--cyan);font-weight:700;">ACTIVE — 3× multiplier</span>' : 'OFF — excluded from scoring') + '</div>' +
+        '<div style="font-size:11px;color:var(--text3);margin-top:3px;">' + (exhausted ? '⛔ Limit reached (8/8)' : _impactActive ? '<span style="color:var(--cyan);font-weight:700;">ACTIVE — 3× multiplier</span>' : 'OFF — excluded from scoring') + '</div>' +
       '</div>' +
       '<div class="impact-multiplier-badge ' + (_impactActive ? 'on' : 'off') + '">' + (_impactActive ? '3×' : '0×') + '</div>' +
     '</div>' +
