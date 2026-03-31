@@ -573,7 +573,11 @@ async function loadResultForm() {
     });
     pomEl.innerHTML = '<option value="">— Select player —</option>' +
       matchPlayers.map(function(p){
-        return '<option value="'+p.id+'"'+(m.player_of_match===p.id?' selected':'')+'>'+UI.esc(p.name)+' ('+UI.esc(tShort(p.ipl_team))+')</option>';
+        var pt = p.ipl_team || '';
+        var ptc = pt === m.team1 ? tShort(m.team1) : pt === m.team2 ? tShort(m.team2)
+          : pt === tCode(m.team1) ? tShort(m.team1) : pt === tCode(m.team2) ? tShort(m.team2)
+          : tShort(pt);
+        return '<option value="'+p.id+'"'+(m.player_of_match===p.id?' selected':'')+'>'+UI.esc(p.name)+' ('+UI.esc(ptc)+')</option>';
       }).join('');
   }
 
