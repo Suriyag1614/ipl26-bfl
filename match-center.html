@@ -11,23 +11,40 @@
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    .match-selector { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,200px),1fr)); gap:14px; margin-bottom:28px; }
+    .mc-layout { display: flex; gap: 24px; align-items: flex-start; }
+    .mc-sidebar { width: 280px; flex-shrink: 0; position: sticky; top: 80px; max-height: calc(100vh - 120px); overflow-y: auto; padding-right: 4px; }
+    .mc-main { flex: 1; min-width: 0; }
+    
+    /* Scrollbar for sidebar */
+    .mc-sidebar::-webkit-scrollbar { width: 4px; }
+    .mc-sidebar::-webkit-scrollbar-track { background: transparent; }
+    .mc-sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+    .match-selector { display: flex; flex-direction: column; gap: 10px; }
     .match-pill {
       background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg);
-      padding:14px 16px; cursor:pointer; transition:all var(--t);
+      padding:12px 14px; cursor:pointer; transition:all var(--t);
       display:flex; flex-direction:column; gap:4px; animation:fade-up .35s ease both;
     }
-    .match-pill:hover { border-color:var(--border-h); transform:translateY(-3px); box-shadow:var(--shadow); }
-    .match-pill.selected { border-color:var(--accent); background:var(--accent-dim); }
-    .match-pill-teams { font-family:var(--f-display); font-weight:400; font-size:clamp(13px, 3.5vw, 15px); line-height:1.25; }
+    .match-pill:hover { border-color:var(--border-h); background: var(--bg3); }
+    .match-pill.selected { border-color:var(--accent); background:var(--accent-dim); box-shadow: 0 4px 12px rgba(200,241,53,0.1); }
+    .match-pill-teams { font-family:var(--f-display); font-weight:400; font-size: 14px; line-height:1.2; }
     .match-pill-date  { font-size:11px; color:var(--text3); }
+    
     .winner-bar { display:flex; border-radius:6px; overflow:hidden; height:24px; margin-top:8px; }
     .winner-bar-seg { display:flex; align-items:center; justify-content:center; font-family:var(--f-ui); font-size:11px; font-weight:400; transition:flex .8s ease; min-width:30px; }
     .leaderboard-rank-1 td { background:rgba(245,200,66,.08); }
     .leaderboard-rank-1 td:first-child { border-left:3px solid var(--gold); }
     .mc-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
     .pred-winner-bar { height:8px; border-radius:4px; background:var(--bg3); overflow:hidden; display:flex; margin-top:6px; }
-    @media(max-width:700px){ .mc-grid{grid-template-columns:1fr;} .match-selector{grid-template-columns:1fr; gap:10px;} }
+
+    @media(max-width:900px) {
+      .mc-layout { flex-direction: column; }
+      .mc-sidebar { width: 100%; position: static; max-height: 200px; display: flex; flex-direction: row; overflow-x: auto; padding: 4px 0 12px; }
+      .match-selector { flex-direction: row; padding-bottom: 8px; }
+      .match-pill { min-width: 180px; flex-shrink: 0; }
+    }
+    @media(max-width:700px){ .mc-grid{grid-template-columns:1fr;} }
   </style>
 </head>
 <body>
@@ -46,58 +63,59 @@
     <div class="page-sub">Per-match leaderboard · Prediction summary · Top scorers</div>
   </div>
 
-  <!-- Match selector -->
-  <div class="card mb-24">
-    <div class="card-title">Select Match</div>
-    <div id="match-selector" class="match-selector">
-      <div class="skel skel-card" style="height:70px;"></div>
-      <div class="skel skel-card" style="height:70px;"></div>
-      <div class="skel skel-card" style="height:70px;"></div>
-    </div>
-  </div>
+  <div class="mc-layout">
+    <!-- Sidebar: Match Selector -->
+    <aside class="mc-sidebar">
+      <div style="font-family: var(--f-ui); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 12px; padding-left: 4px;">Select Match</div>
+      <div id="match-selector" class="match-selector">
+        <div class="skel skel-card" style="height:60px;"></div>
+        <div class="skel skel-card" style="height:60px;"></div>
+        <div class="skel skel-card" style="height:60px;"></div>
+      </div>
+    </aside>
 
-  <!-- Match detail -->
-  <div id="match-detail" style="display:none;">
-    <!-- Match header -->
-    <div class="card mb-20" id="match-header-card"></div>
+    <!-- Main Content: Match Detail -->
+    <div class="mc-main">
+      <div id="match-detail" style="display:none;">
+        <!-- Match header -->
+        <div class="card mb-20" id="match-header-card"></div>
 
-    <div class="mc-grid">
+        <div class="mc-grid">
+          <!-- Match Leaderboard -->
+          <div class="card">
+            <div class="card-title">Match Leaderboard</div>
+            <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
+              <table class="data-table">
+                <thead><tr><th style="width:40px;">#</th><th>Team</th><th>Squad</th><th>Pred</th><th>Total</th><th>Season Pts</th></tr></thead>
+                <tbody id="match-lb-tbody"></tbody>
+              </table>
+            </div>
+          </div>
 
-      <!-- Match Leaderboard -->
-      <div class="card">
-        <div class="card-title">Match Leaderboard</div>
-        <div class="table-wrap" style="max-height:340px;overflow-y:auto;">
-          <table class="data-table">
-            <thead><tr><th style="width:40px;">#</th><th>Team</th><th>Squad</th><th>Pred</th><th>Total</th><th>Season Pts</th></tr></thead>
-            <tbody id="match-lb-tbody"></tbody>
-          </table>
+          <!-- Prediction Summary -->
+          <div class="card">
+            <div class="card-title">Prediction Summary</div>
+            <div id="pred-summary-wrap"><div class="skel skel-row"></div></div>
+          </div>
+        </div>
+
+        <!-- All Predictions Table -->
+        <div class="card mt-20">
+          <div class="card-title">All Team Predictions</div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Team</th><th>Target Prediction</th><th>Winner Pick</th><th>Actual Target</th><th>Correct?</th></tr></thead>
+              <tbody id="all-preds-tbody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- Prediction Summary -->
-      <div class="card">
-        <div class="card-title">Prediction Summary</div>
-        <div id="pred-summary-wrap"><div class="skel skel-row"></div></div>
-      </div>
-
-    </div>
-
-    <!-- All Predictions Table -->
-    <div class="card mt-20">
-      <div class="card-title">All Team Predictions</div>
-      <div class="table-wrap">
-        <table class="data-table">
-          <thead><tr><th>Team</th><th>Target Prediction</th><th>Winner Pick</th><th>Actual Target</th><th>Correct?</th></tr></thead>
-          <tbody id="all-preds-tbody"></tbody>
-        </table>
+      <div id="no-match" class="empty-state">
+        <div class="empty-state-icon">🏏</div>
+        <div class="empty-state-text">Select a match from the sidebar to view details</div>
       </div>
     </div>
-
-  </div>
-
-  <div id="no-match" class="empty-state mt-24">
-    <div class="empty-state-icon">🏏</div>
-    <div class="empty-state-text">Select a match above to view details</div>
   </div>
 
 </div>

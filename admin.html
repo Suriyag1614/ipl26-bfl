@@ -282,6 +282,22 @@
     @media (min-width: 901px) {
       .sb-overlay { display: none !important; }
     }
+    @media (max-width: 900px) {
+      .admin-body { margin-left: 0; padding: 16px; }
+      .col-2 { grid-template-columns: 1fr; }
+      .list-strip-mobile { 
+        display: flex !important; 
+        flex-direction: row !important; 
+        overflow-x: auto !important; 
+        max-height: 220px !important; 
+        padding-bottom: 12px !important; 
+      }
+      .list-strip-mobile > * { 
+        flex: 0 0 200px !important; 
+        border-bottom: none !important; 
+        border-right: 1px solid var(--border) !important; 
+      }
+    }
   </style>
 </head>
 <body>
@@ -446,7 +462,7 @@
             <option value="abandoned">Abandoned</option>
           </select>
         </div>
-        <div id="fixture-list" style="max-height:550px;overflow-y:auto;">
+        <div id="fixture-list" class="list-strip-mobile" style="max-height:550px;overflow-y:auto;">
           <div style="padding:20px;text-align:center;color:var(--text3);">Loading matches…</div>
         </div>
       </div>
@@ -740,12 +756,11 @@
     <div class="col-2">
       <div class="card">
         <div class="card-title">Mark Player Injured / Clear</div>
-        <div class="form-group"><label class="form-label">Search Player</label>
-          <div class="psr-wrap">
-            <input class="form-input" id="inj-player-input" placeholder="Player name…" autocomplete="off"
-              oninput="searchInjPlayer(this.value)" onblur="setTimeout(closeInjSearch,180)">
-            <div class="psr-results" id="inj-psr-results"></div>
-          </div>
+        <div class="form-group"><label class="form-label">Team</label>
+          <select class="form-select" id="inj-team-sel" onchange="onInjTeamChange()"><option value="">— Select team —</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Select Player</label>
+          <select class="form-select" id="inj-player-sel" onchange="onInjPlayerChange()"><option value="">— Select player —</option></select>
           <input type="hidden" id="inj-player-id">
         </div>
         <div id="inj-player-info" style="display:none;" class="inj-card mb-8"></div>
@@ -839,7 +854,7 @@
           <button class="btn btn-ghost btn-sm" id="bfilt-draft" onclick="filterBlogs('draft',this)">Drafts</button>
           <button class="btn btn-ghost btn-sm" id="bfilt-published" onclick="filterBlogs('published',this)">Published</button>
         </div>
-        <div id="blog-list" style="max-height:540px;overflow-y:auto;">
+        <div id="blog-list" class="list-strip-mobile" style="max-height:540px;overflow-y:auto;">
           <div style="padding:20px;text-align:center;color:var(--text3);">Loading…</div>
         </div>
       </div>
@@ -884,7 +899,7 @@
       <button class="btn btn-ghost btn-sm" onclick="loadUsers()">↻ Refresh</button>
     </div>
     <div class="card" style="padding:0;overflow:hidden;">
-      <div class="table-wrap">
+      <div class="table-wrap table-scroller">
         <table class="data-table">
           <thead><tr><th>#</th><th>Team</th><th>Owner</th><th>Rank</th><th>Total Pts</th><th>Matches</th><th>Actions</th></tr></thead>
           <tbody id="users-tbody"><tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
@@ -912,7 +927,7 @@
       </div>
     </div>
     <div class="card" style="padding:0;overflow:hidden;">
-      <div class="table-wrap">
+      <div class="table-wrap table-scroller" style="max-height:500px;">
         <table class="data-table" style="min-width:640px;">
           <thead><tr><th>Time</th><th>Action</th><th>Entity</th><th>ID</th><th>By</th><th>Undo</th></tr></thead>
           <tbody id="audit-tbody"><tr><td colspan="6"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>

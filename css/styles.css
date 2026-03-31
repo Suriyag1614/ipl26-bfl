@@ -369,6 +369,10 @@ body { display:flex; flex-direction:column; }
    TABLES
 ═══════════════════════════════════════════════ */
 .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.table-scroller { max-height: 440px; overflow-y: auto; scrollbar-width: thin; }
+.table-scroller::-webkit-scrollbar { width: 4px; }
+.table-scroller::-webkit-scrollbar-track { background: transparent; }
+.table-scroller::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
 .data-table { width:100%; border-collapse:collapse; min-width:360px; }
 .data-table th {
   font-family:var(--f-ui); font-size:11px; font-weight:800;
@@ -579,6 +583,7 @@ body:has(.login-wrap) #toast-container {
 .mb-8{margin-bottom:8px}.mb-16{margin-bottom:16px}.mb-20{margin-bottom:20px}.mb-24{margin-bottom:24px}
 .text-accent{color:var(--accent)}.text-gold{color:var(--gold)}.text-muted{color:var(--text2)}
 .font-display{font-family:var(--f-display)}.font-ui{font-family:var(--f-ui)}.font-mono{font-family:var(--f-mono)}
+.overflow-visible { overflow: visible !important; }
 
 /* ═══════════════════════════════════════════════
    COUNTDOWN TIMER
