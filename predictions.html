@@ -665,7 +665,7 @@ function buildStatusBar(m, si) {
 }
 
 function buildCountdownSection(m) {
-  var secs = secsToLock(m);
+  var secs = API.secondsToLock(m);
   if (secs === null || secs <= 0) return '';
   var cdId = 'cd-' + m.id.substring(0, 8);
   // Start ticker

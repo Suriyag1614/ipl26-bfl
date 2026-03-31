@@ -244,6 +244,12 @@ function populateAllDropdowns() {
   populateInjTeamSelect();
 }
 
+function populateInjTeamSelect() {
+  var el = $id('inj-team-sel'); if (!el) return;
+  el.innerHTML = '<option value="">— Select team —</option>' +
+    ALL_TEAMS.map(function(t) { return '<option value="'+t+'">'+t+'</option>'; }).join('');
+}
+
 function populateTeamOpts() {
   // For fixture form team selects
   var teamOptHtml = '<option value="">— Select team —</option>' +
