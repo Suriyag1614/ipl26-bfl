@@ -354,23 +354,36 @@ const API = {
     }));
     if (!rows.length) return;
 
-    // 1. Fetch current standings to preserve as "prev_rank"
-    const { data: current } = await sb.from('leaderboard').select('fantasy_team_id,rank').order('rank', { ascending: true });
-    const prevRankMap = {};
-    (current || []).forEach(r => { prevRankMap[r.fantasy_team_id] = r.rank; });
+  // 1. Fetch current standings to preserve as "prev_rank"
+  const { data: current } = await sb.from('leaderboard').select('fantasy_team_id,rank,prev_rank');
+  const prevRankMap = {};
+  (current || []).forEach(r => { 
+    // If we already have a rank, use it as the "previous" for the next calculation
+    if (r.rank) prevRankMap[r.fantasy_team_id] = r.rank;
+    // If no rank yet, but we have a prev_rank stored, keep that as a fallback
+    else if (r.prev_rank) prevRankMap[r.fantasy_team_id] = r.prev_rank;
+  });
 
-    // 2. Upsert new points
-    const { error } = await sb.from('leaderboard').upsert(rows, { onConflict: 'fantasy_team_id' });
-    if (error) throw error;
+  // 2. Upsert new points (this updates total_points, matches_played)
+  const { error } = await sb.from('leaderboard').upsert(rows, { onConflict: 'fantasy_team_id' });
+  if (error) throw error;
 
-    // 3. Final Rank Calculation (including prev_rank update)
-    const { data: updated } = await sb.from('leaderboard').select('*').order('total_points', { ascending: false });
-    const finalRows = (updated || []).map((r, i) => ({
+  // 3. Final Rank Calculation (FETCH EVERYTHING to avoid partial overwrite)
+  const { data: updated } = await sb.from('leaderboard').select('*').order('total_points', { ascending: false });
+  const finalRows = (updated || []).map((r, i) => {
+    const newRank = i + 1;
+    const oldRank = prevRankMap[r.fantasy_team_id] || null;
+    return {
       id: r.id,
-      rank: i + 1,
-      prev_rank: prevRankMap[r.fantasy_team_id] || null
-    }));
-    if (finalRows.length) await sb.from('leaderboard').upsert(finalRows);
+      fantasy_team_id: r.fantasy_team_id,
+      total_points: r.total_points,
+      matches_played: r.matches_played,
+      rank: newRank,
+      prev_rank: oldRank,
+      updated_at: new Date().toISOString()
+    };
+  });
+  if (finalRows.length) await sb.from('leaderboard').upsert(finalRows, { onConflict: 'id' });
   },
 
   // ══════════════════════════════════════════════════════════════════
@@ -1158,21 +1171,14 @@ getLockTime(match) {
    */
   calcPredictionPoints(pred, match) {
     if (!pred || !match) return 0;
-
-    // Abandoned → always 0, no exceptions
     if (match.status === 'abandoned' || match.is_abandoned) return 0;
-
     let pts = 0;
-    // For DLS matches, actual_target is the DLS-revised target
     const diff = Math.abs(Number(pred.target_score || 0) - Number(match.actual_target || 0));
     if      (diff === 0) pts += 250;
     else if (diff === 1) pts += 150;
     else if (diff <= 5)  pts += 100;
     else if (diff <= 10) pts += 50;
-
-    // Winner: super over / tie breaker — match.winner is always the official winner
     if (pred.predicted_winner === match.winner) pts += 25;
-
     return pts;
   },
 
