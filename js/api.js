@@ -143,15 +143,13 @@ const API = {
 
   async upsertMatch(match) {
     if (match.match_date) {
-      // Auto-lock means "minutes after match start"
+      // Default deadline is the match start time
       if (!match.deadline_time) {
-        const d = new Date(match.match_date);
-        d.setMinutes(d.getMinutes() + (match.auto_lock_mins || 5));
-        match.deadline_time = d.toISOString();
+        match.deadline_time = match.match_date;
       }
-      // Keep lock_time aligned to deadline + 5 min if not explicitly set
+      // Keep lock_time aligned to deadline
       if (!match.lock_time && match.deadline_time) {
-        match.lock_time = new Date(new Date(match.deadline_time).getTime() + 5 * 60 * 1000).toISOString();
+        match.lock_time = match.deadline_time;
       }
     }
 
@@ -1067,17 +1065,14 @@ async fetchTeams() {
 
 /**
  * Returns the effective lock timestamp for a match.
- * Priority: explicit lock_time → deadline_time + 5min → match_date + auto_lock_mins + 5min
+ * Priority: explicit lock_time → deadline_time → match_date
  */
-getLockTime(match) {
+  getLockTime(match) {
     if (!match) return null;
     if (match.lock_time)     return new Date(match.lock_time);
-    if (match.deadline_time) return new Date(new Date(match.deadline_time).getTime() + 5 * 60 * 1000);
-    // Fallback: if deadline_time is missing, use match start + auto_lock_mins + 5 min
-    if (match.match_date) {
-      const mins = Number(match.auto_lock_mins || 5);
-      return new Date(new Date(match.match_date).getTime() + (mins * 60 * 1000) + (5 * 60 * 1000));
-    }
+    if (match.deadline_time) return new Date(match.deadline_time);
+    // Fallback: match start time
+    if (match.match_date)    return new Date(match.match_date);
     return null;
   },
 
@@ -1190,9 +1185,8 @@ getLockTime(match) {
    * Update match deadline and/or lock_time.
    * Admin use only.
    */
-  async extendDeadline(matchId, newDeadlineIso, autoLockMins) {
-    const mins = autoLockMins || 5;
-    const newLock = new Date(new Date(newDeadlineIso).getTime() + mins * 60 * 1000).toISOString();
+  async extendDeadline(matchId, newDeadlineIso) {
+    const newLock = newDeadlineIso;
     const { data: before } = await sb.from('matches').select('*').eq('id', matchId).maybeSingle();
     const { data, error } = await sb.from('matches').update({
       deadline_time: newDeadlineIso,
@@ -1212,7 +1206,7 @@ getLockTime(match) {
   async reopenPredictions(matchId, newDeadlineIso) {
     const { data: before } = await sb.from('matches').select('*').eq('id', matchId).maybeSingle();
     const deadline = newDeadlineIso || new Date(Date.now() + 30 * 60 * 1000).toISOString();
-    const lockTime = new Date(new Date(deadline).getTime() + 5 * 60 * 1000).toISOString();
+    const lockTime = deadline;
     const { data, error } = await sb.from('matches').update({
       is_locked:     false,
       deadline_time: deadline,

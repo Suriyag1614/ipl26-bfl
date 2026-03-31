@@ -478,84 +478,82 @@
             <option>Guwahati</option><option>New Chandigarh</option>
           </select>
         </div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-select" id="fx-status">
+            <option value="upcoming">Upcoming</option>
+            <option value="locked">Locked</option>
+            <option value="live">Live</option>
+            <option value="completed">Completed</option>
+            <option value="abandoned">Abandoned</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-accent" onclick="saveFixture()">Save Match</button>
+        <button class="btn btn-ghost" onclick="clearFixtureForm()">Clear</button>
+        <button class="btn btn-danger btn-sm" id="fx-delete-btn" style="display:none;margin-left:auto;" onclick="deleteFixture()">Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ RESULTS ════ -->
+<div class="admin-panel" id="panel-results">
+  <div class="section-hdr">
+    <div><div class="section-title">Results & Winner</div><div class="section-sub">Enter final target, winner, and Player of Match</div></div>
+  </div>
+  <div class="col-2">
+    <div class="card">
+      <div class="card-title">Set Result</div>
+      <div class="form-group"><label class="form-label">Match</label>
+        <select class="form-select" id="res-match" onchange="loadResultForm()"><option value="">— Select match —</option></select>
+      </div>
+      <div id="res-form-body" style="display:none;">
         <div class="col-2" style="gap:10px;">
-          <div class="form-group"><label class="form-label">Auto-lock (mins after start)</label><input class="form-input font-mono" type="number" id="fx-autolock" value="5" min="5" max="120"></div>
-          <div class="form-group"><label class="form-label">Status</label>
-            <select class="form-select" id="fx-status">
-              <option value="upcoming">Upcoming</option>
-              <option value="locked">Locked</option>
-              <option value="live">Live</option>
-              <option value="completed">Completed</option>
-              <option value="abandoned">Abandoned</option>
-            </select>
+          <div class="form-group"><label class="form-label">Actual Target (1st inns + 1)</label>
+            <input class="form-input font-mono" type="number" id="res-target" placeholder="e.g. 181" min="50" max="500">
+          </div>
+          <div class="form-group"><label class="form-label">Winner</label>
+            <select class="form-select" id="res-winner"><option value="">— Select —</option></select>
           </div>
         </div>
-        <div style="display:flex;gap:8px;margin-top:8px;">
-          <button class="btn btn-accent" onclick="saveFixture()">Save Match</button>
-          <button class="btn btn-ghost" onclick="clearFixtureForm()">Clear</button>
-          <button class="btn btn-danger btn-sm" id="fx-delete-btn" style="display:none;margin-left:auto;" onclick="deleteFixture()">Delete</button>
+        <div class="form-group"><label class="form-label">Player of Match</label>
+          <select class="form-select" id="res-pom"><option value="">— Select —</option></select>
         </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-bottom:14px;cursor:pointer;">
+          <input type="checkbox" id="res-dls" style="width:15px;height:15px;accent-color:var(--accent);">
+          DLS Applied (revised target used)
+        </label>
+        <div class="form-error" id="res-error" style="min-height:16px;margin-bottom:8px;"></div>
+        <button class="btn btn-accent" onclick="saveResult()">💾 Save Result</button>
       </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Current State</div>
+      <div id="res-preview" style="color:var(--text3);font-size:13px;">Select a match to preview.</div>
     </div>
   </div>
+</div>
 
-  <!-- ════ RESULTS ════ -->
-  <div class="admin-panel" id="panel-results">
-    <div class="section-hdr">
-      <div><div class="section-title">Results & Winner</div><div class="section-sub">Enter final target, winner, and Player of Match</div></div>
-    </div>
-    <div class="col-2">
-      <div class="card">
-        <div class="card-title">Set Result</div>
-        <div class="form-group"><label class="form-label">Match</label>
-          <select class="form-select" id="res-match" onchange="loadResultForm()"><option value="">— Select match —</option></select>
-        </div>
-        <div id="res-form-body" style="display:none;">
-          <div class="col-2" style="gap:10px;">
-            <div class="form-group"><label class="form-label">Actual Target (1st inns + 1)</label>
-              <input class="form-input font-mono" type="number" id="res-target" placeholder="e.g. 181" min="50" max="500">
-            </div>
-            <div class="form-group"><label class="form-label">Winner</label>
-              <select class="form-select" id="res-winner"><option value="">— Select —</option></select>
-            </div>
-          </div>
-          <div class="form-group"><label class="form-label">Player of Match</label>
-            <select class="form-select" id="res-pom"><option value="">— Select —</option></select>
-          </div>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2);margin-bottom:14px;cursor:pointer;">
-            <input type="checkbox" id="res-dls" style="width:15px;height:15px;accent-color:var(--accent);">
-            DLS Applied (revised target used)
-          </label>
-          <div class="form-error" id="res-error" style="min-height:16px;margin-bottom:8px;"></div>
-          <button class="btn btn-accent" onclick="saveResult()">💾 Save Result</button>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Current State</div>
-        <div id="res-preview" style="color:var(--text3);font-size:13px;">Select a match to preview.</div>
-      </div>
-    </div>
+<!-- ════ MATCH CONTROLS ════ -->
+<div class="admin-panel" id="panel-matchctrl">
+  <div class="section-hdr">
+    <div><div class="section-title">Match Controls</div><div class="section-sub">Deadlines · Locks · DLS · Abandon</div></div>
   </div>
-
-  <!-- ════ MATCH CONTROLS ════ -->
-  <div class="admin-panel" id="panel-matchctrl">
-    <div class="section-hdr">
-      <div><div class="section-title">Match Controls</div><div class="section-sub">Deadlines · Locks · DLS · Abandon</div></div>
-    </div>
-    <div class="card mb-20">
-      <div class="card-title">Select Match</div>
-      <select class="form-select" id="ctrl-match" onchange="loadCtrlMatch()" style="max-width:420px;">
-        <option value="">— Pick a match —</option>
-      </select>
-      <div id="ctrl-match-info" style="margin-top:12px;"></div>
-    </div>
-    <div class="col-3" id="ctrl-cards" style="display:none;">
-      <div class="ctrl-card">
-        <div class="ctrl-title" style="color:var(--cyan);">⏰ Deadline Control</div>
-        <div class="form-group" style="margin-bottom:10px;"><label class="form-label">New Deadline (IST)</label>
-          <input class="form-input" type="datetime-local" id="ctrl-deadline">
-        </div>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Lock = deadline + 5 min auto</div>
+  <div class="card mb-20">
+    <div class="card-title">Select Match</div>
+    <select class="form-select" id="ctrl-match" onchange="loadCtrlMatch()" style="max-width:420px;">
+      <option value="">— Pick a match —</option>
+    </select>
+    <div id="ctrl-match-info" style="margin-top:12px;"></div>
+  </div>
+  <div class="col-3" id="ctrl-cards" style="display:none;">
+    <div class="ctrl-card">
+      <div class="ctrl-title" style="color:var(--cyan);">⏰ Deadline Control</div>
+      <div class="form-group" style="margin-bottom:10px;"><label class="form-label">New Deadline (IST)</label>
+        <input class="form-input" type="datetime-local" id="ctrl-deadline">
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Lock = deadline time strictly</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn btn-ghost btn-sm" onclick="ctrlExtend()">Extend</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--cyan);" onclick="ctrlReopen()">Reopen (30 min)</button>

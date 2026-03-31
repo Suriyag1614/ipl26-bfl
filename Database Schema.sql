@@ -119,7 +119,6 @@ CREATE TABLE public.matches (
   created_at timestamp with time zone DEFAULT now(),
   match_no integer,
   deadline_time timestamp with time zone,
-  auto_lock_mins integer DEFAULT 15,
   status text DEFAULT 'upcoming'::text CHECK (status = ANY (ARRAY['upcoming'::text, 'locked'::text, 'live'::text, 'completed'::text, 'processed'::text])),
   lock_time timestamp with time zone,
   is_abandoned boolean NOT NULL DEFAULT false,
