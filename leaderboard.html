@@ -184,7 +184,10 @@ function renderSeasonTable() {
     var avg=r.matches_played?(r.total_points/r.matches_played).toFixed(1):'—';
     var rCls=r.rank<=3?'rank-'+r.rank:'rank-n';
     return '<div class="lb-row'+(isMe?' me':'')+'">'+
-      '<div style="display:flex;justify-content:center;"><span class="rank-badge '+rCls+'">'+(medals[r.rank]||r.rank)+'</span></div>'+
+      '<div style="display:flex;justify-content:center;align-items:center;flex-direction:column;gap:2px;">'+
+        '<span class="rank-badge '+rCls+'">'+(medals[r.rank]||r.rank)+'</span>'+
+        UI.rankBadge(r.rank, r.prev_rank)+
+      '</div>'+
       '<div><div class="lb-team">'+UI.esc(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
         '<div class="lb-sub">'+r.matches_played+' matches · avg '+avg+'</div></div>'+
       '<div><div class="lb-pts">'+r.total_points+'</div><div class="lb-pts-label">pts</div></div>'+

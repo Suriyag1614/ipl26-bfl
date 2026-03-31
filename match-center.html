@@ -167,6 +167,8 @@ async function showMatchDetail(matchId) {
     mc.leaderboard.forEach(function(r) {
       var s = seasonLb.find(function(x) { return x.fantasy_team_id === r.fantasy_team_id; });
       r.team_season_pts = s ? s.total_points : 0;
+      r.team_season_rank = s ? s.rank : 999;
+      r.team_season_prev_rank = s ? s.prev_rank : null;
     });
     renderMatchHeader(mc);
     renderMatchLeaderboard(mc);
@@ -212,7 +214,10 @@ function renderMatchLeaderboard(mc) {
       '<td class="font-mono">'+r.squad_points+'</td>' +
       '<td class="font-mono">'+r.prediction_points+'</td>' +
       '<td class="pts">'+r.total_points+'</td>' +
-      '<td class="pts" style="color:var(--gold);">'+(r.team_season_pts||'—')+'</td>' +
+      '<td class="pts" style="color:var(--gold);">' + 
+        '<div>' + (r.team_season_pts||'—') + '</div>' +
+        UI.rankBadge(r.team_season_rank, r.team_season_prev_rank) + 
+      '</td>' +
     '</tr>';
   }).join('');
 }

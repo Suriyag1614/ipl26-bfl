@@ -15,6 +15,12 @@ const UI = {
     var c = this.tCode(name);
     return c || (name||'').split(' ').map(function(w){return w[0];}).join('').toUpperCase();
   },
+  rankBadge(curr, prev) {
+    if (!prev || curr === prev) return '<span class="rk-neutral">—</span>';
+    const diff = prev - curr; // positive means rank improved (decreased)
+    if (diff > 0) return `<span class="rk-up">▲${diff}</span>`;
+    return `<span class="rk-down">▼${Math.abs(diff)}</span>`;
+  },
 
   // ════════════════════════════════════════════════════════════
   //  THEME — dark / light toggle

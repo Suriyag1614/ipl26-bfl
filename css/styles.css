@@ -407,6 +407,11 @@ body { display:flex; flex-direction:column; }
 .status-live     { background:rgba(200,241,53,.15); color:var(--accent); animation:pulse-acc 2s infinite; }
 .status-processed{ background:rgba(56,217,245,.1); color:var(--cyan); }
 
+/* Rank change indicators */
+.rk-up { color: var(--green); font-size: 11px; font-weight: 800; margin-left: 4px; }
+.rk-down { color: var(--red); font-size: 11px; font-weight: 800; margin-left: 4px; }
+.rk-neutral { color: var(--text3); font-size: 11px; font-weight: 400; margin-left: 4px; }
+
 /* ═══════════════════════════════════════════════
    MATCH CARD
 ═══════════════════════════════════════════════ */
