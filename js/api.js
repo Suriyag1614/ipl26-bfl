@@ -353,8 +353,24 @@ const API = {
       matches_played: v.matches_played, updated_at: new Date().toISOString(),
     }));
     if (!rows.length) return;
+
+    // 1. Fetch current standings to preserve as "prev_rank"
+    const { data: current } = await sb.from('leaderboard').select('fantasy_team_id,rank').order('rank', { ascending: true });
+    const prevRankMap = {};
+    (current || []).forEach(r => { prevRankMap[r.fantasy_team_id] = r.rank; });
+
+    // 2. Upsert new points
     const { error } = await sb.from('leaderboard').upsert(rows, { onConflict: 'fantasy_team_id' });
     if (error) throw error;
+
+    // 3. Final Rank Calculation (including prev_rank update)
+    const { data: updated } = await sb.from('leaderboard').select('*').order('total_points', { ascending: false });
+    const finalRows = (updated || []).map((r, i) => ({
+      id: r.id,
+      rank: i + 1,
+      prev_rank: prevRankMap[r.fantasy_team_id] || null
+    }));
+    if (finalRows.length) await sb.from('leaderboard').upsert(finalRows);
   },
 
   // ══════════════════════════════════════════════════════════════════
@@ -614,13 +630,16 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   async awardBadges(matchId) {
     // 1. Fetch data
-    const [match, { data: logs }, { data: preds }, lb] = await Promise.all([
+    const [matchRes, logsRes, predsRes, lb] = await Promise.all([
       this.fetchMatch(matchId),
       sb.from('points_log').select('*').eq('match_id', matchId),
       sb.from('predictions').select('*').eq('match_id', matchId),
       this.fetchLeaderboard() // Need latest standings for career badges
     ]);
-    if (!match || !logs) return;
+    const match = matchRes;
+    const logs = logsRes.data || [];
+    const preds = predsRes.data || [];
+    if (!match || !logs.length) return;
 
     // 2. Fetch all existing badges to avoid duplicates
     const { data: existing } = await sb.from('user_badges').select('fantasy_team_id,badge_id');

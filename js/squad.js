@@ -97,7 +97,7 @@ function renderSquad(){
     var isInjured=!!(p.is_injured), hasRep=!!(sp.replacement);
     var color=C[(p.ipl_team||'').replace(/\s+/g,'').toUpperCase()]||'#f0b429';
     var pRow=_playerPts[p.name]||{pts:0,pom:0,pot:0};
-    var pts=Math.round(pRow.pts);
+    var pts=UI.fmtPts(pRow.pts);
     var displayName=(isInjured&&hasRep&&sp.replacement.replacement)?sp.replacement.replacement.name:p.name||'Player';
     var displayImg=(isInjured&&hasRep&&sp.replacement.replacement)?sp.replacement.replacement.image_url:p.image_url;
     var badges=UI.roleBadge(p.role);
@@ -339,7 +339,7 @@ async function exportSquadPDF() {
             </div>
             <div class="total-box">
                 <div class="total-lbl">Season Points</div>
-                <div class="total-val">${Math.round(totalPts)}</div>
+                <div class="total-val">${UI.fmtPts(totalPts)}</div>
             </div>
         </div>
 
@@ -358,10 +358,10 @@ async function exportSquadPDF() {
                     <span class="stat-l">Leaders</span>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-v">${(totalPts / Math.max(1, list.length)).toFixed(1)}</span>
+                    <span class="stat-v">${UI.fmtPts(totalPts / Math.max(1, list.length))}</span>
                     <span class="stat-l">Avg Pts</span>
                 </div>
-            </div>
+              </div>
 
             <table>
                 <thead>
@@ -394,7 +394,7 @@ async function exportSquadPDF() {
                                 </div>
                             </td>
                             <td><span class="role-pill">${UI.esc(role)}</span></td>
-                            <td style="text-align:right;"><span class="pts-badge ${pPts < 0 ? 'neg' : ''}">${Math.round(pPts)}</span></td>
+                            <td style="text-align:right;"><span class="pts-badge ${pPts < 0 ? 'neg' : ''}">${UI.fmtPts(pPts)}</span></td>
                         </tr>`;
                     }).join('')}
                 </tbody>

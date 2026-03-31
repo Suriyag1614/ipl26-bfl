@@ -189,9 +189,9 @@ function renderMatchHeader(mc) {
         '<span class="match-status '+(m.is_locked?(m.winner?'status-done':'status-locked'):'status-open')+'">'+(m.is_locked?(m.winner?'Completed':'Locked'):'Open')+'</span>' +
       '</div>' +
       '<div class="match-teams">' +
-        '<div class="match-team">'+UI.esc(t1s||'—')+'</div>' +
+        '<div class="match-team">'+UI.esc(UI.tShort(m.team1)||'—')+'</div>' +
         '<div class="match-vs">VS</div>' +
-        '<div class="match-team">'+UI.esc(t2s||'—')+'</div>' +
+        '<div class="match-team">'+UI.esc(UI.tShort(m.team2)||'—')+'</div>' +
       '</div>' +
       '<div class="match-meta mt-8">' +
         (m.match_date?'<span>📅 '+UI.fmtDate(m.match_date)+'</span>':'') +
@@ -246,7 +246,7 @@ function renderPredSummary(mc) {
     '<div style="margin-top:12px;"><div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--f-ui);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Winner Distribution</div>' +
     '<div class="winner-bar">'+barHtml+'</div>' +
     '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--text2);">' +
-      '<span>'+UI.esc(m.team1||'—')+' ('+t1ct+')</span><span>'+UI.esc(m.team2||'—')+' ('+t2ct+')</span>' +
+      '<span>'+UI.esc(UI.tShort(m.team1)||'—')+' ('+t1ct+')</span><span>'+UI.esc(UI.tShort(m.team2)||'—')+' ('+t2ct+')</span>' +
     '</div></div>';
 }
 

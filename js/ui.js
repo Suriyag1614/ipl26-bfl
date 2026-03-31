@@ -23,7 +23,12 @@ const UI = {
   },
   fmtPts(v) {
     if (v === null || v === undefined || isNaN(v)) return '—';
-    return Number(v) % 1 === 0 ? Number(v).toString() : Number(v).toFixed(1);
+    var n = Number(v);
+    if (n === 0) return '0';
+    return n % 1 === 0 ? n.toString() : n.toFixed(1);
+  },
+  fmtMatch(t1, t2) {
+    return this.esc(this.tShort(t1) || 'TBD') + ' vs ' + this.esc(this.tShort(t2) || 'TBD');
   },
 
   // ════════════════════════════════════════════════════════════
