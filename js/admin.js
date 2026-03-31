@@ -564,16 +564,19 @@ async function loadResultForm() {
       return '<option value="'+t+'"'+(m.winner===t?' selected':'')+'>'+UI.esc(t)+'</option>';
     }).join('');
 
-  // PoM options - Filtered by match teams
+  // PoM options - Fetch players for both teams directly from DB
   var pomEl = $id('res-pom');
   if (pomEl) {
-    var matchPlayers = _players.filter(function(p){ 
-      return p.ipl_team === m.team1 || p.ipl_team === m.team2; 
-    });
-    pomEl.innerHTML = '<option value="">— Select player —</option>' + 
-      matchPlayers.map(function(p){
-        return '<option value="'+p.id+'"'+(m.player_of_match===p.id?' selected':'')+'>'+UI.esc(p.name)+' ('+UI.esc(tShort(p.ipl_team))+')</option>';
-      }).join('');
+    try {
+      var matchPlayers = safeArr(await API.fetchPlayersByMatch(matchId));
+      pomEl.innerHTML = '<option value="">— Select player —</option>' +
+        matchPlayers.map(function(p){
+          return '<option value="'+p.id+'"'+(m.player_of_match===p.id?' selected':'')+'>'+UI.esc(p.name)+' ('+UI.esc(tShort(p.ipl_team))+')</option>';
+        }).join('');
+    } catch(e) {
+      console.error('[loadResultForm] fetchPlayersByMatch:', e);
+      pomEl.innerHTML = '<option value="">— Error loading players —</option>';
+    }
   }
 
   if (m.actual_target) $id('res-target').value = m.actual_target;
