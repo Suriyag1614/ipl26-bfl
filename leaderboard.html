@@ -190,7 +190,7 @@ function renderSeasonTable() {
       '</div>'+
       '<div><div class="lb-team">'+UI.esc(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
         '<div class="lb-sub">'+r.matches_played+' matches · avg '+avg+'</div></div>'+
-      '<div><div class="lb-pts">'+r.total_points+'</div><div class="lb-pts-label">pts</div></div>'+
+      '<div><div class="lb-pts">'+UI.fmtPts(r.total_points)+'</div><div class="lb-pts-label">pts</div></div>'+
     '</div>';
   }).join('');
 }

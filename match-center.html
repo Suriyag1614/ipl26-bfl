@@ -211,11 +211,11 @@ function renderMatchLeaderboard(mc) {
     return '<tr class="'+(r.match_rank===1?'leaderboard-rank-1':'')+(isMe?' highlight-me':'')+'">' +
       '<td class="rank">'+(medals[r.match_rank]||r.match_rank)+'</td>' +
       '<td style="font-family:var(--f-ui);font-weight:400;">' + UI.esc(r.team?.team_name||'—') + (isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'') + '</td>' +
-      '<td class="font-mono">'+r.squad_points+'</td>' +
-      '<td class="font-mono">'+r.prediction_points+'</td>' +
-      '<td class="pts">'+r.total_points+'</td>' +
+      '<td class="font-mono">'+UI.fmtPts(r.squad_points)+'</td>' +
+      '<td class="font-mono">'+UI.fmtPts(r.prediction_points)+'</td>' +
+      '<td class="pts">'+UI.fmtPts(r.total_points)+'</td>' +
       '<td class="pts" style="color:var(--gold);">' + 
-        '<div>' + (r.team_season_pts||'—') + '</div>' +
+        '<div>' + UI.fmtPts(r.team_season_pts) + '</div>' +
         UI.rankBadge(r.team_season_rank, r.team_season_prev_rank) + 
       '</td>' +
     '</tr>';

@@ -549,9 +549,9 @@ const API = {
           effective_name: sp.replacement ? sp.replacement.replacement?.name : sp.player?.name,
           is_injured: !!sp.player?.is_injured,
           is_replacement: !!(sp.player?.is_injured && sp.replacement),
-          base: Math.round(base), bat: Math.round(bat), bowl: Math.round(bowl),
-          fld: Math.round(fld), bon: Math.round(bon), multiplier, label,
-          final: Math.round(final),
+          base: base, bat: bat, bowl: bowl,
+          fld: fld, bon: bon, multiplier, label,
+          final: final,
           isImpact: !!sp.is_impact,
           isImpactActive: !!(sp.is_impact && isActive),
           isCaptain: !!sp.is_captain, isVC: !!sp.is_vc,
@@ -584,13 +584,13 @@ const API = {
       } else {
         onLog?.(`  → ${team.team_name}: ⚠ No prediction submitted`, 'warn');
       }
-      onLog?.(`  → ${team.team_name}: Squad ${Math.round(squadPts)} + Pred ${predPts} = ${Math.round(squadPts + predPts)}`, 'good');
+      onLog?.(`  → ${team.team_name}: Squad ${squadPts.toFixed(1)} + Pred ${predPts} = ${(squadPts + predPts).toFixed(1)}`, 'good');
       logs.push({
         match_id: matchId, fantasy_team_id: team.id,
-        squad_points: Math.round(squadPts), prediction_points: predPts,
-        total_points: Math.round(squadPts + predPts),
-        batting_pts: Math.round(batPts), bowling_pts: Math.round(bowlPts),
-        fielding_pts: Math.round(fldPts), bonus_pts: Math.round(bonPts),
+        squad_points: squadPts, prediction_points: predPts,
+        total_points: squadPts + predPts,
+        batting_pts: batPts, bowling_pts: bowlPts,
+        fielding_pts: fldPts, bonus_pts: bonPts,
         breakdown, created_at: new Date().toISOString(),
       });
     }

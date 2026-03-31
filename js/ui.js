@@ -21,6 +21,10 @@ const UI = {
     if (diff > 0) return `<span class="rk-up">▲${diff}</span>`;
     return `<span class="rk-down">▼${Math.abs(diff)}</span>`;
   },
+  fmtPts(v) {
+    if (v === null || v === undefined || isNaN(v)) return '—';
+    return Number(v) % 1 === 0 ? Number(v).toString() : Number(v).toFixed(1);
+  },
 
   // ════════════════════════════════════════════════════════════
   //  THEME — dark / light toggle
@@ -389,13 +393,14 @@ const UI = {
   el(id)           { return document.getElementById(id); },
   qs(sel, ctx)     { return (ctx||document).querySelector(sel); },
 
-  countUp(el, target, dur = 1200) {
+  countUp(el, target, dur = 1200, decimals = false) {
     if (!el) return;
     const start = Date.now();
     const tick  = () => {
       const prog = Math.min((Date.now()-start)/dur, 1);
       const ease = 1 - Math.pow(1-prog, 3);
-      el.textContent = Math.round(target * ease);
+      const val  = target * ease;
+      el.textContent = decimals ? val.toFixed(1) : Math.round(val);
       if (prog < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
