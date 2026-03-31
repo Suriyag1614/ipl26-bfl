@@ -1151,7 +1151,11 @@ function onInjTeamChange() {
   $id('inj-player-id').value = ''; $id('inj-player-info').style.display = 'none';
 
   if (!team) return;
-  var players = _players.filter(function(p) { return p.ipl_team === team; });
+  var code = tCode(team), short = tShort(team);
+  var players = _players.filter(function(p) {
+    var pt = p.ipl_team || '';
+    return pt === team || pt === code || pt === short;
+  });
   sel.innerHTML += players.map(function(p) {
     return '<option value="'+p.id+'">'+UI.esc(p.name)+(p.is_injured?' [INJ]':'')+'</option>';
   }).join('');
