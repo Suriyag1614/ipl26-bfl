@@ -219,31 +219,6 @@ function imgTag(src, name, cls, style) {
     ' onerror="this.onerror=null;this.src=this.dataset.fb">';
 }
 
-/** Determine the effective lock time for a match. */
-function getLockTime(m) {
-  if (m.lock_time)     return new Date(m.lock_time);
-  if (m.deadline_time) return new Date(new Date(m.deadline_time).getTime() + 5 * 60 * 1000);
-  if (m.match_date)    return new Date(new Date(m.match_date).getTime() - 10 * 60 * 1000);
-  return null;
-}
-
-/** True when predictions are still editable. */
-function isPredOpen(m) {
-  if (!m) return false;
-  if (m.is_locked || m._client_locked) return false;
-  if (m.status === 'abandoned' || m.status === 'completed' || m.status === 'processed') return false;
-  var lock = getLockTime(m);
-  if (lock && lock <= new Date()) return false;
-  return true;
-}
-
-/** Seconds until lock (null if no deadline info). */
-function secsToLock(m) {
-  var lock = getLockTime(m);
-  if (!lock) return null;
-  return Math.floor((lock - new Date()) / 1000);
-}
-
 /** Returns { label, cls } for status badge */
 function matchStatusInfo(m) {
   if (!m) return { label: '—', cls: '' };
@@ -253,8 +228,10 @@ function matchStatusInfo(m) {
     if (m.winner) return { label: '✓ Result In', cls: 'done' };
     return { label: '🔒 Locked', cls: 'locked' };
   }
-  var secs = secsToLock(m);
-  if (secs !== null && secs < 300) return { label: '⚠ Closing Soon', cls: 'warning' };
+  var lock = API.getLockTime(m);
+  if (lock && lock <= new Date()) return { label: '🔒 Locked', cls: 'locked' };
+  var secs = API.secondsToLock(m);
+  if (secs !== null && secs < 300) return { label: '⚠️ Closing Soon', cls: 'warning' };
   return { label: '● Open', cls: 'open' };
 }
 
@@ -323,7 +300,7 @@ async function init() {
         // Refresh current match area if lock state may have changed
         if (_activeMatchId) {
           var m = _matches.find(function(x) { return x.id === _activeMatchId; });
-          if (m && !isPredOpen(m)) await renderMatchArea(_activeMatchId);
+          if (m && !API.isPredOpen(m)) await renderMatchArea(_activeMatchId);
         }
       } catch(e) {}
     }, 30000);
@@ -365,7 +342,7 @@ async function loadMatches() {
   var params = new URLSearchParams(window.location.search);
   var mid = params.get('match');
   var first = mid ? (_matches.find(function(m) { return m.id === mid; }) || _matches[0]) :
-                    (_matches.find(function(m) { return isPredOpen(m); }) || _matches[0]);
+                    (_matches.find(function(m) { return API.isPredOpen(m); }) || _matches[0]);
   if (first) await setActiveMatch(first.id);
 }
 
@@ -462,7 +439,7 @@ async function renderMatchArea(matchId) {
       renderAbandoned(m, pred, ia);
     } else if (m.is_locked && m.winner) {
       renderResult(m, pred, ia);
-    } else if (!isPredOpen(m)) {
+    } else if (!API.isPredOpen(m)) {
       renderLocked(m, pred, ia);
     } else if (pred) {
       renderSubmitted(m, pred, ia);
