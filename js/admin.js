@@ -564,19 +564,17 @@ async function loadResultForm() {
       return '<option value="'+t+'"'+(m.winner===t?' selected':'')+'>'+UI.esc(t)+'</option>';
     }).join('');
 
-  // PoM options - Fetch players for both teams directly from DB
+  // PoM options - filter from _players using flexible team matching
   var pomEl = $id('res-pom');
   if (pomEl) {
-    try {
-      var matchPlayers = safeArr(await API.fetchPlayersByMatch(matchId));
-      pomEl.innerHTML = '<option value="">— Select player —</option>' +
-        matchPlayers.map(function(p){
-          return '<option value="'+p.id+'"'+(m.player_of_match===p.id?' selected':'')+'>'+UI.esc(p.name)+' ('+UI.esc(tShort(p.ipl_team))+')</option>';
-        }).join('');
-    } catch(e) {
-      console.error('[loadResultForm] fetchPlayersByMatch:', e);
-      pomEl.innerHTML = '<option value="">— Error loading players —</option>';
-    }
+    var matchPlayers = _players.filter(function(p){
+      var pt = p.ipl_team || '';
+      return pt===m.team1 || pt===m.team2 || pt===tCode(m.team1) || pt===tCode(m.team2) || pt===tShort(m.team1) || pt===tShort(m.team2);
+    });
+    pomEl.innerHTML = '<option value="">— Select player —</option>' +
+      matchPlayers.map(function(p){
+        return '<option value="'+p.id+'"'+(m.player_of_match===p.id?' selected':'')+'>'+UI.esc(p.name)+' ('+UI.esc(tShort(p.ipl_team))+')</option>';
+      }).join('');
   }
 
   if (m.actual_target) $id('res-target').value = m.actual_target;
