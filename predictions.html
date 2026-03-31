@@ -401,18 +401,19 @@ function renderUsageMeter() {
 function renderMatchTabs() {
   var strip = document.getElementById('match-tabs');
   if (!strip) return;
-  strip.innerHTML = _matches.map(function(m) {
-    var si  = matchStatusInfo(m);
-    var hasImpact = !!_impactMatchMap[m.id];
-    var cls = 'match-tab' +
-      (si.cls === 'done'      ? ' done'       : '') +
-      (si.cls === 'locked'    ? ' locked-tab' : '') +
-      (si.cls === 'abandoned' ? ' locked-tab' : '') +
-      (hasImpact              ? ' has-impact'  : '') +
-      (_activeMatchId === m.id ? ' active'    : '');
-    var label = UI.esc((m.team1 || '?').split(' ').pop()) + ' vs ' + UI.esc((m.team2 || '?').split(' ').pop());
-    return '<button class="' + cls + '" id="tab-' + m.id + '" onclick="setActiveMatch(\'' + m.id + '\')">' + label + '</button>';
-  }).join('');
+    strip.innerHTML = _matches.map(function(m) {
+      var si  = matchStatusInfo(m);
+      var hasImpact = !!_impactMatchMap[m.id];
+      var cls = 'match-tab' +
+        (si.cls === 'done'      ? ' done'       : '') +
+        (si.cls === 'locked'    ? ' locked-tab' : '') +
+        (si.cls === 'abandoned' ? ' locked-tab' : '') +
+        (hasImpact              ? ' has-impact'  : '') +
+        (_activeMatchId === m.id ? ' active'    : '');
+      var t1s = UI.tShort(m.team1), t2s = UI.tShort(m.team2);
+      var label = UI.esc(t1s) + ' vs ' + UI.esc(t2s);
+      return '<button class="' + cls + '" id="tab-' + m.id + '" onclick="setActiveMatch(\'' + m.id + '\')">' + label + '</button>';
+    }).join('');
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -664,9 +665,10 @@ function renderAbandoned(m, pred, ia) {
    SHARED BUILDERS
 ══════════════════════════════════════════════════════════════ */
 function buildMatchHeader(m, si) {
+  var t1s = UI.tShort(m.team1), t2s = UI.tShort(m.team2);
   return '<div class="pred-card-header">' +
     '<div>' +
-      '<div class="pred-match-name">' + UI.esc(m.team1 || 'TBD') + ' vs ' + UI.esc(m.team2 || 'TBD') + '</div>' +
+      '<div class="pred-match-name">' + UI.esc(t1s || 'TBD') + ' vs ' + UI.esc(t2s || 'TBD') + '</div>' +
       '<div class="pred-match-meta">' +
         (m.match_no ? 'Match ' + m.match_no + ' · ' : '') +
         UI.fmtDate(m.match_date) +
@@ -731,8 +733,7 @@ function startCountdown(elId, m, initialSecs) {
 }
 
 function buildTeamLogo(teamName) {
-  var codes = { CHENNAISUPERKINGS:'CSK',DELHICAPITALS:'DC',GUJARATTITANS:'GT',KOLKATAKNIGHTRIDERS:'KKR',LUCKNOWSUPERGIANTS:'LSG',MUMBAIINDIANS:'MI',PUNJABKINGS:'PBKS',RAJASTHANROYALS:'RR',ROYALCHALLENGERSBENGALURU:'RCB',SUNRISERSHYDERABAD:'SRH',SUPREMERAJAS:'SURA' };
-  var code = codes[(teamName || '').toUpperCase().replace(/\s+/g, '')] || null;
+  var code = UI.tCode(teamName);
   if (!code) return '';
   return '<img src="images/teams/' + code + 'outline.png" style="width:20px;height:20px;object-fit:contain;flex-shrink:0;" onerror="this.style.display=\'none\'">';
 }

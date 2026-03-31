@@ -4,6 +4,17 @@
 // ─────────────────────────────────────────────────────────────
 
 const UI = {
+  TEAM_CODES: {
+    'CHENNAI SUPER KINGS':'CSK','DELHI CAPITALS':'DC','GUJARAT TITANS':'GT',
+    'KOLKATA KNIGHT RIDERS':'KKR','LUCKNOW SUPER GIANTS':'LSG','MUMBAI INDIANS':'MI',
+    'PUNJAB KINGS':'PBKS','RAJASTHAN ROYALS':'RR','ROYAL CHALLENGERS BENGALURU':'RCB',
+    'SUNRISERS HYDERABAD':'SRH','SUPREME RAJAS':'SURA'
+  },
+  tCode: function(name) { return this.TEAM_CODES[((name||'').toUpperCase())] || null; },
+  tShort: function(name) {
+    var c = this.tCode(name);
+    return c || (name||'').split(' ').map(function(w){return w[0];}).join('').toUpperCase();
+  },
 
   // ════════════════════════════════════════════════════════════
   //  THEME — dark / light toggle

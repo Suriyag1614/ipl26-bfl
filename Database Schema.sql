@@ -29,7 +29,7 @@ CREATE TABLE public.badge_definitions (
   name text NOT NULL,
   description text NOT NULL,
   icon text DEFAULT '🏅'::text,
-  color text DEFAULT '#f0b429'::text,
+  color text DEFAULT '#c8f135'::text,
   criteria jsonb DEFAULT '{}'::jsonb,
   CONSTRAINT badge_definitions_pkey PRIMARY KEY (id)
 );

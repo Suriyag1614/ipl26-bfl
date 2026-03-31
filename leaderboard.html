@@ -197,7 +197,8 @@ async function populateMatchSel() {
   var sel=document.getElementById('mw-match-sel');
   sel.innerHTML='<option value="">— Select match —</option>'+
     matches.filter(function(m){return m.is_locked;}).map(function(m){
-      return '<option value="'+m.id+'">M'+(m.match_no||'')+' · '+UI.esc(m.match_title||m.team1+' vs '+m.team2)+'</option>';
+      var title = m.match_title || (UI.tShort(m.team1) + ' vs ' + UI.tShort(m.team2));
+      return '<option value="'+m.id+'">M'+(m.match_no||'')+' · '+UI.esc(title)+'</option>';
     }).join('');
 }
 

@@ -15,12 +15,6 @@ var ALL_TEAMS = [
   'SUNRISERS HYDERABAD','SUPREME RAJAS'
 ];
 
-var TEAM_CODES = {
-  'CHENNAI SUPER KINGS':'CSK','DELHI CAPITALS':'DC','GUJARAT TITANS':'GT',
-  'KOLKATA KNIGHT RIDERS':'KKR','LUCKNOW SUPER GIANTS':'LSG','MUMBAI INDIANS':'MI',
-  'PUNJAB KINGS':'PBKS','RAJASTHAN ROYALS':'RR','ROYAL CHALLENGERS BENGALURU':'RCB',
-  'SUNRISERS HYDERABAD':'SRH','SUPREME RAJAS':'SURA'
-};
 
 var TEAM_COLORS = {
   CSK:'#fdb913',MI:'#004ba0',RCB:'#da1818',KKR:'#6a1bac',SRH:'#f26522',
@@ -53,13 +47,8 @@ var _sidebarOpen  = true;
 /* ══════════════════════════════════════════════════════════════
    HELPERS
 ══════════════════════════════════════════════════════════════ */
-function tCode(name) {
-  return TEAM_CODES[((name||'').toUpperCase())] || null;
-}
-function tShort(name) {
-  var c = tCode(name);
-  return c || (name||'').split(' ').map(function(w){return w[0];}).join('').toUpperCase();
-}
+function tCode(name) { return UI.tCode(name); }
+function tShort(name) { return UI.tShort(name); }
 function tColor(name) {
   var c = tCode(name);
   return (c && TEAM_COLORS[c]) ? TEAM_COLORS[c] : 'var(--accent)';
