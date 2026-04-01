@@ -1,5 +1,5 @@
 // sw.js — BFL Fantasy IPL 2026
-const CACHE_NAME = 'bfl-cache-v1.13';
+const CACHE_NAME = 'bfl-cache-v1.14';
 const ASSETS = [
   '/',
   '/index.html',

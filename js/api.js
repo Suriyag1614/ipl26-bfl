@@ -446,22 +446,6 @@ const API = {
   },
 
   // ══════════════════════════════════════════════════════════════════
-  //  RECALCULATION ENGINE
-  // ══════════════════════════════════════════════════════════════════
-  async recalculateMatch(matchId, onLog) {
-    onLog?.('Deleting existing points for this match...');
-    const { error: delErr } = await sb.from('points_log').delete().eq('match_id', matchId);
-    if (delErr) throw delErr;
-    onLog?.('Recalculating player points...');
-    const result = await this.calculateMatchPoints(matchId, onLog);
-    onLog?.('Awarding badges...');
-    try { await this.awardBadges(matchId); } catch(e) { console.warn('[Badges]', e.message); }
-    try { await sb.rpc('refresh_match_center', { p_match_id: matchId }); } catch (_) {}
-    onLog?.('Done! Leaderboard refreshed.', 'good');
-    return result;
-  },
-
-  // ══════════════════════════════════════════════════════════════════
   //  POINTS ENGINE  — replacement-aware · PoM/PoT bonus not multiplied
   // ══════════════════════════════════════════════════════════════════
   calcBattingPoints(s) {
@@ -652,8 +636,9 @@ const API = {
 
     await this.refreshLeaderboard();
     
-    // Award badges (admin-side bypasses RLS)
-    try { await this.awardBadges(matchId); } catch(e) { console.error('[Badges] Awarding failed:', e); }
+    // Award badges (admin-side bypasses RLS) — must NOT be skipped by refreshLeaderboard errors
+    onLog?.('Awarding badges...');
+    try { await this.awardBadges(matchId); } catch(e) { console.error('[Badges] Awarding failed:', e.message, e); onLog?.('Badge error: '+e.message, 'err'); }
     
     return logs;
   },
@@ -697,21 +682,32 @@ const API = {
   },
 
   async awardBadges(matchId) {
-    await this.ensureBadgeDefinitions();
+    console.log('[Badges] === awardBadges START for match:', matchId, '===');
+    try {
+      try {
+        await this.ensureBadgeDefinitions();
+      } catch(e) {
+        console.error('[Badges] ensureBadgeDefinitions failed:', e);
+      }
 
-    // 1. Fetch data (match-specific + history for streaks/consistency)
-    const [matchRes, logsRes, predsRes, lb, allPredsRes, allLogsRes] = await Promise.all([
-      this.fetchMatch(matchId),
-      sb.from('points_log').select('*').eq('match_id', matchId),
-      sb.from('predictions').select('*,created_at').eq('match_id', matchId).order('created_at', { ascending: true }),
-      this.fetchLeaderboard(),
-      sb.from('predictions').select('*,match:matches(id,match_date,winner,actual_target,status)').order('created_at', { ascending: true }),
-      sb.from('points_log').select('*,match:matches(id,match_date,status)').order('created_at', { ascending: true }),
-    ]);
-    const match = matchRes;
-    const logs = logsRes.data || [];
-    const preds = predsRes.data || [];
-    if (!match || !logs.length) return;
+      // 1. Fetch data (match-specific + history for streaks/consistency)
+      console.log('[Badges] Fetching data...');
+      const [matchRes, logsRes, predsRes, lb, allPredsRes, allLogsRes] = await Promise.all([
+        this.fetchMatch(matchId),
+        sb.from('points_log').select('*').eq('match_id', matchId),
+        sb.from('predictions').select('*,created_at').eq('match_id', matchId).order('created_at', { ascending: true }),
+        this.fetchLeaderboard(),
+        sb.from('predictions').select('*,match:matches(id,match_date,winner,actual_target,status)').order('created_at', { ascending: true }),
+        sb.from('points_log').select('*,match:matches(id,match_date,status)').order('created_at', { ascending: true }),
+      ]);
+      const match = matchRes;
+      const logs = logsRes.data || [];
+      const preds = predsRes.data || [];
+      console.log('[Badges] Data fetched - match:', !!match, 'logs:', logs.length, 'preds:', preds.length, 'lb:', (lb||[]).length);
+      if (!match || !logs.length) {
+        console.warn('[Badges] Early return: no match or no logs');
+        return;
+      }
 
     const allPreds = allPredsRes.data || [];
     const allLogs = allLogsRes.data || [];
@@ -855,6 +851,10 @@ const API = {
       }
     } else {
       console.log('[Badges] No new badges to award for this match');
+    }
+    console.log('[Badges] === awardBadges END ===');
+    } catch(fatalErr) {
+      console.error('[Badges] FATAL ERROR in awardBadges:', fatalErr);
     }
   },
 
@@ -1442,6 +1442,9 @@ async fetchTeams() {
 
     onLog?.('Recalculating...');
     const result = await this.calculateMatchPoints(matchId, onLog);
+    onLog?.('Awarding badges...');
+    console.log('[Badges] About to call awardBadges from recalculateMatch');
+    try { await this.awardBadges(matchId); } catch(e) { console.warn('[Badges]', e.message, e); onLog?.('Badge error: '+e.message, 'err'); }
     try { await sb.rpc('refresh_match_center', { p_match_id: matchId }); } catch(_) {}
     onLog?.('Done! Leaderboard refreshed.', 'good');
     return result;
