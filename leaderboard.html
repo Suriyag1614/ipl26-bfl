@@ -151,7 +151,7 @@ async function loadLeaderboard() {
     if(myRow){
       var banner=$('#my-rank-banner'); if(banner) banner.style.display='flex';
       var ordinal=UI.ordinal(myRow.rank);
-      document.getElementById('my-rank-big').textContent=ordinal;
+      document.getElementById('my-rank-big').innerHTML=ordinal;
       document.getElementById('my-rank-name').innerHTML=UI.championName(myRow.team?myRow.team.team_name:'—');
       document.getElementById('my-rank-detail').textContent=myRow.matches_played+' matches played';
       var ptsEl=document.getElementById('my-rank-pts'); if(ptsEl){ptsEl.textContent=myRow.total_points;UI.countUp(ptsEl,myRow.total_points,900,myRow.total_points%1!==0);}
@@ -200,8 +200,8 @@ async function populateMatchSel() {
   var sel=document.getElementById('mw-match-sel');
   sel.innerHTML='<option value="">— Select match —</option>'+
     matches.filter(function(m){return m.is_locked;}).map(function(m){
-      var title = m.match_title || (UI.tShort(m.team1) + ' vs ' + UI.tShort(m.team2));
-      return '<option value="'+m.id+'">M'+(m.match_no||'')+' · '+UI.esc(title)+'</option>';
+      var title = m.match_title || ('M'+(m.match_no||'')+' · '+UI.tShort(m.team1)+' vs '+UI.tShort(m.team2));
+      return '<option value="'+m.id+'">'+UI.esc(title)+'</option>';
     }).join('');
 }
 

@@ -581,6 +581,7 @@ const API = {
         playerResults.push({
           name: sp.player?.name,
           effective_name: sp.replacement ? sp.replacement.replacement?.name : sp.player?.name,
+          role: sp.player?.role || '',
           is_injured: !!sp.player?.is_injured,
           is_replacement: !!(sp.player?.is_injured && sp.replacement),
           base: base, bat: bat, bowl: bowl,
@@ -695,9 +696,9 @@ const API = {
       const [matchRes, logsRes, predsRes, lb, allPredsRes, allLogsRes] = await Promise.all([
         this.fetchMatch(matchId),
         sb.from('points_log').select('*').eq('match_id', matchId),
-        sb.from('predictions').select('*,created_at').eq('match_id', matchId).order('created_at', { ascending: true }),
+        sb.from('predictions').select('*').eq('match_id', matchId).order('submitted_at', { ascending: true }),
         this.fetchLeaderboard(),
-        sb.from('predictions').select('*,match:matches(id,match_date,winner,actual_target,status)').order('created_at', { ascending: true }),
+        sb.from('predictions').select('*,match:matches(id,match_date,winner,actual_target,status)').order('submitted_at', { ascending: true }),
         sb.from('points_log').select('*,match:matches(id,match_date,status)').order('created_at', { ascending: true }),
       ]);
       const match = matchRes;
@@ -962,7 +963,7 @@ const API = {
     return breakdown.map(log => {
       cum += (log.total_points || 0);
       return {
-        label: log.match?.match_title || ('M' + (log.match?.match_no || '')),
+        label: 'M' + (log.match?.match_no || '?'),
         pts: log.total_points || 0, cumPts: cum,
         bat: log.batting_pts || 0, bowl: log.bowling_pts || 0,
         fld: log.fielding_pts || 0, pred: log.prediction_points || 0,

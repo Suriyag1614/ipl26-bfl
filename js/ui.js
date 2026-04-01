@@ -393,7 +393,7 @@ const UI = {
     return owners[(teamName || '').toUpperCase()] || 'Team Manager';
   },
   esc(s)           { return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); },
-  ordinal(n)       { const s=['th','st','nd','rd'],v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); },
+  ordinal(n)       { const s=['th','st','nd','rd'],v=n%100; return n+'<sup>'+(s[(v-20)%10]||s[v]||s[0])+'</sup>'; },
   navigate(url)    { document.body.style.opacity='0'; document.body.style.transition='opacity .2s ease'; setTimeout(()=>{window.location.href=url;},210); },
   show(id)         { const e=document.getElementById(id); if(e) e.style.display=''; },
   hide(id)         { const e=document.getElementById(id); if(e) e.style.display='none'; },
