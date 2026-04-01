@@ -472,7 +472,7 @@ const UI = {
   championName(name) {
     var n = (name || '').trim();
     if (n.toUpperCase() === 'CHENNAI SUPER KINGS') {
-      return '<span style="color:var(--gold);font-weight:700;" title="Defending Champion">' + this.esc(n) + ' <span style="font-size:.75em;opacity:.8;">🏆</span></span>';
+      return '<span style="color:var(--gold);font-weight:700;" title="Defending Champion">' + this.esc(n) + ' <span style="font-size:.75em;opacity:.8;"></span></span>';
     }
     return this.esc(n);
   },

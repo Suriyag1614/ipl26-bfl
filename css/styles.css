@@ -359,12 +359,13 @@ body { display:flex; flex-direction:column; }
   background:rgba(148,163,184,.2);color:var(--text);
 }
 .role-tag:hover { transform:scale(1.06); }
-.role-tag img { width:12px;height:12px;object-fit:contain;flex-shrink:0;filter:grayscale(1) brightness(.35); }
+.role-tag img { width:12px;height:12px;object-fit:contain;flex-shrink:0;filter:brightness(0) invert(1); }
 .rt-bat  { background:rgba(248,113,113,.25);color:#f87171; }
 .rt-bowl { background:rgba(96,165,250,.25); color:#60a5fa; }
 .rt-ar   { background:rgba(52,211,153,.25); color:#34d399; }
 .rt-wk   { background:rgba(251,191,36,.25); color:#fbbf24; }
 .rt-os   { background:rgba(167,139,250,.25);color:var(--purple); }
+.rt-os img { filter:none !important; }
 
 /* ═══════════════════════════════════════════════
    TABLES
@@ -1114,7 +1115,7 @@ input:focus + .slider { box-shadow: 0 0 1px var(--cyan); }
 [data-theme="light"] .rule-card   { background: var(--bg2); }
 [data-theme="light"] .badge-card  { background: var(--bg2); }
 [data-theme="light"] .step-item   { background: var(--bg2); }
-[data-theme="light"] .role-tag img { filter:grayscale(1) brightness(.7) contrast(1.2); }
+[data-theme="light"] .role-tag img { filter:brightness(0); }
 [data-theme="light"] .role-tag { background:rgba(0,0,0,.1); }
 [data-theme="light"] .rt-bat  { background:rgba(248,113,113,.2); }
 [data-theme="light"] .rt-bowl { background:rgba(96,165,250,.2); }
