@@ -339,16 +339,39 @@ const API = {
   async refreshLeaderboard() {
     const { data: logs, error: le } = await sb.from('points_log').select('fantasy_team_id,squad_points,prediction_points');
     if (le) throw le;
+
+    // Fetch squad players with their IPL teams and all matches for matches_played calc
+    const [squadsRes, matchesRes] = await Promise.all([
+      sb.from('squad_players').select('fantasy_team_id, player_id, players(ipl_team)'),
+      sb.from('matches').select('id,team1,team2').in('status', ['completed', 'processed', 'locked'])
+    ]);
+    const allSquads = squadsRes.data || [];
+    const allMatches = matchesRes.data || [];
+
+    // Build map: fantasy_team_id → Set of IPL teams their squad players belong to
+    const teamIplMap = {};
+    allSquads.forEach(sp => {
+      const iplTeam = sp.players?.ipl_team;
+      if (!iplTeam) return;
+      if (!teamIplMap[sp.fantasy_team_id]) teamIplMap[sp.fantasy_team_id] = new Set();
+      teamIplMap[sp.fantasy_team_id].add(iplTeam);
+    });
+
+    // Build matches_played: count matches where at least one squad player's team is playing
+    const matchesPlayedMap = {};
+    Object.keys(teamIplMap).forEach(ftId => {
+      const iplTeams = teamIplMap[ftId];
+      matchesPlayedMap[ftId] = allMatches.filter(m => iplTeams.has(m.team1) || iplTeams.has(m.team2)).length;
+    });
+
     const agg = {};
     (logs || []).forEach(r => {
-      if (!agg[r.fantasy_team_id]) agg[r.fantasy_team_id] = { total_points: 0, matches_played: 0 };
-      // Explicitly sum squad + prediction to guarantee prediction points are included
-      agg[r.fantasy_team_id].total_points   += Number(r.squad_points || 0) + Number(r.prediction_points || 0);
-      agg[r.fantasy_team_id].matches_played += 1;
+      if (!agg[r.fantasy_team_id]) agg[r.fantasy_team_id] = { total_points: 0 };
+      agg[r.fantasy_team_id].total_points += Number(r.squad_points || 0) + Number(r.prediction_points || 0);
     });
     const rows = Object.entries(agg).map(([id, v]) => ({
       fantasy_team_id: id, total_points: v.total_points,
-      matches_played: v.matches_played, updated_at: new Date().toISOString(),
+      matches_played: matchesPlayedMap[id] || 0, updated_at: new Date().toISOString(),
     }));
     if (!rows.length) return;
 
