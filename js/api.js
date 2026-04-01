@@ -661,18 +661,60 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   //  BADGE ENGINE
   // ══════════════════════════════════════════════════════════════════
+  _badgeDefs: [
+    { id: 'centurion',      name: 'Centurion',         description: 'Had a player score 100+ runs in a match', icon: '💯', color: '#f59e0b' },
+
+    { id: 'perfect-pick',   name: 'Perfect Pick',      description: 'Predicted the exact target score', icon: '🔮', color: '#a855f7' },
+    { id: 'prediction-pro', name: 'Prediction Pro',    description: 'Correct winner with target within 5 runs', icon: '🧠', color: '#06b6d4' },
+    { id: 'high-flyer',     name: 'High Flyer',        description: 'Scored 250+ points in a single match', icon: '🦅', color: '#ef4444' },
+    { id: '1000-points',    name: 'Millennium Club',   description: 'Reached 1000 career points', icon: '🔥', color: '#f97316' },
+    { id: '3000-points',    name: 'Triple Threat',     description: 'Reached 3000 career points', icon: '⚡', color: '#eab308' },
+    { id: '5000-points',    name: 'Elite 5000',        description: 'Reached 5000 career points', icon: '👑', color: '#fbbf24' },
+    { id: 'rank-1',         name: 'Champion',          description: 'Reached #1 on the leaderboard', icon: '🥇', color: '#fbbf24' },
+    { id: 'top-3',          name: 'Podium Finish',     description: 'Reached top 3 on the leaderboard', icon: '🥉', color: '#d97706' },
+    { id: 'top-5',          name: 'Top 5',             description: 'Reached top 5 on the leaderboard', icon: '🏅', color: '#6b7280' },
+    { id: 'early_bird',     name: 'Early Bird',        description: 'First to submit prediction for a match', icon: '🌅', color: '#38d9f5' },
+    { id: 'first_blood',    name: 'First Blood',       description: 'First prediction submitted in the season', icon: '🩸', color: '#f87171' },
+    { id: 'first_win',      name: 'First Win',         description: 'Ranked 1st in a match', icon: '🏆', color: '#f5c842' },
+    { id: 'consistent',     name: 'Consistent Performer', description: 'Top 3 for 3 consecutive matches', icon: '🔥', color: '#ff4d6d' },
+    { id: 'streak_3',       name: 'Hat Trick',         description: '3 correct winner predictions in a row', icon: '🎩', color: '#a78bfa' },
+    { id: 'streak_5',       name: 'Prediction Maestro', description: '5 correct winner predictions in a row', icon: '🧙', color: '#f5c842' },
+    { id: 'all_rounder',    name: 'All-Rounder',       description: 'Scored points in all categories in a match', icon: '🌟', color: '#a78bfa' },
+    { id: 'captain_king',   name: 'Captain King',      description: 'Captain scored 200+ points in a match', icon: '👑', color: '#f5c842' },
+    { id: 'impact_master',  name: 'Impact Master',     description: 'Impact Player scored 300+ points', icon: '⚡', color: '#38d9f5' },
+    { id: 'perfect_pred',   name: 'Perfect Predictor', description: 'Predicted exact target score', icon: '🎯', color: '#c8f135' },
+  ],
+
+  async ensureBadgeDefinitions() {
+    const { data: existing } = await sb.from('badge_definitions').select('id');
+    const existingIds = new Set((existing || []).map(b => b.id));
+    const missing = this._badgeDefs.filter(b => !existingIds.has(b.id));
+    if (missing.length) {
+      console.log(`[Badges] Seeding ${missing.length} missing badge definitions`);
+      const { error } = await sb.from('badge_definitions').insert(missing);
+      if (error) console.error('[Badges] Seed error:', error.message);
+    }
+  },
+
   async awardBadges(matchId) {
-    // 1. Fetch data
-    const [matchRes, logsRes, predsRes, lb] = await Promise.all([
+    await this.ensureBadgeDefinitions();
+
+    // 1. Fetch data (match-specific + history for streaks/consistency)
+    const [matchRes, logsRes, predsRes, lb, allPredsRes, allLogsRes] = await Promise.all([
       this.fetchMatch(matchId),
       sb.from('points_log').select('*').eq('match_id', matchId),
-      sb.from('predictions').select('*').eq('match_id', matchId),
-      this.fetchLeaderboard() // Need latest standings for career badges
+      sb.from('predictions').select('*,created_at').eq('match_id', matchId).order('created_at', { ascending: true }),
+      this.fetchLeaderboard(),
+      sb.from('predictions').select('*,match:matches(id,match_date,winner,actual_target,status)').order('created_at', { ascending: true }),
+      sb.from('points_log').select('*,match:matches(id,match_date,status)').order('created_at', { ascending: true }),
     ]);
     const match = matchRes;
     const logs = logsRes.data || [];
     const preds = predsRes.data || [];
     if (!match || !logs.length) return;
+
+    const allPreds = allPredsRes.data || [];
+    const allLogs = allLogsRes.data || [];
 
     // 2. Fetch all existing badges to avoid duplicates
     const { data: existing } = await sb.from('user_badges').select('fantasy_team_id,badge_id');
@@ -682,64 +724,137 @@ const API = {
       existingMap[b.fantasy_team_id].add(b.badge_id);
     });
 
+    // 3. Build match leaderboard for rank-based badges
+    const matchLb = logs.slice().sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
+
+    // 4. Check if any prediction exists before this match (for first_blood)
+    const matchDate = match.match_date;
+    const hasPriorPredictions = allPreds.some(p => p.match && p.match.match_date && p.match.match_date < matchDate);
+
     const newBadges = [];
     for (const log of logs) {
       const teamId = log.fantasy_team_id;
       const teamExisting = existingMap[teamId] || new Set();
-      const pred = (preds || []).find(p => p.fantasy_team_id === teamId);
+      const pred = preds.find(p => p.fantasy_team_id === teamId);
       const lbRow = (lb || []).find(r => r.fantasy_team_id === teamId);
       const totalPoints = lbRow ? lbRow.total_points : 0;
       const rank = lbRow ? lbRow.rank : 999;
+      const matchRank = matchLb.findIndex(r => r.fantasy_team_id === teamId) + 1;
+      const players = log.breakdown?.players || [];
 
-      // Helper to push if not already owned
       const give = (bid) => {
         if (!teamExisting.has(bid)) {
           newBadges.push({ fantasy_team_id: teamId, badge_id: bid });
-          teamExisting.add(bid); // Don't add same badge twice in one go
+          teamExisting.add(bid);
         }
       };
 
-      // --- Match Specific Badges ---
-      // 1. Centurion (100+ runs by any player)
-      const hasCenturion = (log.breakdown?.players || []).some(p => (p.bat / (p.multiplier || 1)) >= 100);
-      if (hasCenturion) give('centurion');
+      // ── Match-Specific Badges ──
 
-      // 2. Five-fer (250+ bowling pts by any player)
-      const hasFivefer = (log.breakdown?.players || []).some(p => (p.bowl / (p.multiplier || 1)) >= 250); 
-      if (hasFivefer) give('five-fer');
+      // Centurion (100+ batting pts by any player, unmultiplied)
+      if (players.some(p => (p.bat / (p.multiplier || 1)) >= 100)) give('centurion');
 
-      // 3. Perfect Pick (Prediction diff = 0)
+
+
+      // Perfect Pick / Perfect Predictor (exact target match)
       if (pred && match.actual_target && Math.abs(pred.target_score - match.actual_target) === 0) {
         give('perfect-pick');
+        give('perfect_pred');
       }
 
-      // 4. Prediction Pro (Correct winner + diff <= 5)
+      // Prediction Pro (correct winner + diff <= 5)
       if (pred && pred.predicted_winner === match.winner && match.actual_target && Math.abs(pred.target_score - match.actual_target) <= 5) {
         give('prediction-pro');
       }
 
-      // 5. High Flyer (Match points >= 250)
+      // High Flyer (match total >= 250)
       if (log.total_points >= 250) give('high-flyer');
 
-      // --- Career Milestones ---
-      // 6. Point Milestones
+      // First Win (ranked 1st in this match)
+      if (matchRank === 1) give('first_win');
+
+      // Early Bird (first prediction submitted for this match)
+      if (pred && preds.length > 0 && preds[0].fantasy_team_id === teamId) give('early_bird');
+
+      // First Blood (very first prediction of the season)
+      if (pred && !hasPriorPredictions && preds[0].fantasy_team_id === teamId) give('first_blood');
+
+      // All-Rounder (points in all 4 categories: bat, bowl, fld, bon)
+      const totBat = players.reduce((s, p) => s + (p.bat || 0) * (p.multiplier || 1), 0);
+      const totBowl = players.reduce((s, p) => s + (p.bowl || 0) * (p.multiplier || 1), 0);
+      const totFld = players.reduce((s, p) => s + (p.fld || 0) * (p.multiplier || 1), 0);
+      const totBon = players.reduce((s, p) => s + (p.bon || 0), 0);
+      if (totBat > 0 && totBowl > 0 && totFld > 0 && totBon > 0) give('all_rounder');
+
+      // Captain King (captain scored 200+ final points)
+      const captain = players.find(p => p.isCaptain);
+      if (captain && (captain.final || 0) >= 200) give('captain_king');
+
+      // Impact Master (impact player scored 300+ final points)
+      const impact = players.find(p => p.isImpact && p.isImpactActive);
+      if (impact && (impact.final || 0) >= 300) give('impact_master');
+
+      // ── Career Milestones ──
+
+      // Point milestones
       if (totalPoints >= 1000) give('1000-points');
       if (totalPoints >= 3000) give('3000-points');
       if (totalPoints >= 5000) give('5000-points');
 
-      // 7. Rank Milestones
+      // Rank milestones
       if (rank === 1) give('rank-1');
       if (rank <= 3)  give('top-3');
-      if (rank <= 10) give('top-10');
+      if (rank <= 5)  give('top-5');
 
-      // 8. Prediction Counts (Approximate from total points if needed, or better fetch all history)
-      // For now we'll stick to points and rank as they are the most important
+      // ── Streak Badges (from prediction history) ──
+      const teamPreds = allPreds.filter(p => p.fantasy_team_id === teamId && p.match?.actual_target && p.match?.winner);
+      if (teamPreds.length >= 3) {
+        let streak = 0, bestStreak = 0;
+        teamPreds.forEach(p => {
+          if (p.predicted_winner === p.match.winner) { streak++; bestStreak = Math.max(bestStreak, streak); }
+          else streak = 0;
+        });
+        // Also check current streak ending at latest prediction
+        let currentStreak = 0;
+        for (let i = teamPreds.length - 1; i >= 0; i--) {
+          if (teamPreds[i].predicted_winner === teamPreds[i].match.winner) currentStreak++;
+          else break;
+        }
+        const maxStreak = Math.max(bestStreak, currentStreak);
+        if (maxStreak >= 3) give('streak_3');
+        if (maxStreak >= 5) give('streak_5');
+      }
+
+      // ── Consistent Performer (top 3 in 3 consecutive completed matches) ──
+      const teamLogs = allLogs.filter(l => l.fantasy_team_id === teamId && l.match && ['completed', 'processed'].includes(l.match.status));
+      if (teamLogs.length >= 3) {
+        // Sort by match date
+        teamLogs.sort((a, b) => (a.match?.match_date || '') > (b.match?.match_date || '') ? 1 : -1);
+        // Build rank for each match
+        const matchRanks = teamLogs.map(tl => {
+          const matchEntries = allLogs.filter(l => l.match_id === tl.match_id).sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
+          return matchEntries.findIndex(e => e.fantasy_team_id === teamId) + 1;
+        });
+        // Check for 3 consecutive top-3
+        let consec = 0;
+        for (const r of matchRanks) {
+          if (r > 0 && r <= 3) { consec++; if (consec >= 3) break; }
+          else consec = 0;
+        }
+        if (consec >= 3) give('consistent');
+      }
     }
 
     if (newBadges.length) {
-      console.log(`[Badges] Awarding ${newBadges.length} new badges to ${logs.length} teams`);
+      console.log(`[Badges] Awarding ${newBadges.length} new badges:`, JSON.stringify(newBadges));
       const { error } = await sb.from('user_badges').insert(newBadges);
-      if (error) console.error('[Badges] Insert error:', error.message);
+      if (error) {
+        console.error('[Badges] Insert error:', error.message, error.code, error.details);
+      } else {
+        console.log(`[Badges] Successfully awarded ${newBadges.length} badges`);
+      }
+    } else {
+      console.log('[Badges] No new badges to award for this match');
     }
   },
 
@@ -760,34 +875,46 @@ const API = {
       const myLbRow = (lb || []).find(r => r.fantasy_team_id === teamId);
       const rank = myLbRow ? myLbRow.rank : 999;
 
-      console.log(`[Badges] Checking for ${teamId}. Current: ${earned.size}. Pts: ${team.total_points}, Rank: ${rank}`);
-
       const newBadges = [];
-      const give = (bid) => { if (!earned.has(bid)) newBadges.push({ fantasy_team_id: teamId, badge_id: bid }); };
+      const give = (bid) => { if (!earned.has(bid)) newBadges.push(bid); };
 
       // 1. Point Milestones
-      if (team.total_points >= 1000) give('millennium-club');
-      if (team.total_points >= 500)  give('half-k-club');
+      if (team.total_points >= 5000) give('5000-points');
+      if (team.total_points >= 3000) give('3000-points');
+      if (team.total_points >= 1000) give('1000-points');
 
       // 2. Rank Milestones
-      if (rank === 1) give('the-champion');
-      if (rank <= 3)  give('podium-finish');
-      if (rank <= 10) give('top-10');
+      if (rank === 1) give('rank-1');
+      if (rank <= 3)  give('top-3');
+      if (rank <= 5)  give('top-5');
 
       // 3. Prediction Milestones
-      if (preds.some(p => p.match?.actual_target && Number(p.target_score) === Number(p.match.actual_target))) give('perfect-pick');
-      if (predStats.best_streak >= 3) give('streak-3');
-      if (predStats.best_streak >= 5) give('streak-5');
+      if (preds.some(p => p.match?.actual_target && Number(p.target_score) === Number(p.match.actual_target))) {
+        give('perfect-pick');
+        give('perfect_pred');
+      }
+      if (predStats.best_streak >= 3) give('streak_3');
+      if (predStats.best_streak >= 5) give('streak_5');
 
       // 4. Player Milestones
-      if (breakdown.some(log => (log.breakdown?.players || []).some(p => p.isImpact && (p.final || 0) >= 300))) give('impact-master');
-      if (breakdown.some(log => (log.breakdown?.players || []).some(p => p.isCaptain && (p.final || 0) >= 200))) give('captain-king');
+      if (breakdown.some(log => (log.breakdown?.players || []).some(p => p.isImpact && (p.final || 0) >= 300))) give('impact_master');
+      if (breakdown.some(log => (log.breakdown?.players || []).some(p => (p.bat / (p.multiplier || 1)) >= 100))) give('centurion');
+      if (breakdown.some(log => log.total_points >= 250)) give('high-flyer');
+      if (breakdown.some(log => (log.breakdown?.players || []).some(p => p.isCaptain && (p.final || 0) >= 200))) give('captain_king');
+      if (breakdown.some(log => {
+        const pp = log.breakdown?.players || [];
+        return pp.some(p => (p.bat || 0) > 0) && pp.some(p => (p.bowl || 0) > 0) &&
+               pp.some(p => (p.fld || 0) > 0) && pp.some(p => (p.bon || 0) > 0);
+      })) give('all_rounder');
+
+      // 5. Prediction Pro (correct winner + diff <= 5)
+      if (preds.some(p => p.match?.winner && p.predicted_winner === p.match.winner && p.match?.actual_target && Math.abs(p.target_score - p.match.actual_target) <= 5)) give('prediction-pro');
 
       if (newBadges.length) {
-        console.debug('[Badges] New potential badges:', newBadges.length, '. Awarding is handled by admin during match processing.');
+        console.log(`[Badges] Eligible for ${newBadges.length} new badges (awarded via admin):`, newBadges);
       }
     } catch (err) {
-      console.debug('[Badges] Prediction stats unavailable or other fetch error:', err.message);
+      console.debug('[Badges] checkAndAwardBadges error:', err.message);
     }
   },
 

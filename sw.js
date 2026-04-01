@@ -43,7 +43,8 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
       fetch(e.request).then((networkResponse) => {
         if (networkResponse && networkResponse.ok) {
-          caches.open(CACHE_NAME).then(c => c.put(e.request, networkResponse.clone()));
+          var clone = networkResponse.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
         }
         return networkResponse;
       }).catch(() => caches.match(e.request).then(r => r || new Response('Offline', {status: 408, headers: {'Content-Type':'text/plain'}})))
@@ -57,7 +58,8 @@ self.addEventListener('fetch', (e) => {
       return cache.match(e.request).then((cachedResponse) => {
         const fetchedResponse = fetch(e.request).then((networkResponse) => {
           if (networkResponse && networkResponse.ok) {
-            cache.put(e.request, networkResponse.clone());
+            var clone = networkResponse.clone();
+            cache.put(e.request, clone);
           }
           return networkResponse;
         });
