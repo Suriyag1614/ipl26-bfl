@@ -948,8 +948,22 @@ const API = {
       this.fetchPointsBreakdown(teamId), this.fetchMyPredictions(teamId),
       this.fetchImpactStats(teamId), this.fetchSquad(teamId),
     ]);
+    // Build impactUsage from breakdown for Best Impact Picks section
+    const impactUsage = [];
+    breakdown.forEach(log => {
+      const ip = (log.breakdown?.players || []).find(p => p.isImpact && p.isImpactActive);
+      if (ip && (ip.final || 0) > 0) {
+        impactUsage.push({
+          match: log.match,
+          player: { name: ip.name },
+          points_earned: ip.final || 0,
+        });
+      }
+    });
+    impactUsage.sort((a, b) => b.points_earned - a.points_earned);
+
     return {
-      breakdown, predictions, impactUsage: [], squad, // impactUsage redundant now
+      breakdown, predictions, impactUsage, squad,
       rankHistory: this._buildRankHistory(breakdown),
       predStats:   this._calcPredStats(predictions),
       playerStats: this._calcPlayerStats(breakdown),
