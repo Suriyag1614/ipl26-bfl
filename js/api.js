@@ -354,14 +354,14 @@ const API = {
       const iplTeam = sp.players?.ipl_team;
       if (!iplTeam) return;
       if (!teamIplMap[sp.fantasy_team_id]) teamIplMap[sp.fantasy_team_id] = new Set();
-      teamIplMap[sp.fantasy_team_id].add(iplTeam);
+      teamIplMap[sp.fantasy_team_id].add(iplTeam.toUpperCase().trim());
     });
 
     // Build matches_played: count matches where at least one squad player's team is playing
     const matchesPlayedMap = {};
     Object.keys(teamIplMap).forEach(ftId => {
       const iplTeams = teamIplMap[ftId];
-      matchesPlayedMap[ftId] = allMatches.filter(m => iplTeams.has(m.team1) || iplTeams.has(m.team2)).length;
+      matchesPlayedMap[ftId] = allMatches.filter(m => iplTeams.has((m.team1||'').toUpperCase()) || iplTeams.has((m.team2||'').toUpperCase())).length;
     });
 
     const agg = {};
