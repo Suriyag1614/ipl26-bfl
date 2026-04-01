@@ -721,18 +721,19 @@ function buildImpactBanner(m) {
     return '<div style="color:var(--text3);font-size:12px;padding:10px;background:var(--bg2);border:1px dashed var(--border);border-radius:8px;text-align:center;">No Impact Player assigned. Admin needs to set one in your squad.</div>';
   }
   var p = impact.player || {};
-  
+
+  var teamPlaying = p.ipl_team && (p.ipl_team === m.team1 || p.ipl_team === m.team2);
   var exhausted = (_impactStats.used >= 8) && !_impactActive;
-  var disabled = exhausted;
-  var cls = 'impact-banner' + (_impactActive ? ' active-state' : '') + (exhausted ? ' exhausted' : '');
-  
+  var disabled = exhausted || !teamPlaying;
+  var cls = 'impact-banner' + (_impactActive ? ' active-state' : '') + (exhausted ? ' exhausted' : '') + (!teamPlaying && !exhausted ? ' exhausted' : '');
+
   return '<div class="' + cls + '">' +
     '<div class="impact-player-row">' +
       imgTag(p.image_url, p.name, '', 'width:44px;height:44px;border-radius:10px;object-fit:cover;flex-shrink:0;') +
       '<div class="impact-player-info">' +
         '<div class="impact-player-name">' + UI.esc(p.name || '—') + '</div>' +
         '<div class="impact-player-sub">' + UI.esc(p.role || '') + (p.ipl_team ? ' · ' + UI.esc(p.ipl_team) : '') + (p.is_overseas ? ' · ✈️ OS' : '') + '</div>' +
-        '<div style="font-size:11px;color:var(--text3);margin-top:3px;">' + (exhausted ? '⛔ Limit reached (8/8)' : _impactActive ? '<span style="color:var(--cyan);font-weight:700;">ACTIVE — 3× multiplier</span>' : 'OFF — excluded from scoring') + '</div>' +
+        '<div style="font-size:11px;color:var(--text3);margin-top:3px;">' + (exhausted ? '⛔ Limit reached (8/8)' : !teamPlaying ? '⛔ ' + UI.esc(p.ipl_team || 'Team') + ' not playing this match' : _impactActive ? '<span style="color:var(--cyan);font-weight:700;">ACTIVE — 3× multiplier</span>' : 'OFF — excluded from scoring') + '</div>' +
       '</div>' +
       '<div class="impact-multiplier-badge ' + (_impactActive ? 'on' : 'off') + '">' + (_impactActive ? '3×' : '0×') + '</div>' +
     '</div>' +
