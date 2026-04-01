@@ -428,13 +428,14 @@ const UI = {
 
   roleBadge(role) {
     const map = {
-      'Batter':        {cls:'rt-bat',  s:'BAT'},
-      'Bowler':        {cls:'rt-bowl', s:'BOWL'},
-      'All-Rounder':   {cls:'rt-ar',   s:'AR'},
-      'Wicket-Keeper': {cls:'rt-wk',   s:'WK'},
+      'Batter':        {cls:'rt-bat',  s:'BAT',  icon:'images/ipl/teams-batter-icon.svg'},
+      'Bowler':        {cls:'rt-bowl', s:'BOWL', icon:'images/ipl/teams-bowler-icon.svg'},
+      'All-Rounder':   {cls:'rt-ar',   s:'AR',   icon:'images/ipl/teams-all-rounder-icon.svg'},
+      'Wicket-Keeper': {cls:'rt-wk',   s:'WK',   icon:'images/ipl/teams-wicket-keeper-icon.svg'},
     };
-    const r = map[role] || {cls:'', s:(role||'—').substring(0,4)};
-    return `<span class="role-tag ${r.cls}">${r.s}</span>`;
+    const r = map[role] || {cls:'', s:(role||'—').substring(0,4), icon:null};
+    const iconHtml = r.icon ? `<img src="${r.icon}" alt="${r.s}">` : '';
+    return `<span class="role-tag ${r.cls}">${iconHtml}${r.s}</span>`;
   },
 
   deadlineBadge(match, onExpireId) {
@@ -466,6 +467,14 @@ const UI = {
     const clean = String(teamName).toUpperCase().replace(/[^A-Z]/g, '');
     const code = codes[clean] || (Object.values(codes).includes(clean) ? clean : null);
     return code ? 'images/teams/' + code + 'outline.png' : null;
+  },
+
+  championName(name) {
+    var n = (name || '').trim();
+    if (n.toUpperCase() === 'CHENNAI SUPER KINGS') {
+      return '<span style="color:var(--gold);font-weight:700;" title="Defending Champion">' + this.esc(n) + ' <span style="font-size:.75em;opacity:.8;">🏆</span></span>';
+    }
+    return this.esc(n);
   },
 };
 

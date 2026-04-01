@@ -100,35 +100,43 @@ function renderSquad(){
     var pts=UI.fmtPts(pRow.pts);
     var displayName=(isInjured&&hasRep&&sp.replacement.replacement)?sp.replacement.replacement.name:p.name||'Player';
     var displayImg=(isInjured&&hasRep&&sp.replacement.replacement)?sp.replacement.replacement.image_url:p.image_url;
-    var badges=UI.roleBadge(p.role);
-    if(p.is_overseas) badges+=' <span class="role-tag rt-os" style="font-size:9px;">OS</span>';
-    if(isCap) badges+=' <span class="badge badge-gold" style="font-size:10px;">2x</span>';
-    if(isVC)  badges+=' <span class="badge badge-cyan"  style="font-size:10px;">1.5x</span>';
-    if(isImpact) badges+=' <span class="badge badge-impact" style="font-size:10px;">IMPACT</span>';
-    if(pRow.pom) badges+=' <span class="badge-pom" title="PoM Winner">PoM '+(pRow.pom>1?pRow.pom:'')+'</span>';
-    if(pRow.pot) badges+=' <span class="badge-pot" title="Player of Tournament">PoT</span>';
 
-    var statusBadges='';
-    if(isInjured) statusBadges+='<span class="badge-injured">&#x1F3E5; Injured</span> ';
-    if(hasRep)    statusBadges+='<span class="badge-replacement">&#x1F504; '+UI.esc(sp.replacement.replacement&&sp.replacement.replacement.name||'')+'</span>';
+    var nameTag='';
+    if(isCap) nameTag=' <span style="display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-ui);font-size:9px;font-weight:900;width:18px;height:18px;border-radius:50%;background:var(--gold);color:#000;margin-left:4px;vertical-align:middle;" title="Captain (2×)">C</span>';
+    else if(isVC) nameTag=' <span style="display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-ui);font-size:9px;font-weight:900;width:18px;height:18px;border-radius:50%;background:var(--cyan);color:#000;margin-left:4px;vertical-align:middle;" title="Vice-Captain (1.5×)">VC</span>';
+    if(isImpact) nameTag+=' <span style="display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-ui);font-size:9px;font-weight:900;width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,var(--purple),#4facfe);color:#000;margin-left:4px;vertical-align:middle;" title="Impact Player (3×)">IP</span>';
+
+    var achBadges='';
+    if(pRow.pom) achBadges+='<span class="badge-pom">★ PoM'+(pRow.pom>1?' '+pRow.pom:'')+'</span>';
+    if(pRow.pot) achBadges+='<span class="badge-pot">★ PoT</span>';
+
+    var roleHtml = UI.roleBadge(p.role);
+    var osHtml = p.is_overseas ? '<span class="role-tag rt-os"><img src="images/ipl/teams-foreign-player-icon.svg" alt="OS" style="transform:rotate(45deg)">OS</span>' : '';
+
+    var statusHtml='';
+    if(isInjured) statusHtml+='<span class="badge-injured">Injured</span> ';
+    if(hasRep) statusHtml+='<span class="badge-replacement">'+UI.esc(sp.replacement.replacement&&sp.replacement.replacement.name||'')+'</span>';
     
     var cardCls='player-card'+(isCap?' captain':isVC?' vice-cap':'')+(isImpact?' impact':'')+(isInjured&&!hasRep?' injured':'')+(hasRep?' replaced':'')+
                 (pRow.pom?' pom-highlight':'')+(pRow.pot?' pot-highlight':'');
     var pd=UI.esc(JSON.stringify({id:p.id,name:p.name||'',role:p.role||''}));
+
     return '<div class="'+cardCls+'" style="--ipl-color:'+color+';animation-delay:'+(i*0.05)+'s"'+
       (p.injury_note?' title="'+UI.esc('Injured: '+p.injury_note)+'"':'')+'>' +
-      (pRow.pot?'<div class="captain-badge" style="background:var(--purple);color:#fff;">PoT Legend</div>':
-       pRow.pom?'<div class="captain-badge" style="background:var(--gold);color:#000;">PoM Champ</div>':
-       isCap?'<div class="captain-badge">C Captain</div>':isVC?'<div class="captain-badge vc-badge">VC Vice</div>':
-       isImpact?'<div class="impact-role-badge">⚡ IMPACT</div>':'') +
-      imgTag(displayImg, displayName, 'player-avatar') +
-      '<div class="player-name">'+UI.esc(displayName)+'</div>' +
-      (isInjured&&hasRep?'<div style="font-size:10px;color:var(--text3);text-decoration:line-through;margin-bottom:2px;">'+UI.esc(p.name||'')+'</div>':'') +
-      '<div class="player-ipl">'+UI.esc(p.ipl_team||'&mdash;')+'</div>' +
-      '<div style="display:flex;align-items:center;justify-content:center;gap:4px;flex-wrap:wrap;">'+badges+'</div>' +
-      (statusBadges?'<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin-top:6px;">'+statusBadges+'</div>':'') +
-      (pts!==0?'<div class="player-pts-row"><span style="color:var(--text2)">Season</span><span style="font-family:var(--f-mono);font-weight:600;color:var(--accent)">'+pts+'</span></div>':'') +
-      (isInjured?'<button class="btn btn-sm" style="margin-top:8px;width:100%;background:rgba(56,217,245,.12);color:var(--cyan);border:1px solid rgba(56,217,245,.25);font-size:11px;" onclick="openRepModal(\''+pd+'\');">'+(hasRep?'&#x2194; Change':'+ Set Replacement')+'</button>':'') +
+      '<div class="player-card-header">' +
+        roleHtml +
+        osHtml +
+      '</div>' +
+      '<div class="player-card-body">' +
+        imgTag(displayImg, displayName, 'player-avatar') +
+        '<div class="player-name">'+UI.esc(displayName)+nameTag+'</div>' +
+        (isInjured&&hasRep?'<div style="font-size:10px;color:var(--text3);text-decoration:line-through;margin-bottom:2px;">'+UI.esc(p.name||'')+'</div>':'') +
+        '<div class="player-ipl">'+UI.esc(p.ipl_team||'&mdash;')+'</div>' +
+        (achBadges?'<div class="player-card-badges">'+achBadges+'</div>':'') +
+        (statusHtml?'<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin:4px 0;">'+statusHtml+'</div>':'') +
+        (pts!==0?'<div class="player-pts-row"><span style="color:var(--text2)">Season</span><span style="font-family:var(--f-mono);font-weight:600;color:var(--accent)">'+pts+'</span></div>':'') +
+        (isInjured?'<button class="btn btn-sm" style="margin-top:6px;width:100%;background:rgba(56,217,245,.12);color:var(--cyan);border:1px solid rgba(56,217,245,.25);font-size:11px;" onclick="openRepModal(\''+pd+'\');">'+(hasRep?'&#x2194; Change':'+ Set Replacement')+'</button>':'') +
+      '</div>' +
     '</div>';
   }).join('');
 }

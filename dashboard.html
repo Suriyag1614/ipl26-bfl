@@ -31,7 +31,11 @@
       gap:20px; flex-wrap:wrap; margin-bottom:22px; position:relative; overflow:hidden;
       animation:fade-up .4s ease both;
     }
-    .hero-banner::after { content:''; position:absolute; right:-40px; top:-40px; width:200px; height:200px; border-radius:50%; background:var(--accent-dim); pointer-events:none; }
+    .hero-banner::before { content:''; position:absolute; inset:0; background:rgba(12,15,28,.88); border-radius:inherit; z-index:1; }
+    .hero-banner::after { content:''; position:absolute; right:-40px; top:-40px; width:200px; height:200px; border-radius:50%; background:var(--accent-dim); pointer-events:none; z-index:0; }
+    .hero-banner > * { position:relative; z-index:1; }
+    .hero-rank-chip { background:var(--gold-dim); border:1px solid rgba(245,200,66,.3); border-radius:14px; padding:14px 22px; text-align:center; flex-shrink:0; position:relative; z-index:1; }
+    .hero-rank-chip .trophy-icon { width:28px; height:auto; display:block; margin:0 auto 4px; opacity:.9; }
     .hero-greeting { font-size:13px; color:var(--text2); margin-bottom:4px; }
     .hero-name { font-family:var(--f-display); font-weight:900; font-size:28px; letter-spacing:.3px; }
     .hero-rank-chip { background:var(--gold-dim); border:1px solid rgba(245,200,66,.3); border-radius:14px; padding:14px 22px; text-align:center; flex-shrink:0; }
@@ -194,7 +198,7 @@ async function init() {
   var hr = now.getHours();
   var greet = hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
   document.getElementById('hero-greeting').innerHTML = greet + ' · <span id="hero-date">'+now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})+'</span>';
-  document.getElementById('hero-name').textContent = 'Welcome back, ' + _myTeam.team_name + ' 👋';
+  document.getElementById('hero-name').innerHTML = 'Welcome back, ' + UI.championName(_myTeam.team_name) + ' 👋';
 
   await Promise.all([loadStats(), loadNextMatch(), loadImpact(), loadPerformers(), loadRecent(), loadMiniLB(), loadBlog()]);
   await API.checkAndAwardBadges(_myTeamId);
@@ -214,7 +218,8 @@ async function loadStats() {
     if(rank){ 
       var rc=$('#hero-rank-chip'); 
       rc.style.display=''; 
-      $('#hero-rank-val').innerHTML = UI.ordinal(rank) + '<div style="margin-top:4px;">' + UI.rankBadge(rank, myRow.prev_rank) + '</div>';
+      var trophyHtml = rank === 1 ? '<img src="images/ipl/team-trophy-small.png" alt="Champion" class="trophy-icon">' : '';
+      $('#hero-rank-val').innerHTML = trophyHtml + UI.ordinal(rank) + '<div style="margin-top:4px;">' + UI.rankBadge(rank, myRow.prev_rank) + '</div>';
     }
 
     // Badges
@@ -364,7 +369,7 @@ async function loadMiniLB() {
         var isMe=r.fantasy_team_id===_myTeamId;
         return '<tr'+(isMe?' class="highlight-me"':'')+'>'+
           '<td class="rank">'+(medals[r.rank]||r.rank)+' '+UI.rankBadge(r.rank, r.prev_rank)+'</td>'+
-          '<td style="font-weight:600;">'+UI.esc(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'')+'</td>'+
+          '<td style="font-weight:600;">'+UI.championName(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'')+'</td>'+
           '<td style="color:var(--text2);">'+r.matches_played+'</td>'+
           '<td class="pts">'+UI.fmtPts(r.total_points)+'</td></tr>';
       }).join('')+'</tbody></table></div>';

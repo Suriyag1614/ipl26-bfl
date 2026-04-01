@@ -216,7 +216,7 @@ function setNavUser(name, initials, bg, logoUrl) {
   });
   ['nav-team-name','sb-user-name'].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) el.textContent = name;
+    if (el) el.innerHTML = UI.championName(name);
   });
 }
 

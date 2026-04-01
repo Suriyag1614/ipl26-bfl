@@ -371,7 +371,7 @@ async function loadDashboard() {
     $id('dash-leaderboard').innerHTML = lb.slice(0,5).map(function(r) {
       return '<div class="user-row">'+
         '<div class="user-avatar" style="font-size:14px;">'+(medals[r.rank]||r.rank)+'</div>'+
-        '<div style="flex:1;font-family:var(--f-ui);font-weight:700;font-size:13px;">'+UI.esc(r.team?r.team.team_name:'—')+'</div>'+
+        '<div style="flex:1;font-family:var(--f-ui);font-weight:700;font-size:13px;">'+UI.championName(r.team?r.team.team_name:'—')+'</div>'+
         '<div style="font-family:var(--f-display);font-weight:900;font-size:16px;color:var(--accent);">'+r.total_points+'</div>'+
       '</div>';
     }).join('');
@@ -1096,7 +1096,7 @@ async function loadAdjustments() {
       return '<div class="adj-row">'+
         '<span class="adj-badge '+(isPos?'pos':'neg')+'">'+(isPos?'+':'')+a.points+'</span>'+
         '<div style="flex:1;min-width:0;">'+
-          '<div style="font-family:var(--f-ui);font-weight:700;font-size:13px;">'+UI.esc(a.team?a.team.team_name:'—')+'</div>'+
+          '<div style="font-family:var(--f-ui);font-weight:700;font-size:13px;">'+UI.championName(a.team?a.team.team_name:'—')+'</div>'+
           '<div style="font-size:11px;color:var(--text2);">'+UI.esc(a.remarks)+'</div>'+
           (a.match?'<div style="font-size:10px;color:var(--text3);">'+UI.esc(a.match.match_title||'—')+'</div>':'')+
         '</div>'+
@@ -1138,7 +1138,7 @@ async function loadInjuries() {
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;color:var(--cyan)"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'+
             '<span style="font-family:var(--f-ui);font-weight:700;color:var(--cyan);">'+UI.esc(r.replacement?r.replacement.name:'—')+'</span>'+
           '</div>'+
-          '<div style="font-size:11px;color:var(--text2);margin-top:3px;">'+UI.esc(r.team?r.team.team_name:'—')+(r.reason?' · '+UI.esc(r.reason):'')+'</div>'+
+          '<div style="font-size:11px;color:var(--text2);margin-top:3px;">'+UI.championName(r.team?r.team.team_name:'—')+(r.reason?' · '+UI.esc(r.reason):'')+'</div>'+
         '</div>'+
         '<button class="btn btn-ghost btn-sm" style="font-size:11px;" onclick="removeRep(\''+r.id+'\')">Remove</button>'+
       '</div>';
@@ -1413,7 +1413,7 @@ async function loadUsers() {
       var avatarObj = logo ? '<img src="'+logo+'" style="width:100%;height:100%;object-fit:contain;padding:2px;" onerror="this.outerHTML=\''+initials+'\'">' : initials;
       return '<tr style="animation:row-in .2s ease '+(i*.04)+'s both;">'+
         '<td><div class="user-avatar" style="font-size:11px;">'+avatarObj+'</div></td>'+
-        '<td style="font-family:var(--f-ui);font-weight:700;">'+UI.esc(t.team_name||'—')+'</td>'+
+        '<td style="font-family:var(--f-ui);font-weight:700;">'+UI.championName(t.team_name||'—')+'</td>'+
         '<td style="font-size:13px;color:var(--text2);">'+UI.esc(t.owner_name||'—')+'</td>'+
         '<td class="rank">'+(medals[r.rank]||r.rank)+'</td>'+
         '<td class="pts">'+r.total_points+'</td>'+
