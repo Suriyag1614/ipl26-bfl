@@ -513,7 +513,7 @@ function renderForm(m) {
 function renderSubmitted(m, pred, ia) {
   var si    = matchStatusInfo(m);
   var pts   = calcPredPts(pred, m);
-  var still = isPredOpen(m);
+  var still = API.isPredOpen(m);
   showArea(
     '<div class="pred-card">' +
       buildMatchHeader(m, si) +
@@ -860,7 +860,7 @@ async function submitPrediction() {
   if (!matchObj) { if (errEl) errEl.textContent = 'Match not found.'; return; }
 
   // Re-check open state (might have just locked)
-  if (!isPredOpen(matchObj)) {
+  if (!API.isPredOpen(matchObj)) {
     if (errEl) errEl.textContent = 'Predictions are now closed for this match.';
     await renderMatchArea(_activeMatchId);
     return;
@@ -905,7 +905,7 @@ async function submitPrediction() {
         var freshMatches = safeArr(await API.fetchMatches({ limit: 40 }));
         _matches = freshMatches;
         var freshMatch = _matches.find(function(m) { return m.id === _activeMatchId; });
-        if (!freshMatch || !isPredOpen(freshMatch)) {
+        if (!freshMatch || !API.isPredOpen(freshMatch)) {
           UI.toast('Predictions just closed for this match!', 'error');
           await renderMatchArea(_activeMatchId);
           _submitting = false;
