@@ -154,7 +154,7 @@ async function loadLeaderboard() {
       document.getElementById('my-rank-big').textContent=ordinal;
       document.getElementById('my-rank-name').textContent=myRow.team?myRow.team.team_name:'—';
       document.getElementById('my-rank-detail').textContent=myRow.matches_played+' matches played';
-      var ptsEl=document.getElementById('my-rank-pts'); if(ptsEl){ptsEl.textContent=myRow.total_points;UI.countUp(ptsEl,myRow.total_points,900);}
+      var ptsEl=document.getElementById('my-rank-pts'); if(ptsEl){ptsEl.textContent=myRow.total_points;UI.countUp(ptsEl,myRow.total_points,900,myRow.total_points%1!==0);}
     }
   } catch(e){ UI.toast('Could not load leaderboard','error'); }
 }
@@ -168,7 +168,7 @@ function renderPodium() {
     order.map(function(r,i){
       return '<div class="podium-slot podium-'+slots[i]+'" style="animation:fade-up .4s ease '+(i*.1)+'s both;">'+
         '<div class="podium-crown">'+emojis[i]+'</div>'+
-        '<div class="podium-pts">'+r.total_points+'</div>'+
+        '<div class="podium-pts">'+UI.fmtPts(r.total_points)+'</div>'+
         '<div class="podium-name">'+UI.esc(r.team?r.team.team_name:'—')+'</div>'+
         '<div class="podium-block">'+slots[i]+'</div>'+
       '</div>';

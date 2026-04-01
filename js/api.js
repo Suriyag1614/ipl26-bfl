@@ -624,11 +624,10 @@ const API = {
     const { error: plErr } = await sb.from('points_log').upsert(logs, { onConflict: 'match_id,fantasy_team_id' });
     if (plErr) throw plErr;
 
-    // Mark match as processed so it leaves "Pending Calculation"
-    await sb.from('matches').update({ status: 'processed' }).eq('id', matchId);
+    // Mark match as processed and locked in one update
+    await sb.from('matches').update({ status: 'processed', is_locked: true }).eq('id', matchId);
 
     await this.refreshLeaderboard();
-    await this.lockMatch(matchId);
     
     // Award badges (admin-side bypasses RLS)
     try { await this.awardBadges(matchId); } catch(e) { console.error('[Badges] Awarding failed:', e); }

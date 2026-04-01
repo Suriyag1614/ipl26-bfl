@@ -39,12 +39,23 @@
     .pred-winner-bar { height:8px; border-radius:4px; background:var(--bg3); overflow:hidden; display:flex; margin-top:6px; }
 
     @media(max-width:900px) {
-      .mc-layout { flex-direction: column; }
-      .mc-sidebar { width: 100%; position: static; max-height: 200px; display: flex; flex-direction: row; overflow-x: auto; padding: 4px 0 12px; }
-      .match-selector { flex-direction: row; padding-bottom: 8px; }
-      .match-pill { min-width: 180px; flex-shrink: 0; }
+      .mc-layout { flex-direction: column; gap: 16px; }
+      .mc-sidebar { width: 100%; position: static; max-height: none; display: flex; flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 0 0 12px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+      .mc-sidebar::-webkit-scrollbar { display: none; }
+      .mc-sidebar > div:first-child { display: none; }
+      .match-selector { flex-direction: row; padding-bottom: 0; gap: 8px; }
+      .match-pill { min-width: 170px; flex-shrink: 0; padding: 10px 12px; }
+      .mc-grid { gap: 16px; }
+      .data-table { font-size: 13px; }
+      .data-table th, .data-table td { padding: 8px 10px; }
     }
-    @media(max-width:700px){ .mc-grid{grid-template-columns:1fr;} }
+    @media(max-width:700px){
+      .mc-grid { grid-template-columns: 1fr; gap: 14px; }
+      .match-pill { min-width: 150px; }
+      .match-pill-teams { font-size: 13px; }
+      .data-table th, .data-table td { padding: 7px 8px; font-size: 12px; }
+      .data-table .pts { font-size: 14px; }
+    }
   </style>
 </head>
 <body>
@@ -232,8 +243,8 @@ function renderMatchLeaderboard(mc) {
       '<td class="font-mono">'+UI.fmtPts(r.squad_points)+'</td>' +
       '<td class="font-mono">'+UI.fmtPts(r.prediction_points)+'</td>' +
       '<td class="pts">'+UI.fmtPts(r.total_points)+'</td>' +
-      '<td class="pts" style="color:var(--gold);">' + 
-        '<div>' + UI.fmtPts(r.team_season_pts) + '</div>' +
+      '<td class="pts">' + 
+        '<div style="color:var(--gold);">' + UI.fmtPts(r.team_season_pts) + '</div>' +
         UI.rankBadge(r.team_season_rank, r.team_season_prev_rank) + 
       '</td>' +
     '</tr>';
