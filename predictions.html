@@ -722,7 +722,11 @@ function buildImpactBanner(m) {
   }
   var p = impact.player || {};
 
-  var teamPlaying = p.ipl_team && (p.ipl_team === m.team1 || p.ipl_team === m.team2);
+  // Check if impact player's team is playing this match (case-insensitive)
+  var pTeam = (p.ipl_team || '').toLowerCase();
+  var mTeam1 = (m.team1 || '').toLowerCase();
+  var mTeam2 = (m.team2 || '').toLowerCase();
+  var teamPlaying = pTeam && (pTeam === mTeam1 || pTeam === mTeam2);
   var exhausted = (_impactStats.used >= 8) && !_impactActive;
   var disabled = exhausted || !teamPlaying;
   var cls = 'impact-banner' + (_impactActive ? ' active-state' : '') + (exhausted ? ' exhausted' : '') + (!teamPlaying && !exhausted ? ' exhausted' : '');
