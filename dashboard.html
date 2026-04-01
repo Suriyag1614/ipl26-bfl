@@ -210,7 +210,8 @@ async function loadStats() {
   try {
     var [lb, breakdown] = await Promise.all([API.fetchLeaderboard(), API.fetchPointsBreakdown(_myTeamId)]);
     var myRow = lb.find(function(r){return r.fantasy_team_id===_myTeamId;});
-    var total=myRow?myRow.total_points:0, rank=myRow?myRow.rank:null, played=myRow?myRow.matches_played:0;
+    var total=myRow?myRow.total_points:0, rank=myRow?myRow.rank:null;
+    var played=myRow&&myRow.matches_played?myRow.matches_played:breakdown.length;
     var avg = played ? (total/played).toFixed(1) : '—';
     var lastMatch = breakdown.length ? breakdown[breakdown.length-1] : null;
     var lastPts = lastMatch ? UI.fmtPts(lastMatch.total_points) : '—';
