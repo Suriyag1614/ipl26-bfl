@@ -1124,11 +1124,19 @@ const API = {
   },
 
   async generateAIBlog({ title, category, context }) {
-    const { data, error } = await sb.functions.invoke('generate-blog', {
-      body: { title, category, context },
+    const { data: { session } } = await sb.auth.getSession();
+    const resp = await fetch('https://zptzdqswmarqhotnnlrk.supabase.co/functions/v1/generate-blog', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + (session?.access_token || ''),
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwdHpkcXN3bWFycWhvdG5ubHJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNDc2OTgsImV4cCI6MjA4OTcyMzY5OH0.BLuSuFem2sX08CleGxhfjhBXHmaWxDUfdzTwGaOwIYQ',
+      },
+      body: JSON.stringify({ title, category, context }),
     });
-    if (error) throw new Error(error.message || 'AI generation failed');
-    const content = data?.content || 'Could not generate content.';
+    const result = await resp.json();
+    if (!resp.ok) throw new Error(result.error || 'AI generation failed');
+    const content = result.content || 'Could not generate content.';
     const { data: blog, error: insertErr } = await sb.from('blogs').insert({
       title, category: category || 'general', content,
       status: 'draft', is_published: false, ai_generated: true,
