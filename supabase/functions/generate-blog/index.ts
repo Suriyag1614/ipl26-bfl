@@ -1,8 +1,8 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// @ts-nocheck — Deno runtime, not Node
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-
-serve(async (req) => {
+serve(async (req: Request) => {
+  // CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: {
@@ -14,6 +14,9 @@ serve(async (req) => {
   }
 
   try {
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY secret not set");
+
     const { title, category, context } = await req.json();
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -52,7 +55,8 @@ serve(async (req) => {
       },
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), {
+    const msg = e instanceof Error ? e.message : String(e);
+    return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: {
         "Content-Type": "application/json",
