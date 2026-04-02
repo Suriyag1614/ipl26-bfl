@@ -1124,26 +1124,18 @@ const API = {
   },
 
   async generateAIBlog({ title, category, context }) {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514', max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: 'Write a short, engaging IPL fantasy cricket blog post.\nTitle: "' + title + '"\nCategory: ' + category + '\nContext: ' + (context || 'IPL 2026 fantasy cricket league') + '\nFormat: Plain text with paragraph breaks. 150-250 words. Exciting, fan-focused tone.',
-        }]
-      })
+    const { data, error } = await sb.functions.invoke('generate-blog', {
+      body: { title, category, context },
     });
-    const result = await response.json();
-    const content = result.content?.[0]?.text || 'Could not generate content.';
-    const { data, error } = await sb.from('blogs').insert({
+    if (error) throw new Error(error.message || 'AI generation failed');
+    const content = data?.content || 'Could not generate content.';
+    const { data: blog, error: insertErr } = await sb.from('blogs').insert({
       title, category: category || 'general', content,
       status: 'draft', is_published: false, ai_generated: true,
       author_name: 'AI Assistant', excerpt: content.substring(0, 120) + '...',
     }).select().single();
-    if (error) throw error;
-    return data;
+    if (insertErr) throw insertErr;
+    return blog;
   },
 
   async deleteBlog(blogId) {
