@@ -134,7 +134,7 @@ function renderSquad(){
         '<div class="player-ipl">'+UI.esc(p.ipl_team||'&mdash;')+'</div>' +
         (achBadges?'<div class="player-card-badges">'+achBadges+'</div>':'') +
         (statusHtml?'<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin:4px 0;">'+statusHtml+'</div>':'') +
-        (pts!==0?'<div class="player-pts-row"><span style="color:var(--text2)">Season</span><span style="font-family:var(--f-mono);font-weight:600;color:var(--accent)">'+pts+'</span></div>':'') +
+        (pts!==0?'<div class="player-pts-row"><span style="color:var(--text2)">Season FP</span><span style="font-family:var(--f-mono);font-weight:600;color:var(--accent)">'+pts+'</span></div>':'') +
         (isInjured?'<button class="btn btn-sm" style="margin-top:6px;width:100%;background:rgba(56,217,245,.12);color:var(--cyan);border:1px solid rgba(56,217,245,.25);font-size:11px;" onclick="openRepModal(\''+pd+'\');">'+(hasRep?'&#x2194; Change':'+ Set Replacement')+'</button>':'') +
       '</div>' +
     '</div>';
