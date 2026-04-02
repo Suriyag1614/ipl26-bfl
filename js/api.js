@@ -741,7 +741,7 @@ const API = {
 
       const give = (bid) => {
         if (!teamExisting.has(bid)) {
-          newBadges.push({ fantasy_team_id: teamId, badge_id: bid });
+          newBadges.push({ fantasy_team_id: teamId, badge_id: bid, match_id: matchId });
           teamExisting.add(bid);
         }
       };
@@ -1158,7 +1158,7 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   async fetchUserBadges(teamId) {
     const { data, error } = await sb.from('user_badges')
-      .select('*,badge:badge_definitions(id,name,description,icon,color)')
+      .select('*,badge:badge_definitions(id,name,description,icon,color),match:matches(match_no,team1,team2)')
       .eq('fantasy_team_id', teamId).order('earned_at', { ascending: false });
     if (error) throw error;
     return data || [];
