@@ -282,7 +282,7 @@ async function loadNextMatch() {
       : '<span class="match-status status-locked" style="margin-top:8px;display:inline-block;">🔒 Predictions Locked</span>';
     card.innerHTML =
       '<div class="flex-between mb-8"><div class="card-title">Next Match</div><span class="match-status '+(pred?'status-done':'status-open')+'">'+(pred?'✓ Predicted':'Open')+'</span></div>'+
-      '<div class="match-teams mb-6"><div class="match-team">'+UI.esc(UI.tShort(m.team1))+'</div><div class="match-vs">VS</div><div class="match-team">'+UI.esc(UI.tShort(m.team2))+'</div></div>'+
+      '<div class="match-teams mb-6"><div class="match-team">'+UI.esc(m.team1)+'</div><div class="match-vs">VS</div><div class="match-team">'+UI.esc(m.team2)+'</div></div>'+
       '<div class="match-meta">'+(m.match_date?'<span>📅 '+UI.fmtDate(m.match_date)+'</span>':'')+(m.venue?'<span>📍 '+UI.esc(m.venue)+'</span>':'')+'</div>'+
       deadline_badge+
       '<a href="predictions.html" class="btn '+(pred?'btn-ghost':'btn-accent')+' btn-sm btn-full" style="margin-top:12px;">'+(pred?'View Prediction':'Make Prediction →')+'</a>';
@@ -365,6 +365,14 @@ function showBreakdown(logId) {
 async function loadMiniLB() {
   try {
     var lb = await API.fetchLeaderboard();
+    if (lb.some(function(r){ return !r.matches_played; })) {
+      try {
+        var allLogs = await sb.from('points_log').select('fantasy_team_id');
+        var counts = {};
+        (allLogs.data || []).forEach(function(l){ counts[l.fantasy_team_id] = (counts[l.fantasy_team_id] || 0) + 1; });
+        lb.forEach(function(r){ if (!r.matches_played) r.matches_played = counts[r.fantasy_team_id] || 0; });
+      } catch(e) {}
+    }
     var medals={1:'🥇',2:'🥈',3:'🥉'};
     $('#mini-leaderboard').innerHTML='<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Team</th><th>Played</th><th>Points</th></tr></thead><tbody>'+
       lb.slice(0,5).map(function(r){

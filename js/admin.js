@@ -1405,6 +1405,14 @@ async function loadUsers() {
   tbody.innerHTML='<tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
   try {
     var lb=safeArr(await API.fetchLeaderboard());
+    if (lb.some(function(r){ return !r.matches_played; })) {
+      try {
+        var allLogs = await sb.from('points_log').select('fantasy_team_id');
+        var counts = {};
+        (allLogs.data || []).forEach(function(l){ counts[l.fantasy_team_id] = (counts[l.fantasy_team_id] || 0) + 1; });
+        lb.forEach(function(r){ if (!r.matches_played) r.matches_played = counts[r.fantasy_team_id] || 0; });
+      } catch(e) {}
+    }
     var medals={1:'🥇',2:'🥈',3:'🥉'};
     tbody.innerHTML=lb.map(function(r,i){
       var t=r.team||{};
