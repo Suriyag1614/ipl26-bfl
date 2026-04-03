@@ -90,6 +90,7 @@ CREATE TABLE public.leaderboard (
   matches_played integer DEFAULT 0,
   updated_at timestamp with time zone DEFAULT now(),
   prev_rank integer,
+  rank integer,
   CONSTRAINT leaderboard_pkey PRIMARY KEY (id),
   CONSTRAINT leaderboard_fantasy_team_id_fkey FOREIGN KEY (fantasy_team_id) REFERENCES public.fantasy_teams(id)
 );
