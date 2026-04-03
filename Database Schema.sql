@@ -229,9 +229,11 @@ CREATE TABLE public.user_badges (
   fantasy_team_id uuid,
   badge_id text,
   earned_at timestamp with time zone DEFAULT now(),
+  match_id uuid,
   CONSTRAINT user_badges_pkey PRIMARY KEY (id),
   CONSTRAINT user_badges_fantasy_team_id_fkey FOREIGN KEY (fantasy_team_id) REFERENCES public.fantasy_teams(id),
-  CONSTRAINT user_badges_badge_id_fkey FOREIGN KEY (badge_id) REFERENCES public.badge_definitions(id)
+  CONSTRAINT user_badges_badge_id_fkey FOREIGN KEY (badge_id) REFERENCES public.badge_definitions(id),
+  CONSTRAINT user_badges_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id)
 );
 CREATE TABLE public.user_streaks (
   fantasy_team_id uuid NOT NULL,

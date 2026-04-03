@@ -367,7 +367,7 @@ async function renderBadges() {
       if (isEarned && earnRow) {
         if (earnRow.match && earnRow.match.match_no) {
           earnedLabel = 'Match ' + earnRow.match.match_no;
-        } else {
+        } else if (earnRow.earned_at) {
           earnedLabel = UI.shortDate(earnRow.earned_at);
         }
       }
