@@ -1,6 +1,6 @@
 'use strict';
 var _squad=[], _playerPts={}, _filter='', _myTeamId=null, _myTeam=null;
-var _repTarget=null, _repSelectedId=null, _confirmCb=null, _allPlayers=[];
+var _repTarget=null, _repSelectedId=null, _confirmCb=null, _allPlayers=[], _pendingReps=[], _matches=[];
 
 function safeArr(v){return Array.isArray(v)?v:(v?[v]:[]);}
 function fbUrl(n){return 'https://ui-avatars.com/api/?name='+encodeURIComponent(n||'P')+'&background=1a2035&color=c8f135&size=128';}
@@ -15,14 +15,38 @@ async function init(){
   if(!_myTeam){UI.toast('Team not found','error');return;}
   _myTeamId=_myTeam.id;
   _allPlayers=await API.fetchAllPlayers();
+  _matches=await API.fetchMatches({limit:74});
+  var matchSel=document.getElementById('rep-start-match');
+  var endMatchSel=document.getElementById('rep-end-match');
+  if(matchSel&&_matches.length){
+    var upcoming=_matches.filter(function(m){return!m.is_locked&&m.status!=='completed'&&m.status!=='processed';});
+    matchSel.innerHTML='<option value="">Select match</option>'+
+      upcoming.map(function(m){return '<option value="'+m.id+'">M'+(m.match_no||'?')+' · '+UI.esc(tShort(m.team1))+' vs '+UI.esc(tShort(m.team2))+'</option>';}).join('');
+  }
+  if(endMatchSel&&_matches.length){
+    var allMatches=_matches.filter(function(m){return m.status!=='completed'&&m.status!=='processed';});
+    endMatchSel.innerHTML='<option value="">No end (permanent)</option>'+
+      allMatches.map(function(m){return '<option value="'+m.id+'">M'+(m.match_no||'?')+' · '+UI.esc(tShort(m.team1))+' vs '+UI.esc(tShort(m.team2))+'</option>';}).join('');
+  }
   await loadSquad();
   loadPointsByPlayer();
 }
 
+function tShort(n){return UI.tShort(n);}
+
 async function loadSquad(){
   try{
     _squad=safeArr(await API.fetchSquad(_myTeamId));
+    try{
+      _pendingReps=safeArr(await API.fetchPendingReplacements(_myTeamId));
+    }catch(e){
+      console.warn('[Squad] Could not load pending replacements:', e.message);
+      _pendingReps=[];
+    }
     renderSquad(); renderSummary(); renderRoleBreakdown(); renderInjuryBanner(); renderReplacements();
+    setTimeout(function(){
+      renderPendingReplacements();
+    },100);
   }catch(e){
     UI.toast('Could not load squad: '+e.message,'error');
     document.getElementById('player-grid').innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">!</div><div class="empty-state-text">'+UI.esc(e.message)+'</div></div>';
@@ -80,6 +104,84 @@ function confirmRemoveRep(repId){
     onOk:async function(){
       try{await API.deactivateReplacement(repId);UI.toast('Replacement removed','warn');await loadSquad();}
       catch(e){UI.toast(e.message,'error');}
+    }
+  });
+}
+
+function renderPendingReplacements(){
+  var pending=_pendingReps||[];
+  var card=document.getElementById('pending-replacements-card');
+  if(!card) return;
+  console.log('[renderPendingReps] pending:', pending, 'card exists:', !!card);
+  if(!pending.length){
+    card.style.display='none';
+    return;
+  }
+  card.style.display='';
+  document.getElementById('pending-replacements-list').innerHTML=pending.map(function(r){
+    var statusBadge=r.status==='pending'?'<span style="background:var(--gold);color:#000;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;">PENDING</span>':r.status==='approved'?'<span style="background:var(--green);color:#000;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;">APPROVED</span>':'<span style="background:var(--red);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;">REJECTED</span>';
+    var proofHtml='';
+    if(r.proof_links&&r.proof_links.length){
+      proofHtml+='<div style="font-size:10px;color:var(--cyan);margin-top:4px;">📎 Proof Links: '+r.proof_links.map(function(l){return'<a href="'+UI.esc(l)+'" target="_blank" style="color:var(--cyan);margin-right:8px;">Link</a>';}).join('')+'</div>';
+    }
+    if(r.proof_notes){
+      proofHtml+='<div style="font-size:10px;color:var(--text2);margin-top:2px;">📝 '+UI.esc(r.proof_notes)+'</div>';
+    }
+    return '<div class="stats-saved-row" style="flex-direction:column;gap:8px;padding:12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;">'+
+        '<div style="font-weight:700;font-size:14px;">'+(r.original?r.original.name:'—')+' → '+(r.replacement?r.replacement.name:'—')+'</div>'+
+        statusBadge+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--text2);">'+(r.reason?'Reason: '+UI.esc(r.reason):'No reason provided')+'</div>'+
+      proofHtml+
+      '<div style="font-size:10px;color:var(--text3);">Requested on '+UI.fmtDate(r.created_at)+'</div>'+
+      '<div style="display:flex;gap:8px;margin-top:8px;">'+
+        '<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 8px;" onclick="editPendingRep(\''+r.id+'\')">✏️ Edit</button>'+
+        '<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 8px;color:var(--red);" onclick="deletePendingRep(\''+r.id+'\')">🗑️ Delete</button>'+
+      '</div></div>';
+  }).join('');
+}
+
+function editPendingRep(repId){
+  var rep=_pendingReps.find(function(r){return r.id===repId;});
+  if(!rep){UI.toast('Request not found','error');return;}
+  _repTarget={id:rep.original_player_id,name:rep.original?rep.original.name:'',role:rep.original?rep.original.role:''};
+  _repSelectedId=rep.replacement_player_id;
+  document.getElementById('rep-modal-sub').textContent='Edit replacement for '+(_repTarget.name||'player')+':';
+  document.getElementById('rep-reason').value=rep.reason||'';
+  document.getElementById('rep-proof-links').value=(rep.proof_links||[]).join(', ');
+  document.getElementById('rep-proof-notes').value=rep.proof_notes||'';
+  if(rep.start_match_id){
+    var matchSel=document.getElementById('rep-start-match');
+    if(matchSel) matchSel.value=rep.start_match_id;
+  }
+  var squadIds=new Set(_squad.map(function(s){return s.player&&s.player.id;}));
+  var available=_allPlayers.filter(function(pl){return pl.role===_repTarget.role&&!squadIds.has(pl.id)&&!pl.is_injured&&pl.id!==_repTarget.id;});
+  available.unshift({id:rep.replacement_player_id,name:rep.replacement?rep.replacement.name:'',role:rep.replacement?rep.replacement.role:'',ipl_team:rep.replacement?rep.replacement.ipl_team:''});
+  document.getElementById('rep-player-list').innerHTML=available.map(function(pl){
+    var isSelected=pl.id===_repSelectedId?' selected':'';
+    return '<div class="rp-row'+(isSelected)+'" id="rprow-'+pl.id+'" onclick="selectRep(\''+pl.id+'\')" style="'+(isSelected?'border-color:var(--accent);background:rgba(45,212,191,.1);':'')+'">'+
+      '<div style="width:34px;height:34px;border-radius:50%;background:var(--bg3);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">'+
+        '<span>'+UI.esc((pl.name||'P')[0])+'</span>'+
+      '</div>'+
+      '<div style="flex:1;"><div style="font-family:\'Barlow Condensed\',sans-serif;font-weight:400;font-size:14px;">'+UI.esc(pl.name)+'</div>'+
+      '<div style="font-size:11px;color:var(--text2);">'+UI.esc(pl.ipl_team||'')+'</div></div>'+
+      UI.roleBadge(pl.role)+'</div>';
+  }).join('');
+  _editRepId=repId;
+  document.getElementById('rep-modal').style.display='flex';
+}
+
+var _editRepId=null;
+
+async function deletePendingRep(repId){
+  UI.showConfirm({icon:'🗑️',title:'Delete Request?',msg:'This will permanently delete your replacement request.',consequence:'This action cannot be undone.',okLabel:'Delete',okClass:'btn-danger',
+    onOk:async function(){
+      try{
+        await API.deleteReplacement(repId);
+        UI.toast('Request deleted','success');
+        await loadSquad();
+      }catch(e){UI.toast(e.message,'error');}
     }
   });
 }
@@ -235,7 +337,19 @@ function openRepModal(playerDataStr){
       }).join('');
   document.getElementById('rep-modal').style.display='flex';
 }
-function closeRepModal(){document.getElementById('rep-modal').style.display='none';_repTarget=null;_repSelectedId=null;}
+function closeRepModal(){
+  document.getElementById('rep-modal').style.display='none';
+  _repTarget=null;
+  _repSelectedId=null;
+  _editRepId=null;
+  document.getElementById('rep-reason').value='';
+  document.getElementById('rep-proof-links').value='';
+  document.getElementById('rep-proof-notes').value='';
+  var matchSel=document.getElementById('rep-start-match');
+  var endMatchSel=document.getElementById('rep-end-match');
+  if(matchSel) matchSel.value='';
+  if(endMatchSel) endMatchSel.value='';
+}
 function selectRep(pid){
   _repSelectedId=pid;
   document.querySelectorAll('.rp-row').forEach(function(r){r.classList.remove('selected');});
@@ -244,16 +358,38 @@ function selectRep(pid){
 async function submitReplacement(){
   if(!_repSelectedId){UI.toast('Select a replacement player first','warn');return;}
   if(!_repTarget){UI.toast('No target player','error');return;}
+  var startMatchId=document.getElementById('rep-start-match').value||null;
   var reason=document.getElementById('rep-reason').value.trim();
+  var proofLinksInput=document.getElementById('rep-proof-links').value.trim();
+  var proofLinks=proofLinksInput?proofLinksInput.split(',').map(function(l){return l.trim();}).filter(function(l){return l;}):[];
+  var proofNotes=document.getElementById('rep-proof-notes').value.trim();
+  var endMatchId=document.getElementById('rep-end-match').value||null;
+  var startMatch=startMatchId?_matches.find(function(m){return m.id===startMatchId;}):null;
+  var endMatch=endMatchId?_matches.find(function(m){return m.id===endMatchId;}):null;
+  var matchLabel=startMatch?'M'+(startMatch.match_no||'?'):'next available';
+  var endLabel=endMatch?' until M'+(endMatch.match_no||'?'):'';
   var rep=_allPlayers.find(function(p){return p.id===_repSelectedId;});
+  var isEdit=!!_editRepId;
+  var title=isEdit?'Update Replacement':'Request Replacement';
+  var msg=isEdit
+    ?'Update replacement for '+_repTarget.name+' to '+(rep?rep.name:'selected player')+' starting from '+matchLabel+endLabel+'?'
+    :'Request replacement for '+_repTarget.name+' with '+(rep?rep.name:'selected player')+' starting from '+matchLabel+endLabel+'?';
+  var okLabel=isEdit?'Update Request':'Submit Request';
   closeRepModal();
-  UI.showConfirm({icon:'&#x1F504;',title:'Confirm Replacement',
-    msg:'Replace '+_repTarget.name+' with '+(rep?rep.name:'selected player')+'?',
-    consequence:'Points will use replacement stats until removed.',okLabel:'Set Replacement',okClass:'btn-accent',
+  UI.showConfirm({icon:'&#x1F504;',title:title,
+    msg:msg,
+    consequence:isEdit?'Admin will review the updated request.':'Admin will review and approve/reject this request.',okLabel:okLabel,okClass:'btn-accent',
     onOk:async function(){
       try{
-        await API.createReplacement({teamId:_myTeamId,originalPlayerId:_repTarget.id,replacementPlayerId:_repSelectedId,reason:reason||null});
-        UI.toast('Replacement set!','success'); await loadSquad();
+        if(isEdit){
+          await API.updateReplacement(_editRepId,{replacement_player_id:_repSelectedId,start_match_id:startMatchId,end_match_id:endMatchId,reason:reason||null,proof_links:proofLinks,proof_notes:proofNotes||null});
+          UI.toast('Request updated!','success');
+        }else{
+          await API.createReplacement({teamId:_myTeamId,originalPlayerId:_repTarget.id,replacementPlayerId:_repSelectedId,startMatchId:startMatchId,endMatchId:endMatchId,reason:reason||null,proofLinks:proofLinks,proofNotes:proofNotes||null});
+          UI.toast('Replacement request sent for admin review','success');
+        }
+        _editRepId=null;
+        await loadSquad();
       }catch(e){UI.toast(e.message,'error');}
     }
   });

@@ -72,10 +72,46 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   async fetchActiveReplacements(teamId) {
     const { data, error } = await sb.from('replacements')
-      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,image_url,is_injured),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team,image_url)')
-      .eq('fantasy_team_id', teamId).eq('is_active', true);
+      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,image_url,is_injured),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team,image_url),start_match:matches!replacements_start_match_id_fkey(match_date),end_match:matches!replacements_end_match_id_fkey(match_date)')
+      .eq('fantasy_team_id', teamId).eq('is_active', true).eq('status', 'approved');
     if (error) throw error;
+    const now = new Date().toISOString();
+    return (data || []).filter(r => {
+      // If has start date and it's in the future, not active yet
+      if (r.start_match && r.start_match.match_date && new Date(r.start_match.match_date) > new Date(now)) return false;
+      // If has end date and it's in the past, no longer active
+      if (r.end_match && r.end_match.match_date && new Date(r.end_match.match_date) < new Date(now)) return false;
+      // No end date = permanent, or currently in range
+      return true;
+    });
+  },
+
+  async fetchPendingReplacements(teamId) {
+    const { data, error } = await sb.from('replacements')
+      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,image_url,is_injured),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team,image_url),team:fantasy_teams(team_name)')
+      .eq('fantasy_team_id', teamId).eq('status', 'pending');
+    if (error) {
+      console.error('[fetchPendingReplacements] Error:', error);
+      throw error;
+    }
     return data || [];
+  },
+
+  async updateReplacement(replacementId, updates) {
+    const { data, error } = await sb.from('replacements')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', replacementId).eq('status', 'pending')
+      .select().single();
+    if (error) throw error;
+    await this._log('replacement_updated', 'replacement', replacementId, null, data);
+    return data;
+  },
+
+  async deleteReplacement(replacementId) {
+    const { data: before } = await sb.from('replacements').select('*').eq('id', replacementId).maybeSingle();
+    const { error } = await sb.from('replacements').delete().eq('id', replacementId);
+    if (error) throw error;
+    await this._log('replacement_deleted', 'replacement', replacementId, before, null);
   },
 
   async fetchAllReplacements(teamId) {
@@ -88,13 +124,15 @@ const API = {
     return data || [];
   },
 
-  async createReplacement({ teamId, originalPlayerId, replacementPlayerId, startMatchId, reason }) {
+  async createReplacement({ teamId, originalPlayerId, replacementPlayerId, startMatchId, endMatchId, reason, proofLinks, proofNotes }) {
+    // Validate original player is injured
+    const origRes = await sb.from('players').select('id,name,is_injured').eq('id', originalPlayerId).maybeSingle();
+    if (!origRes.data) throw new Error('Original player not found');
+    if (!origRes.data.is_injured) throw new Error('Can only request replacement for injured players');
+    
     // Role validation
-    const [origRes, replRes] = await Promise.all([
-      sb.from('players').select('role,name').eq('id', originalPlayerId).maybeSingle(),
-      sb.from('players').select('role,name').eq('id', replacementPlayerId).maybeSingle(),
-    ]);
-    if (origRes.data?.role !== replRes.data?.role) {
+    const replRes = await sb.from('players').select('role,name').eq('id', replacementPlayerId).maybeSingle();
+    if (origRes.data.role !== replRes.data?.role) {
       throw new Error('Role mismatch: replacement must have same role as original player');
     }
     // Deactivate any existing active replacement for this player
@@ -102,11 +140,12 @@ const API = {
       .eq('fantasy_team_id', teamId).eq('original_player_id', originalPlayerId).eq('is_active', true);
     const { data, error } = await sb.from('replacements').insert({
       fantasy_team_id: teamId, original_player_id: originalPlayerId,
-      replacement_player_id: replacementPlayerId, start_match_id: startMatchId || null,
-      reason: reason || null, is_active: true,
+      replacement_player_id: replacementPlayerId, start_match_id: startMatchId || null, end_match_id: endMatchId || null,
+      reason: reason || null, is_active: false, status: 'pending',
+      proof_links: proofLinks || [], proof_notes: proofNotes || null,
     }).select().single();
     if (error) throw error;
-    await this._log('replacement_created', 'team', teamId, null, data);
+    await this._log('replacement_requested', 'team', teamId, null, data);
     return data;
   },
 
@@ -115,6 +154,30 @@ const API = {
     const { error } = await sb.from('replacements').update({ is_active: false }).eq('id', replacementId);
     if (error) throw error;
     await this._log('replacement_deactivated', 'replacement', replacementId, before, { is_active: false });
+  },
+
+  async approveReplacement(replacementId, adminNotes) {
+    const { data: before } = await sb.from('replacements').select('*').eq('id', replacementId).maybeSingle();
+    const { error } = await sb.from('replacements').update({ 
+      status: 'approved', 
+      is_active: true, 
+      admin_notes: adminNotes || null,
+      updated_at: new Date().toISOString()
+    }).eq('id', replacementId).eq('status', 'pending');
+    if (error) throw error;
+    await this._log('replacement_approved', 'replacement', replacementId, before, { status: 'approved', is_active: true });
+  },
+
+  async rejectReplacement(replacementId, adminNotes) {
+    const { data: before } = await sb.from('replacements').select('*').eq('id', replacementId).maybeSingle();
+    const { error } = await sb.from('replacements').update({ 
+      status: 'rejected', 
+      is_active: false,
+      admin_notes: adminNotes || null,
+      updated_at: new Date().toISOString()
+    }).eq('id', replacementId).eq('status', 'pending');
+    if (error) throw error;
+    await this._log('replacement_rejected', 'replacement', replacementId, before, { status: 'rejected' });
   },
 
   // ══════════════════════════════════════════════════════════════════
@@ -229,6 +292,8 @@ const API = {
 
   async submitPrediction({ matchId, teamId, targetScore, winner }, match) {
     if (match && !this.isMatchOpen(match)) throw new Error('Predictions are locked for this match');
+    if (targetScore < 50 || targetScore > 300) throw new Error('Target score must be between 50 and 300');
+    if (!winner) throw new Error('Please select a winner');
     const { data, error } = await sb.from('predictions').upsert({
       match_id: matchId, fantasy_team_id: teamId,
       target_score: targetScore, predicted_winner: winner,

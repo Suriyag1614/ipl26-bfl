@@ -298,6 +298,11 @@ function populateTeamSelects() {
       var name = r.team ? r.team.team_name : '—';
       return '<option value="'+r.fantasy_team_id+'">'+UI.esc(name)+'</option>';
     }).join('');
+  var all_teams_opt = '<option value="">All Teams</option>' +
+    _teams.map(function(r) {
+      var name = r.team ? r.team.team_name : '—';
+      return '<option value="'+r.fantasy_team_id+'">'+UI.esc(name)+'</option>';
+    }).join('');
 
   ['ovr-team','rep-team','squad-team'].forEach(function(id) {
     var el = $id(id); if (!el) return;
@@ -305,6 +310,13 @@ function populateTeamSelects() {
     el.innerHTML = lb_opts;
     if (cur) el.value = cur;
   });
+  // Team filter for replacement requests
+  var repTeamFilter = $id('rep-team-filter');
+  if(repTeamFilter){
+    var curTeamFilter = repTeamFilter.value;
+    repTeamFilter.innerHTML = all_teams_opt;
+    if(curTeamFilter) repTeamFilter.value = curTeamFilter;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1122,28 +1134,171 @@ async function undoAdj(adjId) {
 ══════════════════════════════════════════════════════════════ */
 async function loadInjuries() {
   var el=$id('injuries-list'); if(!el) return;
+  var filter=$id('rep-filter')?$id('rep-filter').value:'all';
+  var teamFilter=$id('rep-team-filter')?$id('rep-team-filter').value:'';
   el.innerHTML='<div class="skel skel-row"></div>';
   try {
-    var {data,error} = await sb.from('replacements')
-      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,is_injured,injury_note),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team),team:fantasy_teams(team_name)')
-      .eq('is_active',true).order('created_at',{ascending:false});
-    if (error) throw error;
-    if (!data||!data.length) { el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:12px 0;">No active replacements.</div>'; return; }
-    el.innerHTML = data.map(function(r){
-      return '<div class="inj-card replaced">'+
-        '<div style="flex:1;">'+
-          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'+
-            '<span style="font-family:var(--f-ui);font-weight:700;">'+UI.esc(r.original?r.original.name:'—')+'</span>'+
-            '<span class="badge badge-red" style="font-size:10px;">Injured</span>'+
-            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;color:var(--cyan)"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'+
-            '<span style="font-family:var(--f-ui);font-weight:700;color:var(--cyan);">'+UI.esc(r.replacement?r.replacement.name:'—')+'</span>'+
-          '</div>'+
-          '<div style="font-size:11px;color:var(--text2);margin-top:3px;">'+UI.championName(r.team?r.team.team_name:'—')+(r.reason?' · '+UI.esc(r.reason):'')+'</div>'+
-        '</div>'+
-        '<button class="btn btn-ghost btn-sm" style="font-size:11px;" onclick="removeRep(\''+r.id+'\')">Remove</button>'+
-      '</div>';
-    }).join('');
+    var [repsRes, matchesRes] = await Promise.all([
+      sb.from('replacements')
+        .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,is_injured,injury_note),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team),team:fantasy_teams(team_name)')
+        .order('created_at',{ascending:false}),
+      sb.from('matches').select('id,match_no,team1,team2')
+    ]);
+    if (repsRes.error) throw repsRes.error;
+    var data = repsRes.data || [];
+    var matchesMap = {};
+    (matchesRes.data||[]).forEach(function(m){matchesMap[m.id]=m;});
+    if(teamFilter){
+      data=data.filter(function(r){return r.fantasy_team_id===teamFilter;});
+    }
+    if (!data||!data.length) { el.innerHTML='<div style="color:var(--text3);font-size:13px;padding:12px 0;">No replacement requests.</div>'; return; }
+
+    var pending=data.filter(function(r){return r.status==='pending';});
+    var active=data.filter(function(r){return r.status==='approved'&&r.is_active;});
+    var rejected=data.filter(function(r){return r.status==='rejected';});
+
+    var html='';
+    if(filter==='all'||filter==='pending'){
+      if(pending.length){
+        html+='<div style="margin-bottom:24px;"><div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:8px;">⏳ PENDING REQUESTS ('+pending.length+')</div>';
+        html+=pending.map(function(r){
+          var proofHtml='';
+          if(r.proof_links&&r.proof_links.length){
+            proofHtml+='<div style="font-size:10px;color:var(--cyan);margin-top:4px;">📎 Proof Links: '+r.proof_links.map(function(l){return'<a href="'+UI.esc(l)+'" target="_blank" style="color:var(--cyan);margin-right:8px;">'+UI.esc(l.substring(0,40))+(l.length>40?'...':'')+'</a>';}).join('')+'</div>';
+          }
+          if(r.proof_notes){
+            proofHtml+='<div style="font-size:10px;color:var(--text2);margin-top:2px;">📝 Proof Notes: '+UI.esc(r.proof_notes)+'</div>';
+          }
+          var startMatch=r.start_match_id&&matchesMap[r.start_match_id]?'<span style="color:var(--accent);">M'+(matchesMap[r.start_match_id].match_no||'?')+' · '+UI.esc(UI.tShort(matchesMap[r.start_match_id].team1))+' vs '+UI.esc(UI.tShort(matchesMap[r.start_match_id].team2))+'</span>':'<span style="color:var(--text3);">Next available match</span>';
+          return '<div class="inj-card" style="border-left:3px solid var(--gold);padding:12px;margin-bottom:12px;">'+
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">'+
+              '<div style="flex:1;min-width:250px;">'+
+                '<div style="font-size:11px;color:var(--gold);font-weight:700;margin-bottom:6px;">'+UI.championName(r.team?r.team.team_name:'—')+'</div>'+
+                '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">'+
+                  '<div style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:6px;padding:6px 10px;">'+
+                    '<div style="font-weight:700;font-size:13px;">'+UI.esc(r.original?r.original.name:'—')+'</div>'+
+                    '<div style="font-size:10px;color:var(--red);">'+(r.original?r.original.role:'')+' · '+UI.esc(r.original?r.original.ipl_team:'')+'</div>'+
+                  '</div>'+
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" style="width:20px;height:20px;flex-shrink:0;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'+
+                  '<div style="background:rgba(56,217,245,.15);border:1px solid rgba(56,217,245,.3);border-radius:6px;padding:6px 10px;">'+
+                    '<div style="font-weight:700;font-size:13px;color:var(--cyan);">'+UI.esc(r.replacement?r.replacement.name:'—')+'</div>'+
+                    '<div style="font-size:10px;color:var(--cyan);">'+(r.replacement?r.replacement.role:'')+' · '+UI.esc(r.replacement?r.replacement.ipl_team:'')+'</div>'+
+                  '</div>'+
+                '</div>'+
+                '<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">📅 Start from: '+startMatch+'</div>'+
+                (r.reason?'<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">📋 Reason: '+UI.esc(r.reason)+'</div>':'')+
+                proofHtml+
+              '</div>'+
+              '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">'+
+                '<button class="btn btn-sm" style="background:var(--green);color:#000;font-weight:700;font-size:11px;padding:8px 16px;" onclick="approveRep(\''+r.id+'\')">✓ Approve</button>'+
+                '<button class="btn btn-sm" style="background:var(--red);color:#fff;font-weight:700;font-size:11px;padding:8px 16px;" onclick="rejectRep(\''+r.id+'\')">✕ Reject</button>'+
+                '<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 8px;color:var(--red);" onclick="deleteRepAdmin(\''+r.id+'\')" title="Delete permanently">🗑️</button>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
+        }).join('');
+        html+='</div>';
+      }
+    }
+    if(filter==='all'||filter==='approved'){
+      if(active.length){
+        html+='<div style="margin-bottom:24px;"><div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:8px;">✓ ACTIVE REPLACEMENTS ('+active.length+')</div>';
+        html+=active.map(function(r){
+          var startMatch=r.start_match_id&&matchesMap[r.start_match_id]?'M'+(matchesMap[r.start_match_id].match_no||'?'):'N/A';
+          return '<div class="inj-card replaced" style="padding:12px;margin-bottom:12px;">'+
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">'+
+              '<div style="flex:1;min-width:250px;">'+
+                '<div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:6px;">'+UI.championName(r.team?r.team.team_name:'—')+'</div>'+
+                '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
+                  '<div style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:6px;padding:6px 10px;">'+
+                    '<div style="font-weight:700;font-size:13px;">'+UI.esc(r.original?r.original.name:'—')+'</div>'+
+                    '<div style="font-size:10px;color:var(--red);">'+(r.original?r.original.role:'')+' · '+UI.esc(r.original?r.original.ipl_team:'')+'</div>'+
+                  '</div>'+
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" style="width:20px;height:20px;flex-shrink:0;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'+
+                  '<div style="background:rgba(56,217,245,.15);border:1px solid rgba(56,217,245,.3);border-radius:6px;padding:6px 10px;">'+
+                    '<div style="font-weight:700;font-size:13px;color:var(--cyan);">'+UI.esc(r.replacement?r.replacement.name:'—')+'</div>'+
+                    '<div style="font-size:10px;color:var(--cyan);">'+(r.replacement?r.replacement.role:'')+' · '+UI.esc(r.replacement?r.replacement.ipl_team:'')+'</div>'+
+                  '</div>'+
+                '</div>'+
+                '<div style="font-size:11px;color:var(--text2);margin-top:4px;">📅 Started: '+startMatch+'</div>'+
+              '</div>'+
+              '<div style="display:flex;gap:6px;flex-wrap:wrap;">'+
+                '<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 8px;" onclick="undoRep(\''+r.id+'\')" title="Undo approval">↩️ Undo</button>'+
+                '<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 8px;color:var(--red);" onclick="deleteRepAdmin(\''+r.id+'\')" title="Delete permanently">🗑️</button>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
+        }).join('');
+        html+='</div>';
+      }
+    }
+    if(filter==='all'||filter==='rejected'){
+      if(rejected.length){
+        html+='<div><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px;">✕ REJECTED ('+rejected.length+')</div>';
+        html+=rejected.map(function(r){
+          return '<div class="inj-card" style="border-left:3px solid var(--red);opacity:0.7;padding:12px;margin-bottom:12px;">'+
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">'+
+              '<div style="flex:1;min-width:200px;">'+
+                '<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">'+UI.championName(r.team?r.team.team_name:'—')+'</div>'+
+                '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
+                  '<span style="font-weight:700;">'+UI.esc(r.original?r.original.name:'—')+'</span>'+
+                  '<svg viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" style="width:16px;height:16px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'+
+                  '<span style="font-weight:700;color:var(--text3);">'+UI.esc(r.replacement?r.replacement.name:'—')+'</span>'+
+                '</div>'+
+                (r.admin_notes?'<div style="font-size:10px;color:var(--red);margin-top:4px;">Reason: '+UI.esc(r.admin_notes)+'</div>':'')+
+              '</div>'+
+              '<div style="display:flex;gap:6px;flex-wrap:wrap;">'+
+                '<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 8px;" onclick="undoRep(\''+r.id+'\')" title="Restore to pending">↩️ Undo</button>'+
+                '<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 8px;color:var(--red);" onclick="deleteRepAdmin(\''+r.id+'\')" title="Delete permanently">🗑️</button>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
+        }).join('');
+        html+='</div>';
+      }
+    }
+    if(!html) html='<div style="color:var(--text3);font-size:13px;padding:12px 0;">No requests in this filter.</div>';
+    el.innerHTML=html;
   } catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px;">'+UI.esc(e.message)+'</div>'; }
+}
+
+async function approveRep(repId) {
+  var notes=prompt('Add approval notes (optional):');
+  try{
+    await API.approveReplacement(repId,notes);
+    UI.toast('Replacement approved','success');
+    loadInjuries();
+  }catch(e){UI.toast(e.message,'error');}
+}
+
+async function rejectRep(repId) {
+  var notes=prompt('Add rejection reason:');
+  if(notes===null) return;
+  try{
+    await API.rejectReplacement(repId,notes||'Rejected by admin');
+    UI.toast('Replacement rejected','warn');
+    loadInjuries();
+  }catch(e){UI.toast(e.message,'error');}
+}
+
+async function undoRep(repId) {
+  try{
+    await API.updateReplacement(repId,{status:'pending',is_active:false,admin_notes:null});
+    UI.toast('Action undone - back to pending','success');
+    loadInjuries();
+  }catch(e){UI.toast(e.message,'error');}
+}
+
+async function deleteRepAdmin(repId) {
+  UI.showConfirm({icon:'🗑️',title:'Delete Replacement?',msg:'This will permanently delete this replacement record.',consequence:'This cannot be undone.',okLabel:'Delete',okClass:'btn-danger',
+    onOk:async function(){
+      try{
+        await API.deleteReplacement(repId);
+        UI.toast('Replacement deleted','success');
+        loadInjuries();
+      }catch(e){UI.toast(e.message,'error');}
+    }
+  });
 }
 
 function onInjTeamChange() {
@@ -1248,7 +1403,14 @@ async function loadSameRolePlayers() {
 async function setReplacement() {
   var teamId=$id('rep-team').value, origId=$id('rep-injured').value, replId=$id('rep-player').value, reason=$id('rep-note').value.trim();
   if (!teamId||!origId||!replId) { UI.toast('Fill all required fields','warn'); return; }
-  try { await API.createReplacement({teamId,originalPlayerId:origId,replacementPlayerId:replId,reason:reason||null}); UI.toast('Replacement set!','success'); $id('rep-note').value=''; $id('rep-player').value=''; await loadInjuries(); }
+  try { 
+    var created=await API.createReplacement({teamId,originalPlayerId:origId,replacementPlayerId:replId,reason:reason||null});
+    // Auto-approve admin-set replacements
+    await API.approveReplacement(created.id,'Approved by admin');
+    UI.toast('Replacement set and active!','success'); 
+    $id('rep-note').value=''; $id('rep-player').value=''; 
+    await loadInjuries(); 
+  }
   catch(e){ UI.toast(e.message,'error'); }
 }
 

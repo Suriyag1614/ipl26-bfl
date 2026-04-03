@@ -42,15 +42,35 @@
 
 <div class="modal-overlay" id="rep-modal" style="display:none;" onclick="if(event.target===this)closeRepModal()">
   <div class="modal-box">
-    <div class="modal-title">Set Temporary Replacement</div>
+    <div class="modal-title">Request Temporary Replacement</div>
     <div class="modal-sub" id="rep-modal-sub">Select a same-role replacement.</div>
     <div class="form-group" style="max-height:220px;overflow-y:auto;" id="rep-player-list"></div>
     <div class="form-group">
-      <label class="form-label">Reason (optional)</label>
+      <label class="form-label">Start From Match</label>
+      <select class="form-select" id="rep-start-match">
+        <option value="">Select match</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">End After Match <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+      <select class="form-select" id="rep-end-match">
+        <option value="">No end (permanent)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Reason</label>
       <input class="form-input" id="rep-reason" placeholder="e.g. Out for 2 matches due to hamstring">
     </div>
+    <div class="form-group">
+      <label class="form-label">Proof Links <span style="color:var(--text3);font-weight:400;">(comma-separated URLs)</span></label>
+      <input class="form-input" id="rep-proof-links" placeholder="https://..., https://...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Proof Notes</label>
+      <input class="form-input" id="rep-proof-notes" placeholder="Additional details about proof">
+    </div>
     <div style="display:flex;gap:10px;">
-      <button class="btn btn-accent" onclick="submitReplacement()">Confirm</button>
+      <button class="btn btn-accent" onclick="submitReplacement()">Submit Request</button>
       <button class="btn btn-ghost" onclick="closeRepModal()">Cancel</button>
     </div>
   </div>
@@ -84,6 +104,10 @@
       <div class="card mt-24" id="replacements-card" style="display:none;">
         <div class="card-title">Active Replacements</div>
         <div id="replacements-list"></div>
+      </div>
+      <div class="card mt-24" id="pending-replacements-card" style="display:none;">
+        <div class="card-title">Pending Replacement Requests</div>
+        <div id="pending-replacements-list"></div>
       </div>
       <div class="card mt-24">
         <div class="card-title">Role Breakdown</div>

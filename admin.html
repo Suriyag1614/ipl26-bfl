@@ -750,12 +750,12 @@
   <!-- ════ INJURIES ════ -->
   <div class="admin-panel" id="panel-injuries">
     <div class="section-hdr">
-      <div><div class="section-title">Injuries & Replacements</div><div class="section-sub">Mark injuries · Assign same-role replacements</div></div>
+      <div><div class="section-title">Injuries & Replacements</div><div class="section-sub">Mark injuries · Review team replacement requests</div></div>
       <button class="btn btn-ghost btn-sm" onclick="loadInjuries()">↻ Refresh</button>
     </div>
     <div class="col-2">
       <div class="card">
-        <div class="card-title">Mark Player Injured / Clear</div>
+        <div class="card-title">🏥 Mark Player Injured</div>
         <div class="form-group"><label class="form-label">Team</label>
           <select class="form-select" id="inj-team-sel" onchange="onInjTeamChange()"><option value="">— Select team —</option></select>
         </div>
@@ -767,30 +767,34 @@
         <div class="form-group"><label class="form-label">Injury Note</label>
           <input class="form-input" id="inj-note" placeholder="e.g. Hamstring strain — out 2 matches">
         </div>
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-danger btn-sm" onclick="markInjured()">🏥 Mark Injured</button>
-          <button class="btn btn-ghost btn-sm" onclick="clearInjury()">✓ Clear Injury</button>
+        <button class="btn btn-danger" onclick="markInjured()">🏥 Mark Injured</button>
+        <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+          <div class="form-group"><label class="form-label">Clear Injury</label>
+            <button class="btn btn-ghost btn-sm" onclick="clearInjury()">✓ Clear Injury</button>
+          </div>
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Assign Replacement</div>
-        <div class="form-group"><label class="form-label">Team</label>
-          <select class="form-select" id="rep-team" onchange="loadRepTeamSquad()"><option value="">— Select team —</option></select>
+        <div class="card-title">Team Replacement Requests</div>
+        <div class="form-row">
+          <div class="form-group" style="flex:1;"><label class="form-label">Filter by Status</label>
+            <select class="form-select" id="rep-filter" onchange="loadInjuries()">
+              <option value="all">All Requests</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;"><label class="form-label">Filter by Team</label>
+            <select class="form-select" id="rep-team-filter" onchange="loadInjuries()">
+              <option value="">All Teams</option>
+            </select>
+          </div>
         </div>
-        <div class="form-group"><label class="form-label">Injured Player</label>
-          <select class="form-select" id="rep-injured" onchange="loadSameRolePlayers()"><option value="">— Select injured player —</option></select>
-        </div>
-        <div class="form-group"><label class="form-label">Replacement (same role)</label>
-          <select class="form-select" id="rep-player"><option value="">— Select replacement —</option></select>
-        </div>
-        <div class="form-group"><label class="form-label">Note (optional)</label>
-          <input class="form-input" id="rep-note" placeholder="Reason…">
-        </div>
-        <button class="btn btn-accent" onclick="setReplacement()">Set Replacement</button>
       </div>
     </div>
     <div class="card mt-20">
-      <div class="card-title">Active Injuries & Replacements</div>
+      <div class="card-title">All Injury & Replacement Status</div>
       <div id="injuries-list"><div class="skel skel-row"></div></div>
     </div>
   </div>
