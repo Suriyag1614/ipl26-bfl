@@ -326,8 +326,8 @@ const UI = {
     let modal = document.getElementById('confirm-modal');
     if (!modal) {
       document.body.insertAdjacentHTML('beforeend', `
-        <div class="modal-overlay" id="confirm-modal" style="display:none; z-index:9999;">
-          <div class="modal-box" style="text-align:center;">
+        <div class="modal-overlay" id="confirm-modal" style="display:none; z-index:9999; background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);">
+          <div class="modal-box" style="text-align:center;background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
             <div class="confirm-icon" id="confirm-icon" style="font-size:42px;margin-bottom:12px;display:block;">⚠️</div>
             <div class="modal-title" id="confirm-title" style="margin-bottom:10px;">Are you sure?</div>
             <div id="confirm-msg" style="font-size:14px;color:var(--text2);margin-bottom:8px;"></div>
