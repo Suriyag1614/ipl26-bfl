@@ -329,16 +329,22 @@ function openRepModal(playerDataStr){
   });
   var matchSel=document.getElementById('rep-start-match');
   var endMatchSel=document.getElementById('rep-end-match');
-  var targetTeamMatches=_matches.filter(function(m){return m.team1===targetTeam||m.team2===targetTeam;});
+  var targetTeamMatches=_matches.length?(_matches.filter(function(m){return m.team1===targetTeam||m.team2===targetTeam;})):[];
   var upcomingTeam=targetTeamMatches.filter(function(m){return!m.is_locked&&m.status!=='completed'&&m.status!=='processed';});
   if(matchSel){
+    if(!upcomingTeam.length){
+      upcomingTeam=_matches.filter(function(m){return!m.is_locked&&m.status!=='completed'&&m.status!=='processed';});
+    }
     matchSel.innerHTML='<option value="">Select match</option>'+
-      upcomingTeam.map(function(m){return '<option value="'+m.id+'">M'+(m.match_no||'?')+' · '+UI.esc(tShort(m.team1))+' vs '+UI.esc(tShort(m.team2))+'</option>';}).join('');
+      upcomingTeam.map(function(m){var t1=UI.tShort(m.team1)||m.team1||'';var t2=UI.tShort(m.team2)||m.team2||'';return '<option value="'+m.id+'">M'+(m.match_no||'?')+' · '+UI.esc(t1)+' vs '+UI.esc(t2)+'</option>';}).join('');
   }
   if(endMatchSel){
     var allTeamMatches=targetTeamMatches.filter(function(m){return m.status!=='completed'&&m.status!=='processed';});
+    if(!allTeamMatches.length){
+      allTeamMatches=_matches.filter(function(m){return m.status!=='completed'&&m.status!=='processed';});
+    }
     endMatchSel.innerHTML='<option value="">No end (permanent)</option>'+
-      allTeamMatches.map(function(m){return '<option value="'+m.id+'">M'+(m.match_no||'?')+' · '+UI.esc(tShort(m.team1))+' vs '+UI.esc(tShort(m.team2))+'</option>';}).join('');
+      allTeamMatches.map(function(m){var t1=UI.tShort(m.team1)||m.team1||'';var t2=UI.tShort(m.team2)||m.team2||'';return '<option value="'+m.id+'">M'+(m.match_no||'?')+' · '+UI.esc(t1)+' vs '+UI.esc(t2)+'</option>';}).join('');
   }
   document.getElementById('rep-player-list').innerHTML=!available.length
     ?'<div style="color:var(--text3);font-size:13px;padding:12px 0;">No eligible '+_repTarget.role+'s available.</div>'
