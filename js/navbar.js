@@ -198,16 +198,18 @@ async function initNavbar(page, customLinks) {
         var logo = UI.getTeamLogo(name);
         setNavUser(name, initials, null, logo);
       }
-      // Auto-close sidebar after link click
-      var sb = document.getElementById('sidebar');
-      if (sb && !sb._bflClickBound) {
-        sb._bflClickBound = true;
-        sb.addEventListener('click', function(e) {
-          if (e.target && e.target.closest && e.target.closest('.sb-link')) {
-            closeSidebar();
-          }
-        });
-      }
+    }
+    // Auto-close sidebar after link click (for all users)
+    var sb = document.getElementById('sidebar');
+    if (sb && !sb._bflClickBound) {
+      sb._bflClickBound = true;
+      sb.addEventListener('click', function(e) {
+        var link = e.target.closest ? e.target.closest('.sb-link') : null;
+        var btn = e.target.closest ? e.target.closest('button[onclick*="doLogout"]') : null;
+        if (link || btn) {
+          closeSidebar();
+        }
+      });
     }
   } catch(e) { console.warn('[navbar]', e.message); }
 }

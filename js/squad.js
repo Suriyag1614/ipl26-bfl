@@ -283,7 +283,7 @@ function renderSquad(){
     return '<div class="'+cardCls+'" style="--ipl-color:'+color+';animation-delay:'+(i*0.05)+'s"'+
       (p.availability_note?' title="'+UI.esc(p.availability_status+': '+p.availability_note)+'"':'')+'>' +
       '<div class="player-card-header">' +
-        osHtml +
+        (osHtml ? osHtml : '<span style="flex:1;"></span>') +
         roleHtml +
       '</div>' +
       '<div class="player-card-body">' +
