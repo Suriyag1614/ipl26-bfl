@@ -440,14 +440,13 @@ const API = {
     }));
     if (!rows.length) return;
 
-  // 1. Fetch current standings to preserve as "prev_rank"
+  // 1. Fetch current standings to get the current rank (will become prev_rank after this update)
   const { data: current } = await sb.from('leaderboard').select('fantasy_team_id,rank,prev_rank');
   const prevRankMap = {};
   (current || []).forEach(r => { 
-    // If we already have a rank, use it as the "previous" for the next calculation
+    // Always use current rank as the "previous" for the next match
+    // This ensures prev_rank reflects the rank from the previous match processed
     if (r.rank) prevRankMap[r.fantasy_team_id] = r.rank;
-    // If no rank yet, but we have a prev_rank stored, keep that as a fallback
-    else if (r.prev_rank) prevRankMap[r.fantasy_team_id] = r.prev_rank;
   });
 
   // 2. Upsert new points (this updates total_points, matches_played)
