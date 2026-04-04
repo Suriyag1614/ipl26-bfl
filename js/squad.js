@@ -147,10 +147,10 @@ function editPendingRep(repId){
   var matchSel=document.getElementById('rep-start-match');
   var endMatchSel=document.getElementById('rep-end-match');
   var targetTeamMatches=_matches.length?(_matches.filter(function(m){return m.team1===targetTeam||m.team2===targetTeam;})):[];
-  var upcomingTeam=targetTeamMatches.filter(function(m){return!m.is_locked&&m.status!=='completed'&&m.status!=='processed';});
+  var upcomingTeam=targetTeamMatches.filter(function(m){return m.status!=='completed'&&m.status!=='processed';});
   if(matchSel){
     if(!upcomingTeam.length){
-      upcomingTeam=_matches.filter(function(m){return!m.is_locked&&m.status!=='completed'&&m.status!=='processed';});
+      upcomingTeam=_matches.filter(function(m){return m.status!=='completed'&&m.status!=='processed';});
     }
     matchSel.innerHTML='<option value="">Select match</option>'+
       upcomingTeam.map(function(m){var t1=UI.tShort(m.team1)||m.team1||'';var t2=UI.tShort(m.team2)||m.team2||'';return '<option value="'+m.id+'"'+(rep.start_match_id===m.id?' selected':'')+'>M'+(m.match_no||'?')+' · '+UI.esc(t1)+' vs '+UI.esc(t2)+'</option>';}).join('');
@@ -357,10 +357,10 @@ function openRepModal(playerDataStr){
   var matchSel=document.getElementById('rep-start-match');
   var endMatchSel=document.getElementById('rep-end-match');
   var targetTeamMatches=_matches.length?(_matches.filter(function(m){return m.team1===targetTeam||m.team2===targetTeam;})):[];
-  var upcomingTeam=targetTeamMatches.filter(function(m){return!m.is_locked&&m.status!=='completed'&&m.status!=='processed';});
+  var upcomingTeam=targetTeamMatches.filter(function(m){return m.status!=='completed'&&m.status!=='processed';});
   if(matchSel){
     if(!upcomingTeam.length){
-      upcomingTeam=_matches.filter(function(m){return!m.is_locked&&m.status!=='completed'&&m.status!=='processed';});
+      upcomingTeam=_matches.filter(function(m){return m.status!=='completed'&&m.status!=='processed';});
     }
     matchSel.innerHTML='<option value="">Select match</option>'+
       upcomingTeam.map(function(m){var t1=UI.tShort(m.team1)||m.team1||'';var t2=UI.tShort(m.team2)||m.team2||'';return '<option value="'+m.id+'">M'+(m.match_no||'?')+' · '+UI.esc(t1)+' vs '+UI.esc(t2)+'</option>';}).join('');
