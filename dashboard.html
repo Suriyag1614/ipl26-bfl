@@ -95,15 +95,6 @@
     <div class="skel skel-chip"></div><div class="skel skel-chip"></div>
   </div>
 
-  <!-- Replacement Requests -->
-  <div class="card" id="replacement-requests-card" style="display:none;margin-bottom:16px;">
-    <div class="flex-between mb-12">
-      <div class="card-title">Replacement Requests</div>
-      <a href="squad.html" class="btn btn-ghost btn-sm">Manage →</a>
-    </div>
-    <div id="replacement-requests-list"></div>
-  </div>
-
   <div class="main-2col">
     <!-- Left column -->
     <div style="display:flex;flex-direction:column;gap:16px;">
@@ -209,12 +200,10 @@ async function init() {
   document.getElementById('hero-greeting').innerHTML = greet + ' · <span id="hero-date">'+now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})+'</span>';
   document.getElementById('hero-name').innerHTML = 'Welcome back, ' + UI.championName(_myTeam.team_name) + ' 👋';
 
-  await Promise.all([loadStats(), loadNextMatch(), loadImpact(), loadPerformers(), loadRecent(), loadMiniLB(), loadBlog(), loadReplacementRequests()]);
+  await Promise.all([loadStats(), loadNextMatch(), loadImpact(), loadPerformers(), loadRecent(), loadMiniLB(), loadBlog()]);
   await API.checkAndAwardBadges(_myTeamId);
   fixGrid();
 }
-
-async function loadReplacementRequests() {
   try {
     var squad = await API.fetchSquad(_myTeamId);
     var pending = await API.fetchPendingReplacements(_myTeamId);

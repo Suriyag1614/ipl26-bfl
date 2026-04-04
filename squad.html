@@ -82,19 +82,22 @@
           <button class="btn btn-ghost btn-sm" onclick="exportSquadPDF()">PDF</button>
         </div>
       </div>
-      <div id="injury-banner-wrap"></div>
       <div class="card mb-20" id="squad-summary"><div class="skel skel-text" style="width:70%;"></div></div>
       <div class="player-grid" id="player-grid">
         <div class="skel skel-card"></div><div class="skel skel-card"></div>
         <div class="skel skel-card"></div><div class="skel skel-card"></div>
         <div class="skel skel-card"></div><div class="skel skel-card"></div>
       </div>
+      <div class="card mt-24" id="unavailable-card" style="display:none;">
+        <div class="card-title">Unavailable Players</div>
+        <div id="unavailable-list"></div>
+      </div>
       <div class="card mt-24" id="replacements-card" style="display:none;">
         <div class="card-title">Active Replacements</div>
         <div id="replacements-list"></div>
       </div>
       <div class="card mt-24" id="pending-replacements-card" style="display:none;">
-        <div class="card-title">Pending Replacement Requests</div>
+        <div class="card-title">Replacement Requests</div>
         <div id="pending-replacements-list"></div>
       </div>
       <div class="card mt-24">

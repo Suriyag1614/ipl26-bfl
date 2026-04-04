@@ -77,25 +77,47 @@ function setFilter(role){
 
 function renderInjuryBanner(){
   var inj=_squad.filter(function(s){return s.player&&s.player.availability_status&&s.player.availability_status!=='available';});
-  var w=document.getElementById('injury-banner-wrap');
-  if(!inj.length){w.innerHTML='';return;}
-  var names=inj.map(function(s){return s.player.name+(s.player.availability_note?' ('+s.player.availability_note+')':'');}).join(', ');
-  w.innerHTML='<div class="injury-banner"><span style="font-size:20px;">&#x1F3E5;</span>'+
-    '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-weight:400;font-size:15px;color:var(--red);">Unavailable Players</div>'+
-    '<div style="font-size:13px;color:var(--text2);margin-top:2px;">'+UI.esc(names)+' &mdash; set replacements on their player cards.</div></div></div>';
+  var card=document.getElementById('unavailable-card');
+  if(!inj.length){if(card)card.style.display='none';return;}
+  card.style.display='';
+  document.getElementById('unavailable-list').innerHTML=inj.map(function(s){
+    var p=s.player;
+    var hasRep=s.replacement&&s.replacement.replacement;
+    var statusLabel=p.availability_status==='injured'?'Injured':'Unavailable';
+    var statusColor='var(--red)';
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;background:var(--bg2);border-radius:6px;margin-bottom:6px;border:1px solid var(--border);">'+
+      '<div style="flex:1;">'+
+        '<div style="font-size:13px;font-weight:700;">'+UI.esc(p.name)+'</div>'+
+        '<div style="font-size:11px;color:var(--text2);">'+p.role+' · '+UI.esc(p.ipl_team)+'</div>'+
+      '</div>'+
+      '<div style="text-align:right;">'+
+        '<span style="font-size:10px;padding:3px 8px;background:'+statusColor+';color:#fff;border-radius:4px;font-weight:700;">'+statusLabel+'</span>'+
+        (p.availability_note?'<div style="font-size:9px;color:var(--text3);margin-top:2px;">'+UI.esc(p.availability_note)+'</div>':'')+
+        (hasRep?'<div style="font-size:10px;color:var(--cyan);margin-top:4px;">→ '+UI.esc(s.replacement.replacement.name)+'</div>':'')+
+      '</div>'+
+    '</div>';
+  }).join('');
 }
 
 function renderReplacements(){
   var reps=_squad.filter(function(s){return s.replacement;});
   var card=document.getElementById('replacements-card');
-  if(!reps.length){card.style.display='none';return;}
+  if(!reps.length){if(card)card.style.display='none';return;}
   card.style.display='';
   document.getElementById('replacements-list').innerHTML=reps.map(function(sp){
     var r=sp.replacement;
-    return '<div class="stats-saved-row" style="justify-content:space-between;">'+
-      '<div><div style="font-family:var(--f-ui);font-weight:400;font-size:14px;">'+UI.esc(sp.player.name)+'</div>'+
-      '<div style="font-size:12px;color:var(--text2);">Replaced by: <strong style="color:var(--cyan);">'+UI.esc(r.replacement&&r.replacement.name||'&mdash;')+'</strong></div></div>'+
-      '<button class="btn btn-ghost btn-sm" onclick="confirmRemoveRep(\''+r.id+'\')">Remove</button></div>';
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:rgba(56,217,245,.08);border:1px solid rgba(56,217,245,.2);border-radius:6px;margin-bottom:6px;">'+
+      '<div style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:4px;padding:4px 8px;flex:1;">'+
+        '<div style="font-size:12px;font-weight:700;">'+UI.esc(sp.player.name)+'</div>'+
+        '<div style="font-size:10px;color:var(--text2);">'+sp.player.role+'</div>'+
+      '</div>'+
+      '<svg viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" style="width:16px;height:16px;flex-shrink:0;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'+
+      '<div style="background:rgba(56,217,245,.15);border:1px solid rgba(56,217,245,.3);border-radius:4px;padding:4px 8px;flex:1;text-align:right;">'+
+        '<div style="font-size:12px;font-weight:700;color:var(--cyan);">'+UI.esc(r.replacement&&r.replacement.name||'—')+'</div>'+
+        '<div style="font-size:10px;color:var(--text2);">'+(r.replacement?r.replacement.role:'')+'</div>'+
+      '</div>'+
+      '<button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:10px;color:var(--red);" onclick="confirmRemoveRep(\''+r.id+'\')">Remove</button>'+
+    '</div>';
   }).join('');
 }
 
@@ -117,19 +139,38 @@ function renderPendingReplacements(){
     return;
   }
   card.style.display='';
-  document.getElementById('pending-replacements-list').innerHTML=pending.map(function(r){
-    var statusBadge=r.status==='pending'?'<span style="background:var(--gold);color:#000;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;">PENDING</span>':r.status==='approved'?'<span style="background:var(--green);color:#000;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;">APPROVED</span>':'<span style="background:var(--red);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;">REJECTED</span>';
-    return '<div class="stats-saved-row" style="flex-direction:column;gap:8px;padding:12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;">'+
-        '<div style="font-weight:700;font-size:14px;">'+(r.original?r.original.name:'—')+' → '+(r.replacement?r.replacement.name:'—')+'</div>'+
-        statusBadge+
-      '</div>'+
-      '<div style="font-size:10px;color:var(--text3);">Requested on '+UI.fmtDate(r.created_at)+'</div>'+
-      '<div style="display:flex;gap:8px;margin-top:8px;">'+
-        '<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 8px;" onclick="editPendingRep(\''+r.id+'\')">✏️ Edit</button>'+
-        '<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 8px;color:var(--red);" onclick="deletePendingRep(\''+r.id+'\')">🗑️ Delete</button>'+
-      '</div></div>';
-  }).join('');
+
+  var pendingReq=pending.filter(function(r){return r.status==='pending';});
+  var rejected=pending.filter(function(r){return r.status==='rejected';});
+
+  var html='';
+  if(pendingReq.length){
+    html+='<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">⏳ Pending Requests</div>';
+    html+=pendingReq.map(function(r){
+      var startMatch=r.start_match&&r.start_match.match_no?'M'+r.start_match.match_no:'N/A';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;background:var(--bg2);border-radius:6px;margin-bottom:6px;border:1px solid var(--border);">'+
+        '<div style="flex:1;">'+
+          '<div style="font-size:12px;">'+UI.esc(r.original?r.original.name:'—')+' → '+UI.esc(r.replacement?r.replacement.name:'—')+'</div>'+
+          '<div style="font-size:10px;color:var(--text3);">From: '+startMatch+'</div>'+
+        '</div>'+
+        '<span style="font-size:9px;padding:3px 8px;background:var(--gold);color:#000;border-radius:4px;font-weight:700;">PENDING</span>'+
+      '</div>';
+    }).join('');
+    html+='</div>';
+  }
+
+  if(rejected.length){
+    html+='<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">✕ Rejected Requests</div>';
+    html+=rejected.map(function(r){
+      return '<div style="padding:10px;background:var(--bg2);border-radius:6px;margin-bottom:6px;border:1px solid var(--border);border-left:3px solid var(--red);">'+
+        '<div style="font-size:12px;margin-bottom:4px;">'+UI.esc(r.original?r.original.name:'—')+' → '+UI.esc(r.replacement?r.replacement.name:'—')+'</div>'+
+        (r.admin_notes?'<div style="font-size:10px;color:var(--red);">Reason: '+UI.esc(r.admin_notes)+'</div>':'')+
+      '</div>';
+    }).join('');
+    html+='</div>';
+  }
+
+  document.getElementById('pending-replacements-list').innerHTML=html;
 }
 
 function editPendingRep(repId){
