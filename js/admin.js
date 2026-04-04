@@ -1254,7 +1254,14 @@ async function loadInjuries() {
 }
 
 async function approveRep(repId) {
-  var notes=prompt('Add approval notes (optional):');
+  var notes='';
+  var confirmed=await new Promise(function(resolve){
+    UI.showConfirm({icon:'✓',title:'Approve Replacement?',msg:'This will approve the replacement request and activate it.',okLabel:'Approve',okClass:'btn-accent',
+      onOk:function(){ resolve(true); },
+      onCancel:function(){ resolve(false); }
+    });
+  });
+  if(!confirmed) return;
   try{
     await API.approveReplacement(repId,notes);
     UI.toast('Replacement approved','success');
@@ -1263,10 +1270,16 @@ async function approveRep(repId) {
 }
 
 async function rejectRep(repId) {
-  var notes=prompt('Add rejection reason:');
-  if(notes===null) return;
+  var notes='';
+  var confirmed=await new Promise(function(resolve){
+    UI.showPrompt({title:'Reject Replacement',label:'Rejection Reason (optional)',placeholder:'Enter reason for rejection...',
+      onOk:function(val){ notes=val||'Rejected by admin'; resolve(true); },
+      onCancel:function(){ resolve(false); }
+    });
+  });
+  if(!confirmed) return;
   try{
-    await API.rejectReplacement(repId,notes||'Rejected by admin');
+    await API.rejectReplacement(repId,notes);
     UI.toast('Replacement rejected','warn');
     loadInjuries();
   }catch(e){UI.toast(e.message,'error');}

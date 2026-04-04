@@ -370,6 +370,58 @@ const UI = {
   },
 
   // ════════════════════════════════════════════════════════════
+  //  PROMPT MODAL
+  // ════════════════════════════════════════════════════════════
+  _promptCb: null,
+  _promptCancelCb: null,
+
+  showPrompt(opts) {
+    let modal = document.getElementById('prompt-modal');
+    if (!modal) {
+      document.body.insertAdjacentHTML('beforeend', `
+        <div class="modal-overlay" id="prompt-modal" style="display:none; z-index:9999; background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);">
+          <div class="modal-box" style="text-align:center;background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.5);max-width:360px;">
+            <div class="modal-title" id="prompt-title" style="margin-bottom:12px;">Enter Details</div>
+            <div id="prompt-label" style="font-size:13px;color:var(--text2);margin-bottom:8px;text-align:left;"></div>
+            <input type="text" id="prompt-input" class="form-input" style="width:100%;margin-bottom:16px;" placeholder="">
+            <div style="display:flex;gap:10px;justify-content:center;">
+              <button class="btn btn-accent" id="prompt-ok-btn">OK</button>
+              <button class="btn btn-ghost" id="prompt-cancel-btn">Cancel</button>
+            </div>
+          </div>
+        </div>
+      `);
+      modal = document.getElementById('prompt-modal');
+      document.getElementById('prompt-cancel-btn').onclick = () => this.closePrompt();
+    }
+
+    document.getElementById('prompt-title').textContent = opts.title || 'Enter Details';
+    document.getElementById('prompt-label').textContent = opts.label || '';
+    document.getElementById('prompt-input').placeholder = opts.placeholder || '';
+    document.getElementById('prompt-input').value = '';
+    document.getElementById('prompt-ok-btn').textContent = opts.okLabel || 'OK';
+
+    this._promptCb = opts.onOk || null;
+    this._promptCancelCb = opts.onCancel || null;
+
+    document.getElementById('prompt-ok-btn').onclick = () => {
+      const val = document.getElementById('prompt-input').value;
+      this.closePrompt();
+      if (this._promptCb) this._promptCb(val);
+    };
+
+    modal.style.display = 'flex';
+    document.getElementById('prompt-input').focus();
+    document.body.style.overflow = 'hidden';
+  },
+
+  closePrompt() {
+    const modal = document.getElementById('prompt-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+  },
+
+  // ════════════════════════════════════════════════════════════
   //  UTILITIES
   // ════════════════════════════════════════════════════════════
   fmt(n, dec = 0)  { return Number(n||0).toFixed(dec); },
