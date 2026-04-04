@@ -211,7 +211,7 @@ function renderSquad(){
     
     var cardCls='player-card'+(isCap?' captain':isVC?' vice-cap':'')+(isImpact?' impact':'')+(isUnavailable&&!hasRep?' injured':'')+(hasRep?' replaced':'')+
                 (pRow.pom?' pom-highlight':'')+(pRow.pot?' pot-highlight':'');
-    var pd=UI.esc(JSON.stringify({id:p.id,name:p.name||'',role:p.role||'',ipl_team:p.ipl_team||''}));
+    var pd=UI.esc(JSON.stringify({id:p.id,name:p.name||'',role:p.role||'',ipl_team:p.ipl_team||'',is_overseas:p.is_overseas||false}));
 
     return '<div class="'+cardCls+'" style="--ipl-color:'+color+';animation-delay:'+(i*0.05)+'s"'+
       (p.availability_note?' title="'+UI.esc(p.availability_status+': '+p.availability_note)+'"':'')+'>' +
@@ -311,9 +311,35 @@ function openRepModal(playerDataStr){
   catch(e){ UI.toast('Error opening modal','error'); return; }
   _repSelectedId=null;
   var targetTeam = _repTarget.ipl_team || '';
-  document.getElementById('rep-modal-sub').textContent=_repTarget.name+' is unavailable. Pick a same-role ('+_repTarget.role+') replacement from '+targetTeam+':';
+  var isInjuredOverseas = _repTarget.is_overseas;
+  var osCount = _squad.filter(function(s){return s.player&&s.player.is_overseas;}).length;
+  var hasOverseasSlot = osCount < 4;
+  var canUseOverseas = isInjuredOverseas || hasOverseasSlot;
+  var filterMsg = canUseOverseas ? '' : ' (Indian only - no overseas slots)';
+  document.getElementById('rep-modal-sub').textContent=_repTarget.name+' is unavailable. Pick a same-role ('+_repTarget.role+') from '+targetTeam+filterMsg+':';
   var squadIds=new Set(_squad.map(function(s){return s.player&&s.player.id;}));
-  var available=_allPlayers.filter(function(pl){return pl.role===_repTarget.role&&pl.ipl_team===targetTeam&&!squadIds.has(pl.id)&&pl.availability_status==='available'&&pl.id!==_repTarget.id;});
+  var available=_allPlayers.filter(function(pl){
+    if(pl.role!==_repTarget.role) return false;
+    if(pl.ipl_team!==targetTeam) return false;
+    if(squadIds.has(pl.id)) return false;
+    if(pl.availability_status!=='available') return false;
+    if(pl.id===_repTarget.id) return false;
+    if(!canUseOverseas && pl.is_overseas) return false;
+    return true;
+  });
+  var matchSel=document.getElementById('rep-start-match');
+  var endMatchSel=document.getElementById('rep-end-match');
+  var targetTeamMatches=_matches.filter(function(m){return m.team1===targetTeam||m.team2===targetTeam;});
+  var upcomingTeam=targetTeamMatches.filter(function(m){return!m.is_locked&&m.status!=='completed'&&m.status!=='processed';});
+  if(matchSel){
+    matchSel.innerHTML='<option value="">Select match</option>'+
+      upcomingTeam.map(function(m){return '<option value="'+m.id+'">M'+(m.match_no||'?')+' · '+UI.esc(tShort(m.team1))+' vs '+UI.esc(tShort(m.team2))+'</option>';}).join('');
+  }
+  if(endMatchSel){
+    var allTeamMatches=targetTeamMatches.filter(function(m){return m.status!=='completed'&&m.status!=='processed';});
+    endMatchSel.innerHTML='<option value="">No end (permanent)</option>'+
+      allTeamMatches.map(function(m){return '<option value="'+m.id+'">M'+(m.match_no||'?')+' · '+UI.esc(tShort(m.team1))+' vs '+UI.esc(tShort(m.team2))+'</option>';}).join('');
+  }
   document.getElementById('rep-player-list').innerHTML=!available.length
     ?'<div style="color:var(--text3);font-size:13px;padding:12px 0;">No eligible '+_repTarget.role+'s available.</div>'
     :available.map(function(pl){
@@ -358,6 +384,10 @@ async function submitReplacement(){
     ?'Update replacement for '+_repTarget.name+' to '+(rep?rep.name:'selected player')+' starting from '+matchLabel+endLabel+'?'
     :'Request replacement for '+_repTarget.name+' with '+(rep?rep.name:'selected player')+' starting from '+matchLabel+endLabel+'?';
   var okLabel=isEdit?'Update Request':'Submit Request';
+  var capturedRepTargetId=_repTarget.id;
+  var capturedTeamId=_myTeamId;
+  var capturedRepSelectedId=_repSelectedId;
+  var capturedEditRepId=_editRepId;
   closeRepModal();
   UI.showConfirm({icon:'&#x1F504;',title:title,
     msg:msg,
@@ -365,13 +395,12 @@ async function submitReplacement(){
     onOk:async function(){
       try{
         if(isEdit){
-          await API.updateReplacement(_editRepId,{replacement_player_id:_repSelectedId,start_match_id:startMatchId,end_match_id:endMatchId});
+          await API.updateReplacement(capturedEditRepId,{replacement_player_id:capturedRepSelectedId,start_match_id:startMatchId,end_match_id:endMatchId});
           UI.toast('Request updated!','success');
         }else{
-          await API.createReplacement({teamId:_myTeamId,originalPlayerId:_repTarget.id,replacementPlayerId:_repSelectedId,startMatchId:startMatchId,endMatchId:endMatchId});
+          await API.createReplacement({teamId:capturedTeamId,originalPlayerId:capturedRepTargetId,replacementPlayerId:capturedRepSelectedId,startMatchId:startMatchId,endMatchId:endMatchId});
           UI.toast('Replacement request sent for admin review','success');
         }
-        _editRepId=null;
         await loadSquad();
       }catch(e){UI.toast(e.message,'error');}
     }
