@@ -446,7 +446,7 @@ body { display:flex; flex-direction:column; }
 .player-card.captain::before { background:var(--gold); }
 .player-card.vice-cap { border-color:rgba(56,217,250,.4); }
 .player-card.vice-cap::before { background:var(--cyan); }
-.player-card-header { display:flex; justify-content:flex-end; align-items:flex-start; padding:8px 10px 0; position:relative; z-index:1; gap:6px; }
+.player-card-header { display:flex; justify-content:space-between; align-items:flex-start; padding:8px 10px 0; position:relative; z-index:1; }
 .player-card-header > * { flex-shrink: 0; }
 .player-card-body { padding:8px 12px 14px; }
 .player-card-header .role-tag { font-size:9px; padding:3px 7px; border-radius:6px; }

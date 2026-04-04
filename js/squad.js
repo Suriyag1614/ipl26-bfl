@@ -268,8 +268,11 @@ function renderSquad(){
     if(pRow.pom) achBadges+='<span class="badge-pom">★ PoM'+(pRow.pom>1?' '+pRow.pom:'')+'</span>';
     if(pRow.pot) achBadges+='<span class="badge-pot">★ PoT</span>';
 
-    var roleHtml = UI.roleBadge(p.role);
     var osHtml = p.is_overseas ? '<span class="role-tag rt-os"><img src="images/ipl/teams-foreign-player-icon.svg" alt="OS" style="transform:rotate(45deg)">OS</span>' : '';
+    var roleHtml = UI.roleBadge(p.role);
+    var headerHtml = osHtml
+      ? '<div class="player-card-header">' + osHtml + roleHtml + '</div>'
+      : '<div class="player-card-header"><span style="flex:1;"></span>' + roleHtml + '</div>';
 
     var statusHtml='';
     if(p.availability_status==='injured') statusHtml+='<span class="badge-injured">Injured</span> ';
@@ -282,10 +285,7 @@ function renderSquad(){
 
     return '<div class="'+cardCls+'" style="--ipl-color:'+color+';animation-delay:'+(i*0.05)+'s"'+
       (p.availability_note?' title="'+UI.esc(p.availability_status+': '+p.availability_note)+'"':'')+'>' +
-      '<div class="player-card-header">' +
-        (osHtml ? osHtml : '<span style="flex:1;"></span>') +
-        roleHtml +
-      '</div>' +
+      headerHtml +
       '<div class="player-card-body">' +
         imgTag(displayImg, displayName, 'player-avatar') +
         '<div class="player-name">'+UI.esc(displayName)+nameTag+'</div>' +
