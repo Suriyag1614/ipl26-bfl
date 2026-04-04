@@ -1140,7 +1140,7 @@ async function loadInjuries() {
   try {
     var [repsRes, matchesRes] = await Promise.all([
       sb.from('replacements')
-        .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,is_injured,injury_note),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team),team:fantasy_teams(team_name)')
+        .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,availability_status,availability_note),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team),team:fantasy_teams(team_name)')
         .order('created_at',{ascending:false}),
       sb.from('matches').select('id,match_no,team1,team2')
     ]);
@@ -1162,13 +1162,6 @@ async function loadInjuries() {
       if(pending.length){
         html+='<div style="margin-bottom:24px;"><div style="font-size:12px;font-weight:700;color:var(--gold);margin-bottom:8px;">⏳ PENDING REQUESTS ('+pending.length+')</div>';
         html+=pending.map(function(r){
-          var proofHtml='';
-          if(r.proof_links&&r.proof_links.length){
-            proofHtml+='<div style="font-size:10px;color:var(--cyan);margin-top:4px;">📎 Proof Links: '+r.proof_links.map(function(l){return'<a href="'+UI.esc(l)+'" target="_blank" style="color:var(--cyan);margin-right:8px;">'+UI.esc(l.substring(0,40))+(l.length>40?'...':'')+'</a>';}).join('')+'</div>';
-          }
-          if(r.proof_notes){
-            proofHtml+='<div style="font-size:10px;color:var(--text2);margin-top:2px;">📝 Proof Notes: '+UI.esc(r.proof_notes)+'</div>';
-          }
           var startMatch=r.start_match_id&&matchesMap[r.start_match_id]?'<span style="color:var(--accent);">M'+(matchesMap[r.start_match_id].match_no||'?')+' · '+UI.esc(UI.tShort(matchesMap[r.start_match_id].team1))+' vs '+UI.esc(UI.tShort(matchesMap[r.start_match_id].team2))+'</span>':'<span style="color:var(--text3);">Next available match</span>';
           return '<div class="inj-card" style="border-left:3px solid var(--gold);padding:12px;margin-bottom:12px;">'+
             '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">'+
@@ -1186,8 +1179,6 @@ async function loadInjuries() {
                   '</div>'+
                 '</div>'+
                 '<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">📅 Start from: '+startMatch+'</div>'+
-                (r.reason?'<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">📋 Reason: '+UI.esc(r.reason)+'</div>':'')+
-                proofHtml+
               '</div>'+
               '<div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">'+
                 '<button class="btn btn-sm" style="background:var(--green);color:#000;font-weight:700;font-size:11px;padding:8px 16px;" onclick="approveRep(\''+r.id+'\')">✓ Approve</button>'+
@@ -1314,7 +1305,8 @@ function onInjTeamChange() {
     return pt === team || pt === code || pt === short;
   });
   sel.innerHTML += players.map(function(p) {
-    return '<option value="'+p.id+'">'+UI.esc(p.name)+(p.is_injured?' [INJ]':'')+'</option>';
+    var statusIcon = p.availability_status === 'injured' ? ' [🏥]' : p.availability_status === 'unavailable' ? ' [⛔]' : '';
+    return '<option value="'+p.id+'">'+UI.esc(p.name)+statusIcon+'</option>';
   }).join('');
 }
 
@@ -1333,23 +1325,24 @@ function selectInjPlayer(id, name, playerJson) {
   var p; try { p = JSON.parse(playerJson); } catch(e){ p={}; }
   $id('inj-player-id').value=id; $id('inj-player-input').value=name;
   closeInjSearch();
-  if (p.injury_note) $id('inj-note').value=p.injury_note;
+  if (p.availability_note) $id('avail-note').value=p.availability_note;
+  if (p.availability_status) $id('avail-status').value=p.availability_status;
   var info=$id('inj-player-info');
-  info.style.display=''; info.className='inj-card mb-8'+(p.is_injured?' injured':'');
+  info.style.display=''; info.className='inj-card mb-8'+(p.availability_status!=='available'?' injured':'');
+  var statusLabel=p.availability_status==='injured'?'🏥 Injured':p.availability_status==='unavailable'?'⛔ Unavailable':'✓ Available';
   info.innerHTML='<div style="flex:1;"><div style="font-weight:700;">'+UI.esc(name)+'</div>'+
-    '<div style="font-size:11px;color:var(--text2);">'+UI.esc(p.role||'')+''+UI.esc(p.ipl_team||'')+'</div>'+
-    (p.is_injured?'<div style="font-size:11px;color:var(--red);margin-top:3px;">🏥 '+UI.esc(p.injury_note||'Injured')+'</div>':'')+
+    '<div style="font-size:11px;color:var(--text2);">'+UI.esc(p.role||'')+' · '+UI.esc(p.ipl_team||'')+'</div>'+
+    (p.availability_status!=='available'?'<div style="font-size:11px;color:var(--red);margin-top:3px;">'+statusLabel+(p.availability_note?' — '+UI.esc(p.availability_note):'')+'</div>':'')+
   '</div>';
 }
 
-async function markInjured() {
-  var id=$id('inj-player-id').value, note=$id('inj-note').value.trim();
+async function setPlayerAvailability() {
+  var id=$id('inj-player-id').value, status=$id('avail-status').value, note=$id('avail-note').value.trim();
   if (!id) { UI.toast('Select a player','warn'); return; }
   try { 
-    await API.markPlayerInjured(id,note||null); 
-    UI.toast('Player marked injured','warn'); 
+    await API.setPlayerAvailability(id, status, note||null); 
+    UI.toast('Availability updated','success'); 
     await loadAllPlayers(); 
-    // Refresh the player dropdown to show [INJ] tag
     onInjTeamChange();
     $id('inj-player-id').value=''; 
     $id('inj-player-info').style.display='none'; 
@@ -1357,12 +1350,12 @@ async function markInjured() {
   }
   catch(e){ UI.toast(e.message,'error'); }
 }
-async function clearInjury() {
+async function clearAvailability() {
   var id=$id('inj-player-id').value;
   if (!id) { UI.toast('Select a player','warn'); return; }
   try { 
-    await API.clearPlayerInjury(id); 
-    UI.toast('Injury cleared','success'); 
+    await API.clearPlayerAvailability(id); 
+    UI.toast('Player is now available','success'); 
     await loadAllPlayers(); 
     // Refresh the player dropdown
     onInjTeamChange();
@@ -1378,12 +1371,13 @@ async function loadRepTeamSquad() {
   if (!teamId) return;
   try {
     var squad = safeArr(await API.fetchSquad(teamId));
-    var injured = squad.filter(function(sp){return sp.player&&sp.player.is_injured;});
-    var src = injured.length ? injured : squad;
+    var unavailable = squad.filter(function(sp){return sp.player&&sp.player.availability_status&&sp.player.availability_status!=='available';});
+    var src = unavailable.length ? unavailable : squad;
     injSel.innerHTML = '<option value="">— Select —</option>' +
       src.map(function(sp){
         var p=sp.player||{};
-        return '<option value="'+p.id+'">'+UI.esc(p.name||'')+(p.is_injured?' 🏥':'')+'</option>';
+        var icon = p.availability_status === 'injured' ? ' 🏥' : p.availability_status === 'unavailable' ? ' ⛔' : '';
+        return '<option value="'+p.id+'">'+UI.esc(p.name||'')+icon+'</option>';
       }).join('');
   } catch(e){ UI.toast(e.message,'error'); }
 }
@@ -1395,7 +1389,7 @@ async function loadSameRolePlayers() {
   var injPlayer=_players.find(function(p){return p.id===injId;}); if (!injPlayer) return;
   var squad=teamId?safeArr(await API.fetchSquad(teamId)):[];
   var squadIds=new Set(squad.map(function(sp){return sp.player&&sp.player.id;}));
-  var eligible=_players.filter(function(p){return p.role===injPlayer.role&&!squadIds.has(p.id)&&!p.is_injured&&p.id!==injId;});
+  var eligible=_players.filter(function(p){return p.role===injPlayer.role&&!squadIds.has(p.id)&&p.availability_status==='available'&&p.id!==injId;});
   repSel.innerHTML='<option value="">— Select —</option>'+
     eligible.map(function(p){return '<option value="'+p.id+'">'+UI.esc(p.name)+' · '+UI.esc(p.ipl_team||'?')+'</option>';}).join('');
 }
@@ -1439,15 +1433,16 @@ async function loadSquadAdmin() {
     var tbody=$id('squad-admin-tbody');
     tbody.innerHTML=squad.map(function(sp){
       var p=sp.player||{};
+      var statusIcon = p.availability_status === 'injured' ? '🏥 Injured' : p.availability_status === 'unavailable' ? '⛔ Unavailable' : '';
       return '<tr>'+
-        '<td><div style="font-family:var(--f-ui);font-weight:700;">'+UI.esc(p.name||'—')+'</div>'+(p.is_injured?'<div style="font-size:10px;color:var(--red);">🏥 Injured'+(p.injury_note?' — '+UI.esc(p.injury_note):'')+'</div>':'')+'</td>'+
+        '<td><div style="font-family:var(--f-ui);font-weight:700;">'+UI.esc(p.name||'—')+'</div>'+(statusIcon?'<div style="font-size:10px;color:var(--red);">'+statusIcon+(p.availability_note?' — '+UI.esc(p.availability_note):'')+'</div>':'')+'</td>'+
         '<td>'+UI.roleBadge(p.role)+'</td>'+
         '<td style="font-size:12px;color:var(--text2);">'+UI.esc(p.ipl_team||'—')+'</td>'+
         '<td><input type="radio" name="cap-'+teamId+'" value="'+p.id+'" '+(sp.is_captain?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'captain\',\''+p.id+'\')"></td>'+
         '<td><input type="radio" name="vc-'+teamId+'"  value="'+p.id+'" '+(sp.is_vc?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'vc\',\''+p.id+'\')"></td>'+
         '<td><input type="radio" name="ip-'+teamId+'"  value="'+p.id+'" '+(sp.is_impact?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'impact\',\''+p.id+'\')"></td>'+
         '<td style="font-size:13px;">'+(p.is_overseas?'✈️':'—')+'</td>'+
-        '<td style="font-size:13px;">'+(p.is_injured?'🏥':'—')+'</td>'+
+        '<td style="font-size:13px;">'+(p.availability_status!=='available'?statusIcon:'—')+'</td>'+
       '</tr>';
     }).join('');
   } catch(e){ UI.toast(e.message,'error'); }

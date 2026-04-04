@@ -76,12 +76,12 @@ function setFilter(role){
 }
 
 function renderInjuryBanner(){
-  var inj=_squad.filter(function(s){return s.player&&s.player.is_injured;});
+  var inj=_squad.filter(function(s){return s.player&&s.player.availability_status&&s.player.availability_status!=='available';});
   var w=document.getElementById('injury-banner-wrap');
   if(!inj.length){w.innerHTML='';return;}
-  var names=inj.map(function(s){return s.player.name+(s.player.injury_note?' ('+s.player.injury_note+')':'');}).join(', ');
+  var names=inj.map(function(s){return s.player.name+(s.player.availability_note?' ('+s.player.availability_note+')':'');}).join(', ');
   w.innerHTML='<div class="injury-banner"><span style="font-size:20px;">&#x1F3E5;</span>'+
-    '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-weight:400;font-size:15px;color:var(--red);">Injured Players</div>'+
+    '<div><div style="font-family:\'Barlow Condensed\',sans-serif;font-weight:400;font-size:15px;color:var(--red);">Unavailable Players</div>'+
     '<div style="font-size:13px;color:var(--text2);margin-top:2px;">'+UI.esc(names)+' &mdash; set replacements on their player cards.</div></div></div>';
 }
 
@@ -120,20 +120,11 @@ function renderPendingReplacements(){
   card.style.display='';
   document.getElementById('pending-replacements-list').innerHTML=pending.map(function(r){
     var statusBadge=r.status==='pending'?'<span style="background:var(--gold);color:#000;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;">PENDING</span>':r.status==='approved'?'<span style="background:var(--green);color:#000;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;">APPROVED</span>':'<span style="background:var(--red);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;">REJECTED</span>';
-    var proofHtml='';
-    if(r.proof_links&&r.proof_links.length){
-      proofHtml+='<div style="font-size:10px;color:var(--cyan);margin-top:4px;">📎 Proof Links: '+r.proof_links.map(function(l){return'<a href="'+UI.esc(l)+'" target="_blank" style="color:var(--cyan);margin-right:8px;">Link</a>';}).join('')+'</div>';
-    }
-    if(r.proof_notes){
-      proofHtml+='<div style="font-size:10px;color:var(--text2);margin-top:2px;">📝 '+UI.esc(r.proof_notes)+'</div>';
-    }
     return '<div class="stats-saved-row" style="flex-direction:column;gap:8px;padding:12px;background:var(--bg2);border-radius:8px;border:1px solid var(--border);">'+
       '<div style="display:flex;justify-content:space-between;align-items:center;">'+
         '<div style="font-weight:700;font-size:14px;">'+(r.original?r.original.name:'—')+' → '+(r.replacement?r.replacement.name:'—')+'</div>'+
         statusBadge+
       '</div>'+
-      '<div style="font-size:11px;color:var(--text2);">'+(r.reason?'Reason: '+UI.esc(r.reason):'No reason provided')+'</div>'+
-      proofHtml+
       '<div style="font-size:10px;color:var(--text3);">Requested on '+UI.fmtDate(r.created_at)+'</div>'+
       '<div style="display:flex;gap:8px;margin-top:8px;">'+
         '<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:4px 8px;" onclick="editPendingRep(\''+r.id+'\')">✏️ Edit</button>'+
@@ -148,15 +139,12 @@ function editPendingRep(repId){
   _repTarget={id:rep.original_player_id,name:rep.original?rep.original.name:'',role:rep.original?rep.original.role:''};
   _repSelectedId=rep.replacement_player_id;
   document.getElementById('rep-modal-sub').textContent='Edit replacement for '+(_repTarget.name||'player')+':';
-  document.getElementById('rep-reason').value=rep.reason||'';
-  document.getElementById('rep-proof-links').value=(rep.proof_links||[]).join(', ');
-  document.getElementById('rep-proof-notes').value=rep.proof_notes||'';
   if(rep.start_match_id){
     var matchSel=document.getElementById('rep-start-match');
     if(matchSel) matchSel.value=rep.start_match_id;
   }
   var squadIds=new Set(_squad.map(function(s){return s.player&&s.player.id;}));
-  var available=_allPlayers.filter(function(pl){return pl.role===_repTarget.role&&!squadIds.has(pl.id)&&!pl.is_injured&&pl.id!==_repTarget.id;});
+  var available=_allPlayers.filter(function(pl){return pl.role===_repTarget.role&&!squadIds.has(pl.id)&&pl.availability_status==='available'&&pl.id!==_repTarget.id;});
   available.unshift({id:rep.replacement_player_id,name:rep.replacement?rep.replacement.name:'',role:rep.replacement?rep.replacement.role:'',ipl_team:rep.replacement?rep.replacement.ipl_team:''});
   document.getElementById('rep-player-list').innerHTML=available.map(function(pl){
     var isSelected=pl.id===_repSelectedId?' selected':'';
@@ -196,12 +184,12 @@ function renderSquad(){
   var C={CSK:'#fdb913',MI:'#004ba0',RCB:'#da1818',KKR:'#6a1bac',SRH:'#f26522',DC:'#004c93',PBKS:'#ed1b24',RR:'#ea1a85',GT:'#1c2c5b',LSG:'#ff002b',SURA:'#1a3a8a'};
   grid.innerHTML=list.map(function(sp,i){
     var p=sp.player||{},isCap=!!sp.is_captain,isVC=!!sp.is_vc,isImpact=!!sp.is_impact;
-    var isInjured=!!(p.is_injured), hasRep=!!(sp.replacement);
+    var isUnavailable=!!(p.availability_status&&p.availability_status!=='available'), hasRep=!!(sp.replacement);
     var color=C[(p.ipl_team||'').replace(/\s+/g,'').toUpperCase()]||'#f0b429';
     var pRow=_playerPts[p.name]||{pts:0,pom:0,pot:0};
     var pts=UI.fmtPts(pRow.pts);
-    var displayName=(isInjured&&hasRep&&sp.replacement.replacement)?sp.replacement.replacement.name:p.name||'Player';
-    var displayImg=(isInjured&&hasRep&&sp.replacement.replacement)?sp.replacement.replacement.image_url:p.image_url;
+    var displayName=(isUnavailable&&hasRep&&sp.replacement.replacement)?sp.replacement.replacement.name:p.name||'Player';
+    var displayImg=(isUnavailable&&hasRep&&sp.replacement.replacement)?sp.replacement.replacement.image_url:p.image_url;
 
     var nameTag='';
     if(isCap) nameTag=' <span style="display:inline-flex;align-items:center;justify-content:center;font-family:var(--f-ui);font-size:9px;font-weight:900;width:18px;height:18px;border-radius:50%;background:var(--gold);color:#000;margin-left:4px;vertical-align:middle;" title="Captain (2×)">C</span>';
@@ -216,15 +204,16 @@ function renderSquad(){
     var osHtml = p.is_overseas ? '<span class="role-tag rt-os"><img src="images/ipl/teams-foreign-player-icon.svg" alt="OS" style="transform:rotate(45deg)">OS</span>' : '';
 
     var statusHtml='';
-    if(isInjured) statusHtml+='<span class="badge-injured">Injured</span> ';
+    if(p.availability_status==='injured') statusHtml+='<span class="badge-injured">Injured</span> ';
+    else if(p.availability_status==='unavailable') statusHtml+='<span class="badge-injured">Unavailable</span> ';
     if(hasRep) statusHtml+='<span class="badge-replacement">'+UI.esc(sp.replacement.replacement&&sp.replacement.replacement.name||'')+'</span>';
     
-    var cardCls='player-card'+(isCap?' captain':isVC?' vice-cap':'')+(isImpact?' impact':'')+(isInjured&&!hasRep?' injured':'')+(hasRep?' replaced':'')+
+    var cardCls='player-card'+(isCap?' captain':isVC?' vice-cap':'')+(isImpact?' impact':'')+(isUnavailable&&!hasRep?' injured':'')+(hasRep?' replaced':'')+
                 (pRow.pom?' pom-highlight':'')+(pRow.pot?' pot-highlight':'');
     var pd=UI.esc(JSON.stringify({id:p.id,name:p.name||'',role:p.role||''}));
 
     return '<div class="'+cardCls+'" style="--ipl-color:'+color+';animation-delay:'+(i*0.05)+'s"'+
-      (p.injury_note?' title="'+UI.esc('Injured: '+p.injury_note)+'"':'')+'>' +
+      (p.availability_note?' title="'+UI.esc(p.availability_status+': '+p.availability_note)+'"':'')+'>' +
       '<div class="player-card-header">' +
         roleHtml +
         osHtml +
@@ -232,12 +221,12 @@ function renderSquad(){
       '<div class="player-card-body">' +
         imgTag(displayImg, displayName, 'player-avatar') +
         '<div class="player-name">'+UI.esc(displayName)+nameTag+'</div>' +
-        (isInjured&&hasRep?'<div style="font-size:10px;color:var(--text3);text-decoration:line-through;margin-bottom:2px;">'+UI.esc(p.name||'')+'</div>':'') +
+        (isUnavailable&&hasRep?'<div style="font-size:10px;color:var(--text3);text-decoration:line-through;margin-bottom:2px;">'+UI.esc(p.name||'')+'</div>':'') +
         '<div class="player-ipl">'+UI.esc(p.ipl_team||'&mdash;')+'</div>' +
         (achBadges?'<div class="player-card-badges">'+achBadges+'</div>':'') +
         (statusHtml?'<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin:4px 0;">'+statusHtml+'</div>':'') +
         (pts!==0?'<div class="player-pts-row"><span style="color:var(--text2)">Season FP</span><span style="font-family:var(--f-mono);font-weight:600;color:var(--accent)">'+pts+'</span></div>':'') +
-        (isInjured?'<button class="btn btn-sm" style="margin-top:6px;width:100%;background:rgba(56,217,245,.12);color:var(--cyan);border:1px solid rgba(56,217,245,.25);font-size:11px;" onclick="openRepModal(\''+pd+'\');">'+(hasRep?'&#x2194; Change':'+ Set Replacement')+'</button>':'') +
+        (isUnavailable?'<button class="btn btn-sm" style="margin-top:6px;width:100%;background:rgba(56,217,245,.12);color:var(--cyan);border:1px solid rgba(56,217,245,.25);font-size:11px;" onclick="openRepModal(\''+pd+'\');">'+(hasRep?'&#x2194; Change':'+ Set Replacement')+'</button>':'')+
       '</div>' +
     '</div>';
   }).join('');
@@ -246,10 +235,10 @@ function renderSquad(){
 function renderSummary(){
   var cap=_squad.find(function(s){return s.is_captain;}),vc=_squad.find(function(s){return s.is_vc;}),impact=_squad.find(function(s){return s.is_impact;});
   var os=_squad.filter(function(s){return s.player&&s.player.is_overseas;}).length;
-  var inj=_squad.filter(function(s){return s.player&&s.player.is_injured;}).length;
+  var unavail=_squad.filter(function(s){return s.player&&s.player.availability_status&&s.player.availability_status!=='available';}).length;
   var el=document.getElementById('squad-summary'); if(!el)return;
   var items=[{lbl:'Players',val:_squad.length,unit:'/12'},{lbl:'Captain',val:(cap&&cap.player)?cap.player.name:'&mdash;',plain:true},{lbl:'VC',val:(vc&&vc.player)?vc.player.name:'&mdash;',plain:true},{lbl:'Impact',val:(impact&&impact.player)?impact.player.name:'&mdash;',plain:true},{lbl:'Overseas',val:os,unit:'/4'}];
-  if(inj) items.push({lbl:'Injured',val:inj,accent:'var(--red)'});
+  if(unavail) items.push({lbl:'Unavailable',val:unavail,accent:'var(--red)'});
   el.innerHTML='<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;">'+items.map(function(it,i){
     var sep=i?'<div style="width:1px;height:32px;background:var(--border);flex-shrink:0;"></div>':'';
     var valHtml=it.plain?'<div style="font-family:var(--f-display);font-weight:600;font-size:15px;">'+UI.esc(String(it.val))+'</div>':
@@ -320,10 +309,9 @@ function openRepModal(playerDataStr){
   try{ _repTarget=JSON.parse(playerDataStr.replace(/&quot;/g,'"')); }
   catch(e){ UI.toast('Error opening modal','error'); return; }
   _repSelectedId=null;
-  document.getElementById('rep-modal-sub').textContent=_repTarget.name+' is injured. Pick a same-role ('+_repTarget.role+') replacement:';
-  document.getElementById('rep-reason').value='';
+  document.getElementById('rep-modal-sub').textContent=_repTarget.name+' is unavailable. Pick a same-role ('+_repTarget.role+') replacement:';
   var squadIds=new Set(_squad.map(function(s){return s.player&&s.player.id;}));
-  var available=_allPlayers.filter(function(pl){return pl.role===_repTarget.role&&!squadIds.has(pl.id)&&!pl.is_injured&&pl.id!==_repTarget.id;});
+  var available=_allPlayers.filter(function(pl){return pl.role===_repTarget.role&&!squadIds.has(pl.id)&&pl.availability_status==='available'&&pl.id!==_repTarget.id;});
   document.getElementById('rep-player-list').innerHTML=!available.length
     ?'<div style="color:var(--text3);font-size:13px;padding:12px 0;">No eligible '+_repTarget.role+'s available.</div>'
     :available.map(function(pl){
@@ -342,9 +330,6 @@ function closeRepModal(){
   _repTarget=null;
   _repSelectedId=null;
   _editRepId=null;
-  document.getElementById('rep-reason').value='';
-  document.getElementById('rep-proof-links').value='';
-  document.getElementById('rep-proof-notes').value='';
   var matchSel=document.getElementById('rep-start-match');
   var endMatchSel=document.getElementById('rep-end-match');
   if(matchSel) matchSel.value='';
@@ -359,10 +344,6 @@ async function submitReplacement(){
   if(!_repSelectedId){UI.toast('Select a replacement player first','warn');return;}
   if(!_repTarget){UI.toast('No target player','error');return;}
   var startMatchId=document.getElementById('rep-start-match').value||null;
-  var reason=document.getElementById('rep-reason').value.trim();
-  var proofLinksInput=document.getElementById('rep-proof-links').value.trim();
-  var proofLinks=proofLinksInput?proofLinksInput.split(',').map(function(l){return l.trim();}).filter(function(l){return l;}):[];
-  var proofNotes=document.getElementById('rep-proof-notes').value.trim();
   var endMatchId=document.getElementById('rep-end-match').value||null;
   var startMatch=startMatchId?_matches.find(function(m){return m.id===startMatchId;}):null;
   var endMatch=endMatchId?_matches.find(function(m){return m.id===endMatchId;}):null;
@@ -382,10 +363,10 @@ async function submitReplacement(){
     onOk:async function(){
       try{
         if(isEdit){
-          await API.updateReplacement(_editRepId,{replacement_player_id:_repSelectedId,start_match_id:startMatchId,end_match_id:endMatchId,reason:reason||null,proof_links:proofLinks,proof_notes:proofNotes||null});
+          await API.updateReplacement(_editRepId,{replacement_player_id:_repSelectedId,start_match_id:startMatchId,end_match_id:endMatchId});
           UI.toast('Request updated!','success');
         }else{
-          await API.createReplacement({teamId:_myTeamId,originalPlayerId:_repTarget.id,replacementPlayerId:_repSelectedId,startMatchId:startMatchId,endMatchId:endMatchId,reason:reason||null,proofLinks:proofLinks,proofNotes:proofNotes||null});
+          await API.createReplacement({teamId:_myTeamId,originalPlayerId:_repTarget.id,replacementPlayerId:_repSelectedId,startMatchId:startMatchId,endMatchId:endMatchId});
           UI.toast('Replacement request sent for admin review','success');
         }
         _editRepId=null;

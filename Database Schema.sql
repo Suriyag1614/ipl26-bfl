@@ -157,8 +157,8 @@ CREATE TABLE public.players (
   image_url text,
   is_overseas boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now(),
-  is_injured boolean NOT NULL DEFAULT false,
-  injury_note text,
+  availability_status text DEFAULT 'available' CHECK (availability_status = ANY (ARRAY['available'::text, 'injured'::text, 'unavailable'::text])),
+  availability_note text,
   CONSTRAINT players_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.points_log (

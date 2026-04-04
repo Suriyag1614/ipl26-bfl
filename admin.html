@@ -755,7 +755,7 @@
     </div>
     <div class="col-2">
       <div class="card">
-        <div class="card-title">🏥 Mark Player Injured</div>
+        <div class="card-title">🏥 Set Player Availability</div>
         <div class="form-group"><label class="form-label">Team</label>
           <select class="form-select" id="inj-team-sel" onchange="onInjTeamChange()"><option value="">— Select team —</option></select>
         </div>
@@ -764,13 +764,20 @@
           <input type="hidden" id="inj-player-id">
         </div>
         <div id="inj-player-info" style="display:none;" class="inj-card mb-8"></div>
-        <div class="form-group"><label class="form-label">Injury Note</label>
-          <input class="form-input" id="inj-note" placeholder="e.g. Hamstring strain — out 2 matches">
+        <div class="form-group"><label class="form-label">Availability Status</label>
+          <select class="form-select" id="avail-status">
+            <option value="available">✓ Available</option>
+            <option value="injured">🏥 Injured</option>
+            <option value="unavailable">⛔ Unavailable</option>
+          </select>
         </div>
-        <button class="btn btn-danger" onclick="markInjured()">🏥 Mark Injured</button>
+        <div class="form-group"><label class="form-label">Note <span style="color:var(--text3);font-weight:400;">(optional)</span></label>
+          <input class="form-input" id="avail-note" placeholder="e.g. Hamstring strain — out 2 matches">
+        </div>
+        <button class="btn btn-danger" onclick="setPlayerAvailability()">Save Availability</button>
         <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
-          <div class="form-group"><label class="form-label">Clear Injury</label>
-            <button class="btn btn-ghost btn-sm" onclick="clearInjury()">✓ Clear Injury</button>
+          <div class="form-group"><label class="form-label">Reset to Available</label>
+            <button class="btn btn-ghost btn-sm" onclick="clearAvailability()">✓ Make Available</button>
           </div>
         </div>
       </div>
@@ -922,6 +929,7 @@
           <option value="stat_entry">Stat Entry</option>
           <option value="match_edit">Match Edit</option>
           <option value="adjustment">Adjustment</option>
+          <option value="availability_set">Availability</option>
           <option value="injury_set">Injury</option>
           <option value="replacement_created">Replacement</option>
           <option value="blog_published">Blog</option>

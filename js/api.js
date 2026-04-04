@@ -11,7 +11,7 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   async fetchSquad(teamId) {
     const { data, error } = await sb.from('squad_players')
-      .select('id,is_captain,is_vc,is_impact,player:players(id,name,ipl_team,role,image_url,is_overseas,is_injured,injury_note)')
+      .select('id,is_captain,is_vc,is_impact,player:players(id,name,ipl_team,role,image_url,is_overseas,availability_status,availability_note)')
       .eq('fantasy_team_id', teamId).order('is_captain', { ascending: false });
     if (error) throw error;
     if (!data) return [];
@@ -25,7 +25,7 @@ const API = {
 
   async fetchAllPlayers() {
     const { data, error } = await sb.from('players')
-      .select('id,name,ipl_team,role,image_url,is_overseas,is_injured,injury_note').order('name');
+      .select('id,name,ipl_team,role,image_url,is_overseas,availability_status,availability_note').order('name');
     if (error) throw error;
     return data || [];
   },
@@ -33,7 +33,7 @@ const API = {
   // Dynamic dropdown: players filtered by IPL team
   async fetchPlayersByTeam(iplTeam) {
     const { data, error } = await sb.from('players')
-      .select('id,name,ipl_team,role,image_url,is_overseas,is_injured')
+      .select('id,name,ipl_team,role,image_url,is_overseas,availability_status')
       .eq('ipl_team', iplTeam).order('name');
     if (error) throw error;
     return data || [];
@@ -44,27 +44,29 @@ const API = {
     const match = await this.fetchMatch(matchId);
     if (!match) return [];
     const { data, error } = await sb.from('players')
-      .select('id,name,ipl_team,role,image_url,is_overseas,is_injured')
+      .select('id,name,ipl_team,role,image_url,is_overseas,availability_status')
       .in('ipl_team', [match.team1, match.team2]).order('ipl_team,name');
     if (error) throw error;
     return data || [];
   },
 
   // ══════════════════════════════════════════════════════════════════
-  //  INJURY MANAGEMENT  (admin only)
+  //  AVAILABILITY MANAGEMENT  (admin only)
   // ══════════════════════════════════════════════════════════════════
-  async markPlayerInjured(playerId, injuryNote) {
+  async setPlayerAvailability(playerId, status, note) {
+    const validStatuses = ['available', 'injured', 'unavailable'];
+    if (!validStatuses.includes(status)) throw new Error('Invalid status');
     const { error } = await sb.from('players')
-      .update({ is_injured: true, injury_note: injuryNote || null }).eq('id', playerId);
+      .update({ availability_status: status, availability_note: note || null }).eq('id', playerId);
     if (error) throw error;
-    await this._log('injury_set', 'player', playerId, null, { is_injured: true, injury_note: injuryNote });
+    await this._log('availability_set', 'player', playerId, null, { availability_status: status, availability_note: note });
   },
 
-  async clearPlayerInjury(playerId) {
+  async clearPlayerAvailability(playerId) {
     const { error } = await sb.from('players')
-      .update({ is_injured: false, injury_note: null }).eq('id', playerId);
+      .update({ availability_status: 'available', availability_note: null }).eq('id', playerId);
     if (error) throw error;
-    await this._log('injury_cleared', 'player', playerId, { is_injured: true }, { is_injured: false });
+    await this._log('availability_cleared', 'player', playerId, { availability_status: 'injured' }, { availability_status: 'available' });
   },
 
   // ══════════════════════════════════════════════════════════════════
@@ -72,7 +74,7 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   async fetchActiveReplacements(teamId) {
     const { data, error } = await sb.from('replacements')
-      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,image_url,is_injured),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team,image_url),start_match:matches!replacements_start_match_id_fkey(match_date),end_match:matches!replacements_end_match_id_fkey(match_date)')
+      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,image_url,availability_status),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team,image_url),start_match:matches!replacements_start_match_id_fkey(match_date),end_match:matches!replacements_end_match_id_fkey(match_date)')
       .eq('fantasy_team_id', teamId).eq('is_active', true).eq('status', 'approved');
     if (error) throw error;
     const now = new Date().toISOString();
@@ -88,7 +90,7 @@ const API = {
 
   async fetchPendingReplacements(teamId) {
     const { data, error } = await sb.from('replacements')
-      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,image_url,is_injured),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team,image_url),team:fantasy_teams(team_name)')
+      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,image_url,availability_status),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team,image_url),team:fantasy_teams(team_name)')
       .eq('fantasy_team_id', teamId).eq('status', 'pending');
     if (error) {
       console.error('[fetchPendingReplacements] Error:', error);
@@ -125,10 +127,10 @@ const API = {
   },
 
   async createReplacement({ teamId, originalPlayerId, replacementPlayerId, startMatchId, endMatchId, reason, proofLinks, proofNotes }) {
-    // Validate original player is injured
-    const origRes = await sb.from('players').select('id,name,is_injured').eq('id', originalPlayerId).maybeSingle();
+    // Validate original player is unavailable (injured or unavailable)
+    const origRes = await sb.from('players').select('id,name,role,availability_status').eq('id', originalPlayerId).maybeSingle();
     if (!origRes.data) throw new Error('Original player not found');
-    if (!origRes.data.is_injured) throw new Error('Can only request replacement for injured players');
+    if (origRes.data.availability_status === 'available') throw new Error('Can only request replacement for unavailable players');
     
     // Role validation
     const replRes = await sb.from('players').select('role,name').eq('id', replacementPlayerId).maybeSingle();
@@ -628,7 +630,7 @@ const API = {
       const playerResults = [];
       for (const sp of squadRows) {
         // Use replacement player's stats when original is injured
-        const effectivePid = (sp.player?.is_injured && sp.replacement)
+        const effectivePid = (sp.player?.availability_status !== 'available' && sp.replacement)
           ? sp.replacement.replacement_player_id
           : sp.player?.id;
         const stats = statMap[effectivePid];
@@ -646,8 +648,8 @@ const API = {
           name: sp.player?.name,
           effective_name: sp.replacement ? sp.replacement.replacement?.name : sp.player?.name,
           role: sp.player?.role || '',
-          is_injured: !!sp.player?.is_injured,
-          is_replacement: !!(sp.player?.is_injured && sp.replacement),
+          is_unavailable: sp.player?.availability_status !== 'available',
+          is_replacement: !!(sp.player?.availability_status !== 'available' && sp.replacement),
           base: base, bat: bat, bowl: bowl,
           fld: fld, bon: bon, multiplier, label,
           final: final,
