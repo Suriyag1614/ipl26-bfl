@@ -141,6 +141,15 @@ function closeSidebar() {
   applySidebarState(true);
 }
 
+function initOverlay() {
+  var overlay = document.getElementById('sb-overlay');
+  if (overlay && !overlay._bflInit) {
+    overlay._bflInit = true;
+    overlay.addEventListener('click', closeSidebar);
+    overlay.addEventListener('touchstart', closeSidebar, {passive: true});
+  }
+}
+
 function applySidebarState(animate) {
   var sidebar  = document.getElementById('sidebar');
   var overlay  = document.getElementById('sb-overlay');
@@ -171,6 +180,7 @@ async function initNavbar(page, customLinks) {
     var sess = await Auth.getSession();
     var isAdmin = sess ? Auth.isAdmin(sess.user) : false;
     buildNavbar(page, isAdmin);
+    initOverlay();
 
     if (!sess) return;
     var name = '', initials = '?';
@@ -188,13 +198,13 @@ async function initNavbar(page, customLinks) {
         var logo = UI.getTeamLogo(name);
         setNavUser(name, initials, null, logo);
       }
-      // Auto-close sidebar on mobile after link click
+      // Auto-close sidebar after link click
       var sb = document.getElementById('sidebar');
       if (sb && !sb._bflClickBound) {
         sb._bflClickBound = true;
         sb.addEventListener('click', function(e) {
           if (e.target && e.target.closest && e.target.closest('.sb-link')) {
-            if (window.innerWidth < 900) closeSidebar();
+            closeSidebar();
           }
         });
       }

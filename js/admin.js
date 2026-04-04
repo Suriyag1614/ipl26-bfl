@@ -177,6 +177,23 @@ async function init() {
     _sidebarOpen = window.innerWidth > 900;
     applySidebarState();
 
+    // Init overlay click/touch to close sidebar
+    var overlay = $id('sb-overlay');
+    if (overlay) {
+      overlay.addEventListener('click', closeSidebar);
+      overlay.addEventListener('touchstart', closeSidebar, {passive: true});
+    }
+
+    // Auto-close sidebar on link click
+    var sb = $id('admin-sidebar');
+    if (sb) {
+      sb.addEventListener('click', function(e) {
+        if (e.target && e.target.closest && e.target.closest('a')) {
+          closeSidebar();
+        }
+      });
+    }
+
     // Resize handler
     window.addEventListener('resize', function() {
       if (window.innerWidth > 900 && !_sidebarOpen) {
@@ -1227,14 +1244,21 @@ async function loadInjuries() {
       if(rejected.length){
         html+='<div><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px;">✕ REJECTED ('+rejected.length+')</div>';
         html+=rejected.map(function(r){
+          var startMatch=r.start_match_id&&matchesMap[r.start_match_id]?'M'+(matchesMap[r.start_match_id].match_no||'?'):'N/A';
           return '<div class="inj-card" style="border-left:3px solid var(--red);opacity:0.7;padding:12px;margin-bottom:12px;">'+
             '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">'+
               '<div style="flex:1;min-width:200px;">'+
                 '<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">'+UI.championName(r.team?r.team.team_name:'—')+'</div>'+
                 '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'+
-                  '<span style="font-weight:700;">'+UI.esc(r.original?r.original.name:'—')+'</span>'+
+                  '<div style="background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.3);border-radius:6px;padding:6px 10px;">'+
+                    '<div style="font-weight:700;font-size:13px;">'+UI.esc(r.original?r.original.name:'—')+'</div>'+
+                    '<div style="font-size:10px;color:var(--text2);">'+(r.original?r.original.role:'')+' · '+UI.esc(r.original?r.original.ipl_team:'')+'</div>'+
+                  '</div>'+
                   '<svg viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2" style="width:16px;height:16px;"><path d="M5 12h14M12 5l7 7-7 7"/></svg>'+
-                  '<span style="font-weight:700;color:var(--text3);">'+UI.esc(r.replacement?r.replacement.name:'—')+'</span>'+
+                  '<div style="background:rgba(56,217,245,.1);border:1px solid rgba(56,217,245,.2);border-radius:6px;padding:6px 10px;">'+
+                    '<div style="font-weight:700;font-size:13px;color:var(--text3);">'+UI.esc(r.replacement?r.replacement.name:'—')+'</div>'+
+                    '<div style="font-size:10px;color:var(--text3);">'+(r.replacement?r.replacement.role:'')+' · '+UI.esc(r.replacement?r.replacement.ipl_team:'')+'</div>'+
+                  '</div>'+
                 '</div>'+
                 (r.admin_notes?'<div style="font-size:10px;color:var(--red);margin-top:4px;">Reason: '+UI.esc(r.admin_notes)+'</div>':'')+
               '</div>'+
