@@ -136,25 +136,52 @@ function renderPendingReplacements(){
 function editPendingRep(repId){
   var rep=_pendingReps.find(function(r){return r.id===repId;});
   if(!rep){UI.toast('Request not found','error');return;}
-  _repTarget={id:rep.original_player_id,name:rep.original?rep.original.name:'',role:rep.original?rep.original.role:''};
+  _repTarget={id:rep.original_player_id,name:rep.original?rep.original.name:'',role:rep.original?rep.original.role:'',ipl_team:rep.original?rep.original.ipl_team:'',is_overseas:rep.original?rep.original.is_overseas:false};
   _repSelectedId=rep.replacement_player_id;
+  var targetTeam=_repTarget.ipl_team||'';
+  var isInjuredOverseas=_repTarget.is_overseas;
+  var osCount=_squad.filter(function(s){return s.player&&s.player.is_overseas;}).length;
+  var hasOverseasSlot=osCount<4;
+  var canUseOverseas=isInjuredOverseas||hasOverseasSlot;
   document.getElementById('rep-modal-sub').textContent='Edit replacement for '+(_repTarget.name||'player')+':';
-  if(rep.start_match_id){
-    var matchSel=document.getElementById('rep-start-match');
-    if(matchSel) matchSel.value=rep.start_match_id;
+  var matchSel=document.getElementById('rep-start-match');
+  var endMatchSel=document.getElementById('rep-end-match');
+  var targetTeamMatches=_matches.length?(_matches.filter(function(m){return m.team1===targetTeam||m.team2===targetTeam;})):[];
+  var upcomingTeam=targetTeamMatches.filter(function(m){return!m.is_locked&&m.status!=='completed'&&m.status!=='processed';});
+  if(matchSel){
+    if(!upcomingTeam.length){
+      upcomingTeam=_matches.filter(function(m){return!m.is_locked&&m.status!=='completed'&&m.status!=='processed';});
+    }
+    matchSel.innerHTML='<option value="">Select match</option>'+
+      upcomingTeam.map(function(m){var t1=UI.tShort(m.team1)||m.team1||'';var t2=UI.tShort(m.team2)||m.team2||'';return '<option value="'+m.id+'"'+(rep.start_match_id===m.id?' selected':'')+'>M'+(m.match_no||'?')+' · '+UI.esc(t1)+' vs '+UI.esc(t2)+'</option>';}).join('');
+  }
+  if(endMatchSel){
+    var allTeamMatches=targetTeamMatches.filter(function(m){return m.status!=='completed'&&m.status!=='processed';});
+    if(!allTeamMatches.length){
+      allTeamMatches=_matches.filter(function(m){return m.status!=='completed'&&m.status!=='processed';});
+    }
+    endMatchSel.innerHTML='<option value="">No end (permanent)</option>'+
+      allTeamMatches.map(function(m){var t1=UI.tShort(m.team1)||m.team1||'';var t2=UI.tShort(m.team2)||m.team2||'';return '<option value="'+m.id+'"'+(rep.end_match_id===m.id?' selected':'')+'>M'+(m.match_no||'?')+' · '+UI.esc(t1)+' vs '+UI.esc(t2)+'</option>';}).join('');
   }
   var squadIds=new Set(_squad.map(function(s){return s.player&&s.player.id;}));
-  var targetTeam=_repTarget.ipl_team||'';
-  var available=_allPlayers.filter(function(pl){return pl.role===_repTarget.role&&pl.ipl_team===targetTeam&&!squadIds.has(pl.id)&&pl.availability_status==='available'&&pl.id!==_repTarget.id;});
-  available.unshift({id:rep.replacement_player_id,name:rep.replacement?rep.replacement.name:'',role:rep.replacement?rep.replacement.role:'',ipl_team:rep.replacement?rep.replacement.ipl_team:''});
+  var available=_allPlayers.filter(function(pl){
+    if(pl.role!==_repTarget.role) return false;
+    if(pl.ipl_team!==targetTeam) return false;
+    if(squadIds.has(pl.id)) return false;
+    if(pl.availability_status!=='available') return false;
+    if(pl.id===_repTarget.id) return false;
+    if(!canUseOverseas && pl.is_overseas) return false;
+    return true;
+  });
+  available.unshift({id:rep.replacement_player_id,name:rep.replacement?rep.replacement.name:'',role:rep.replacement?rep.replacement.role:'',ipl_team:rep.replacement?rep.replacement.ipl_team:'',is_overseas:rep.replacement?rep.replacement.is_overseas:false});
   document.getElementById('rep-player-list').innerHTML=available.map(function(pl){
     var isSelected=pl.id===_repSelectedId?' selected':'';
     return '<div class="rp-row'+(isSelected)+'" id="rprow-'+pl.id+'" onclick="selectRep(\''+pl.id+'\')" style="'+(isSelected?'border-color:var(--accent);background:rgba(45,212,191,.1);':'')+'">'+
       '<div style="width:34px;height:34px;border-radius:50%;background:var(--bg3);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;">'+
-        '<span>'+UI.esc((pl.name||'P')[0])+'</span>'+
+        (pl.image_url?'<img src="'+UI.esc(pl.image_url)+'" style="width:34px;height:34px;object-fit:cover;" onerror="this.style.display=\'none\'">':'<span>'+UI.esc((pl.name||'P')[0])+'</span>')+
       '</div>'+
       '<div style="flex:1;"><div style="font-family:\'Barlow Condensed\',sans-serif;font-weight:400;font-size:14px;">'+UI.esc(pl.name)+'</div>'+
-      '<div style="font-size:11px;color:var(--text2);">'+UI.esc(pl.ipl_team||'')+'</div></div>'+
+      '<div style="font-size:11px;color:var(--text2);">'+UI.esc(pl.ipl_team||'')+(pl.is_overseas?' &#x1F30F;':'')+'</div></div>'+
       UI.roleBadge(pl.role)+'</div>';
   }).join('');
   _editRepId=repId;
