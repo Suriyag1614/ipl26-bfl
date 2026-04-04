@@ -96,6 +96,15 @@
     <div class="skel skel-chip"></div><div class="skel skel-chip"></div>
   </div>
 
+  <!-- Replacement Requests -->
+  <div class="card" id="replacement-requests-card" style="display:none;margin-bottom:16px;">
+    <div class="flex-between mb-12">
+      <div class="card-title">Replacement Requests</div>
+      <a href="squad.html" class="btn btn-ghost btn-sm">Manage →</a>
+    </div>
+    <div id="replacement-requests-list"></div>
+  </div>
+
   <div class="main-2col">
     <!-- Left column -->
     <div style="display:flex;flex-direction:column;gap:16px;">
@@ -201,9 +210,39 @@ async function init() {
   document.getElementById('hero-greeting').innerHTML = greet + ' · <span id="hero-date">'+now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})+'</span>';
   document.getElementById('hero-name').innerHTML = 'Welcome back, ' + UI.championName(_myTeam.team_name) + ' 👋';
 
-  await Promise.all([loadStats(), loadNextMatch(), loadImpact(), loadPerformers(), loadRecent(), loadMiniLB(), loadBlog()]);
+  await Promise.all([loadStats(), loadNextMatch(), loadImpact(), loadPerformers(), loadRecent(), loadMiniLB(), loadBlog(), loadReplacementRequests()]);
   await API.checkAndAwardBadges(_myTeamId);
   fixGrid();
+}
+
+async function loadReplacementRequests() {
+  try {
+    var pending = await API.fetchPendingReplacements(_myTeamId);
+    var card = document.getElementById('replacement-requests-card');
+    if (!card) return;
+    if (!pending || !pending.length) {
+      card.style.display = 'none';
+      return;
+    }
+    card.style.display = '';
+    document.getElementById('replacement-requests-list').innerHTML = pending.map(function(r) {
+      var statusBadge = r.status === 'pending' ? '<span style="background:var(--gold);color:#000;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;">PENDING</span>' : r.status === 'approved' ? '<span style="background:var(--green);color:#000;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;">APPROVED</span>' : '<span style="background:var(--red);color:#fff;font-size:9px;padding:2px 6px;border-radius:4px;font-weight:700;">REJECTED</span>';
+      var matchInfo = '';
+      if (r.start_match && r.start_match.match_date) {
+        var d = new Date(r.start_match.match_date);
+        matchInfo = '<div style="font-size:10px;color:var(--text3);">From: M' + (r.start_match.match_no || '?') + ' (' + d.toLocaleDateString('en-IN', {day:'numeric', month:'short'}) + ')</div>';
+      }
+      return '<div style="padding:10px;background:var(--bg2);border-radius:8px;margin-bottom:8px;border:1px solid var(--border);">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+          '<div style="font-size:13px;font-weight:600;">' + (r.original ? r.original.name : '—') + ' → ' + (r.replacement ? r.replacement.name : '—') + '</div>' +
+          statusBadge +
+        '</div>' +
+        matchInfo +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    console.warn('[Dashboard] Could not load replacements:', e.message);
+  }
 }
 
 async function loadStats() {

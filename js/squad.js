@@ -112,7 +112,6 @@ function renderPendingReplacements(){
   var pending=_pendingReps||[];
   var card=document.getElementById('pending-replacements-card');
   if(!card) return;
-  console.log('[renderPendingReps] pending:', pending, 'card exists:', !!card);
   if(!pending.length){
     card.style.display='none';
     return;
