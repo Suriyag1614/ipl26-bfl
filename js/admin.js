@@ -1386,10 +1386,11 @@ async function loadSameRolePlayers() {
   var teamId=$id('rep-team').value, injId=$id('rep-injured').value;
   var repSel=$id('rep-player'); repSel.innerHTML='<option value="">— Select replacement —</option>';
   if (!injId) return;
-  var injPlayer=_players.find(function(p){return p.id===injId;}); if (!injPlayer) return;
+  var injPlayer=_players.find(function(p){return p.id===injId}); if (!injPlayer) return;
   var squad=teamId?safeArr(await API.fetchSquad(teamId)):[];
   var squadIds=new Set(squad.map(function(sp){return sp.player&&sp.player.id;}));
-  var eligible=_players.filter(function(p){return p.role===injPlayer.role&&!squadIds.has(p.id)&&p.availability_status==='available'&&p.id!==injId;});
+  var targetTeam=injPlayer.ipl_team||'';
+  var eligible=_players.filter(function(p){return p.role===injPlayer.role&&p.ipl_team===targetTeam&&!squadIds.has(p.id)&&p.availability_status==='available'&&p.id!==injId;});
   repSel.innerHTML='<option value="">— Select —</option>'+
     eligible.map(function(p){return '<option value="'+p.id+'">'+UI.esc(p.name)+' · '+UI.esc(p.ipl_team||'?')+'</option>';}).join('');
 }

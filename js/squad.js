@@ -144,7 +144,8 @@ function editPendingRep(repId){
     if(matchSel) matchSel.value=rep.start_match_id;
   }
   var squadIds=new Set(_squad.map(function(s){return s.player&&s.player.id;}));
-  var available=_allPlayers.filter(function(pl){return pl.role===_repTarget.role&&!squadIds.has(pl.id)&&pl.availability_status==='available'&&pl.id!==_repTarget.id;});
+  var targetTeam=_repTarget.ipl_team||'';
+  var available=_allPlayers.filter(function(pl){return pl.role===_repTarget.role&&pl.ipl_team===targetTeam&&!squadIds.has(pl.id)&&pl.availability_status==='available'&&pl.id!==_repTarget.id;});
   available.unshift({id:rep.replacement_player_id,name:rep.replacement?rep.replacement.name:'',role:rep.replacement?rep.replacement.role:'',ipl_team:rep.replacement?rep.replacement.ipl_team:''});
   document.getElementById('rep-player-list').innerHTML=available.map(function(pl){
     var isSelected=pl.id===_repSelectedId?' selected':'';
@@ -210,7 +211,7 @@ function renderSquad(){
     
     var cardCls='player-card'+(isCap?' captain':isVC?' vice-cap':'')+(isImpact?' impact':'')+(isUnavailable&&!hasRep?' injured':'')+(hasRep?' replaced':'')+
                 (pRow.pom?' pom-highlight':'')+(pRow.pot?' pot-highlight':'');
-    var pd=UI.esc(JSON.stringify({id:p.id,name:p.name||'',role:p.role||''}));
+    var pd=UI.esc(JSON.stringify({id:p.id,name:p.name||'',role:p.role||'',ipl_team:p.ipl_team||''}));
 
     return '<div class="'+cardCls+'" style="--ipl-color:'+color+';animation-delay:'+(i*0.05)+'s"'+
       (p.availability_note?' title="'+UI.esc(p.availability_status+': '+p.availability_note)+'"':'')+'>' +
@@ -309,9 +310,10 @@ function openRepModal(playerDataStr){
   try{ _repTarget=JSON.parse(playerDataStr.replace(/&quot;/g,'"')); }
   catch(e){ UI.toast('Error opening modal','error'); return; }
   _repSelectedId=null;
-  document.getElementById('rep-modal-sub').textContent=_repTarget.name+' is unavailable. Pick a same-role ('+_repTarget.role+') replacement:';
+  var targetTeam = _repTarget.ipl_team || '';
+  document.getElementById('rep-modal-sub').textContent=_repTarget.name+' is unavailable. Pick a same-role ('+_repTarget.role+') replacement from '+targetTeam+':';
   var squadIds=new Set(_squad.map(function(s){return s.player&&s.player.id;}));
-  var available=_allPlayers.filter(function(pl){return pl.role===_repTarget.role&&!squadIds.has(pl.id)&&pl.availability_status==='available'&&pl.id!==_repTarget.id;});
+  var available=_allPlayers.filter(function(pl){return pl.role===_repTarget.role&&pl.ipl_team===targetTeam&&!squadIds.has(pl.id)&&pl.availability_status==='available'&&pl.id!==_repTarget.id;});
   document.getElementById('rep-player-list').innerHTML=!available.length
     ?'<div style="color:var(--text3);font-size:13px;padding:12px 0;">No eligible '+_repTarget.role+'s available.</div>'
     :available.map(function(pl){
