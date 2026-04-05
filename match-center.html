@@ -227,7 +227,7 @@ function renderMatchHeader(mc) {
         (m.match_date?'<span>📅 '+UI.fmtDate(m.match_date)+'</span>':'') +
         (m.venue?'<span>📍 '+UI.esc(m.venue)+'</span>':'') +
         (m.actual_target?'<span>🎯 Target: <strong style="color:var(--accent);">'+m.actual_target+'</strong></span>':'') +
-        (m.winner?'<span>🏆 Winner: <strong style="color:var(--gold);">'+UI.esc(UI.tShort(m.winner))+'</strong></span>':'') +
+        (m.winner?'<span>🏆 Winner: <strong style="color:var(--gold);">'+UI.esc(m.winner)+'</strong></span>':'') +
       '</div>';
 }
 
