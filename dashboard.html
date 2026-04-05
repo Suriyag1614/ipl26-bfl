@@ -26,14 +26,17 @@
     .widget-lbl { font-family:var(--f-ui); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:var(--text3); }
     .widget-sub { font-size:11px; color:var(--text2); margin-top:4px; }
     .hero-banner {
-      background:linear-gradient(135deg,var(--bg2) 0%,rgba(200,241,53,.08) 100%);
-      border:1px solid var(--border); border-radius:var(--radius-xl);
+      background: url('images/ipl/rounded_spiral-latest-bg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border:0px solid var(--border); border-radius:var(--radius-xl);
       padding:24px 28px; display:flex; align-items:center; justify-content:space-between;
       gap:20px; flex-wrap:wrap; margin-bottom:22px; position:relative; overflow:hidden;
       animation:fade-up .4s ease both;
     }
-    .hero-banner::before { content:''; position:absolute; inset:0; background:rgba(12,15,28,.88); border-radius:inherit; z-index:1; }
-    .hero-banner::after { content:''; position:absolute; right:-40px; top:-40px; width:200px; height:200px; border-radius:50%; background:var(--accent-dim); pointer-events:none; z-index:0; }
+    .hero-banner::before { content:''; position:absolute; inset:0; background:rgba(17,26,46,0.7); border-radius:inherit; z-index:1; }
+    
     .hero-banner > * { position:relative; z-index:1; }
     .hero-rank-chip { background:var(--gold-dim); border:1px solid rgba(245,200,66,.3); border-radius:14px; padding:14px 22px; text-align:center; flex-shrink:0; position:relative; z-index:1; }
     .hero-rank-chip .trophy-icon { width:28px; height:auto; display:block; margin:0 auto 4px; opacity:.9; }
@@ -53,7 +56,14 @@
     .performer-pts { font-family:var(--f-display); font-weight:900; font-size:18px; color:var(--accent); }
     @media(max-width:700px) {
       .main-2col { grid-template-columns:1fr; }
-      .hero-banner { padding:18px; }
+      .hero-banner { 
+        padding:18px;
+        background: url('images/ipl/rounded_spiral-latest-bg.png');
+        background-size: cover;
+        background-position: center right;
+        background-repeat: no-repeat;
+      }
+      .hero-banner::before { background:linear-gradient(135deg, rgba(17,26,46,0.55) 0%, rgba(17,26,46,0.3) 100%); }
       .widget-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
       .widget-val { font-size:clamp(22px, 8vw, 30px); }
     }
