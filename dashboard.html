@@ -321,9 +321,10 @@ async function loadPerformers() {
     $('#performer-list').innerHTML = !rows.length
       ? '<div style="color:var(--text3);font-size:13px;padding:8px;">No match data yet.</div>'
       : rows.map(function(r){
+          var teamLabel = r.ipl ? UI.esc(UI.tShort(r.ipl) || r.ipl) : '';
           return '<div class="performer-row">'+
             '<img class="performer-avatar" src="'+UI.esc(avatar(r.name)||'https://ui-avatars.com/api/?name='+encodeURIComponent(r.name)+'&background=1a2035&color=c8f135&size=80')+'" alt="" onerror="this.src=\'https://ui-avatars.com/api/?name=P&background=1a2035&color=c8f135\'" >'+
-            '<div class="performer-info"><div class="performer-name">'+UI.esc(r.name)+'</div><div class="performer-sub">'+UI.esc(r.role||'')+' · '+UI.esc(UI.tShort(r.ipl)||r.ipl||'')+'</div></div>'+
+            '<div class="performer-info"><div class="performer-name">'+UI.esc(r.name)+'</div><div class="performer-sub">'+UI.esc(r.role||'')+(teamLabel ? ' · '+teamLabel : '')+'</div></div>'+
             '<div style="text-align:right;"><div class="performer-pts" style="color:'+r.color+'">'+UI.fmtPts(r.total)+'</div><div style="font-size:10px;color:var(--text3);">'+r.label+'</div></div>'+
           '</div>';
         }).join('');
