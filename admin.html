@@ -16,6 +16,13 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body { display: flex; flex-direction: column; background: var(--bg); min-height: 100vh; padding-bottom: 0; }
+    body::after {
+      content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 80vw; height: 80vw; max-width: 600px; max-height: 600px;
+      background: url('images/ipl/rounded_spiral_mobile.png') no-repeat center center;
+      background-size: contain; opacity: 0.06; filter: brightness(1);
+      pointer-events: none; z-index: -999;
+    }
 
     .admin-topbar {
       position: fixed; top: 0; left: 0; right: 0; height: var(--topbar-h);
