@@ -219,9 +219,9 @@ function renderMatchHeader(mc) {
         '<span class="match-status '+(m.is_locked?(m.winner?'status-done':'status-locked'):'status-open')+'">'+(m.is_locked?(m.winner?'Completed':'Locked'):'Open')+'</span>' +
       '</div>' +
       '<div class="match-teams">' +
-        '<div class="match-team">'+UI.esc(UI.tShort(m.team1)||'—')+'</div>' +
+        '<div class="match-team">'+UI.esc(m.team1||'—')+'</div>' +
         '<div class="match-vs">VS</div>' +
-        '<div class="match-team">'+UI.esc(UI.tShort(m.team2)||'—')+'</div>' +
+        '<div class="match-team">'+UI.esc(m.team2||'—')+'</div>' +
       '</div>' +
       '<div class="match-meta mt-8">' +
         (m.match_date?'<span>📅 '+UI.fmtDate(m.match_date)+'</span>':'') +
