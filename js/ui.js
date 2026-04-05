@@ -10,10 +10,15 @@ const UI = {
     'PUNJAB KINGS':'PBKS','RAJASTHAN ROYALS':'RR','ROYAL CHALLENGERS BENGALURU':'RCB',
     'SUNRISERS HYDERABAD':'SRH','SUPREME RAJAS':'SURA'
   },
-  tCode: function(name) { return this.TEAM_CODES[((name||'').toUpperCase())] || null; },
+  tCode: function(name) {
+    var key = String(name || '').trim().toUpperCase();
+    return this.TEAM_CODES[key] || null;
+  },
   tShort: function(name) {
-    var c = this.tCode(name);
-    return c || (name||'').split(' ').map(function(w){return w[0];}).join('').toUpperCase();
+    var str = String(name || '').trim();
+    if (!str) return '';
+    var c = this.tCode(str);
+    return c || str.split(/\s+/).map(function(w){return w[0];}).join('').toUpperCase();
   },
   rankBadge(curr, prev) {
     if (!prev) return '<span class="rank-new" style="color:var(--cyan);font-size:9px;font-weight:700;margin-left:4px;vertical-align:middle;">NEW</span>';
