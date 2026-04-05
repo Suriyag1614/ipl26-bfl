@@ -24,8 +24,8 @@ const UI = {
     if (!prev) return '<span class="rank-new" style="color:var(--cyan);font-size:9px;font-weight:700;margin-left:4px;vertical-align:middle;">NEW</span>';
     if (prev === curr) return '<span style="color:var(--text3);font-size:11px;margin-left:4px;vertical-align:middle;">—</span>';
     const diff = prev - curr;
-    if (diff > 0) return `<span class="rank-up" style="color:var(--accent);font-size:11px;font-weight:700;margin-left:4px;vertical-align:middle;" title="Up ${diff} places">▲${diff}</span>`;
-    if (diff < 0) return `<span class="rank-down" style="color:var(--red);font-size:11px;font-weight:700;margin-left:4px;vertical-align:middle;" title="Down ${Math.abs(diff)} places">▼${Math.abs(diff)}</span>`;
+    if (diff > 0) return `<span class="rank-up" style="color:var(--accent);font-size:11px;font-weight:700;margin-left:4px;vertical-align:middle;" title="Up ${diff} place(s)">▲${diff}</span>`;
+    if (diff < 0) return `<span class="rank-down" style="color:var(--red);font-size:11px;font-weight:700;margin-left:4px;vertical-align:middle;" title="Down ${Math.abs(diff)} place(s)">▼${Math.abs(diff)}</span>`;
     return '';
   },
   fmtPts(v) {
