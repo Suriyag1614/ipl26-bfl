@@ -336,7 +336,7 @@ async function loadRecent() {
     if(!logs.length){ $('#recent-results').innerHTML='<div style="text-align:center;color:var(--text3);padding:16px;font-size:14px;">No match results yet</div>'; return; }
     $('#recent-results').innerHTML='<div class="table-wrap"><table class="data-table"><thead><tr><th>Match</th><th>Squad</th><th>Pred</th><th>Total</th></tr></thead><tbody>'+
       logs.slice().reverse().slice(0,5).map(function(l){
-        var matchTitle = l.match ? (l.match.match_title || UI.fmtMatch(UI.tShort(l.match.team1), UI.tShort(l.match.team2))) : '—';
+        var matchTitle = l.match ? (l.match.match_title || UI.fmtMatch(l.match.team1, l.match.team2)) : '—';
         return '<tr class="clickable-row" onclick="showBreakdown(\''+l.id+'\')"><td style="font-weight:400;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+matchTitle+'</td><td class="font-mono">'+UI.fmtPts(l.squad_points)+'</td><td class="font-mono">'+UI.fmtPts(l.prediction_points)+'</td><td class="pts">'+UI.fmtPts(l.total_points)+'</td></tr>';
       }).join('')+'</tbody></table></div>';
   } catch(e) {}
