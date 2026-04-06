@@ -316,10 +316,12 @@ body { display:flex; flex-direction:column; }
   color:var(--text3); transition:all var(--t);
   flex:1 1 0; min-width:0; max-width:100%; text-decoration:none;
   line-height:1.1; text-align:center;
+  -webkit-tap-highlight-color: transparent;
 }
 .bnav-link span { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; word-break:break-word; }
 .bnav-link svg { width:clamp(18px, 5vw, 20px); height:clamp(18px, 5vw, 20px); stroke:currentColor; flex-shrink:0; }
 .bnav-link.active { color:var(--accent); }
+.bnav-link:active { transform: scale(0.92); }
 
 /* ═══════════════════════════════════════════════
     CARDS
@@ -379,17 +381,19 @@ body { display:flex; flex-direction:column; }
 
 /* ═══════════════════════════════════════════════
    BUTTONS
-═══════════════════════════════════════════════ */
+ ═══════════════════════════════════════════════ */
 .btn {
   display:inline-flex;align-items:center;justify-content:center;gap:6px;
   padding:10px 20px; border:none; border-radius:var(--radius);
   font-family:var(--f-ui); font-size:14px; font-weight:800; letter-spacing:.4px;
   transition:all var(--t); position:relative; overflow:hidden; white-space:nowrap;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn::after { content:''; position:absolute;inset:0; background:rgba(255,255,255,.15); opacity:0; transition:opacity .15s; }
+.btn:hover { transform: translateY(-1px); }
 .btn:hover::after { opacity:1; }
-.btn:active { transform:scale(.97); }
-.btn:disabled { opacity:.35; pointer-events:none; }
+.btn:active { transform:scale(.95); }
+.btn:disabled { opacity:.35; pointer-events:none; transform: none; }
 .btn svg { width:15px;height:15px;stroke:currentColor;flex-shrink:0; }
 .btn-accent { 
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-bright) 100%); 
@@ -691,13 +695,18 @@ body:has(.login-wrap) #toast-container {
 
 /* ═══════════════════════════════════════════════
    SKELETON
-═══════════════════════════════════════════════ */
+ ═══════════════════════════════════════════════ */
 .skel { border-radius:6px; background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%); background-size:600px 100%; animation:shimmer 1.4s infinite linear; }
 .skel-text { height:13px;margin-bottom:8px; }
 .skel-h2   { height:28px;margin-bottom:10px; }
 .skel-chip { height:88px;border-radius:var(--radius-lg); }
 .skel-card { height:160px;border-radius:var(--radius-lg); }
 .skel-row  { height:48px;margin-bottom:5px;border-radius:6px; }
+.skel-table-row { height: 44px; margin-bottom: 4px; border-radius: 4px; }
+.skel-table-row:nth-child(even) { height: 36px; margin-left: 20px; width: 90%; }
+.skel-avatar { width: 40px; height: 40px; border-radius: 50%; }
+.skel-btn { height: 36px; width: 80px; border-radius: 6px; }
+.skel-pill { height: 32px; width: 100px; border-radius: 16px; }
 
 /* ═══════════════════════════════════════════════
    CALC LOG
@@ -710,9 +719,11 @@ body:has(.login-wrap) #toast-container {
 /* ═══════════════════════════════════════════════
    UTILITIES
 ═══════════════════════════════════════════════ */
-.empty-state { text-align:center;padding:48px 20px;color:var(--text3); }
-.empty-state-icon { font-size:32px;margin-bottom:9px; }
-.empty-state-text { font-family:var(--f-ui);font-size:14px;font-weight:700; }
+.empty-state { text-align:center;padding:48px 20px;color:var(--text3); animation: fade-up .4s ease both; }
+.empty-state-icon { font-size:42px;margin-bottom:12px; opacity: 0.7; }
+.empty-state-text { font-family:var(--f-ui);font-size:14px;font-weight:700; margin-bottom: 8px; }
+.empty-state-sub { font-size: 12px; color: var(--text2); margin-bottom: 16px; }
+.empty-state-action { display: inline-flex; gap: 8px; margin-top: 8px; }
 .badge { display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-family:var(--f-ui);font-size:11px;font-weight:800; }
 .badge-accent { background:var(--accent-dim);color:var(--accent); }
 .badge-gold   { background:var(--gold-dim);color:var(--gold); }

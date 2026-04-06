@@ -205,6 +205,12 @@ async function init() {
     // Load core data
     await Promise.all([loadAllMatches(), loadAllPlayers(), loadAllTeams()]);
 
+    // Update notification badge for pending replacements
+    updateRepBadge();
+
+    // Poll for new replacement requests every 30 seconds
+    setInterval(updateRepBadge, 30000);
+
     // Populate all dropdowns
     populateAllDropdowns();
 
@@ -1274,7 +1280,33 @@ async function loadInjuries() {
     }
     if(!html) html='<div style="color:var(--text3);font-size:13px;padding:12px 0;">No requests in this filter.</div>';
     el.innerHTML=html;
+    
+    // Update badge count
+    updateRepBadge();
   } catch(e){ el.innerHTML='<div style="color:var(--red);font-size:13px;">'+UI.esc(e.message)+'</div>'; }
+}
+
+async function updateRepBadge() {
+  try {
+    var badge = document.getElementById('rep-badge');
+    if (!badge) return;
+    
+    var { count, error } = await sb.from('replacements')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+    
+    if (error) throw error;
+    
+    var pendingCount = count || 0;
+    if (pendingCount > 0) {
+      badge.textContent = pendingCount;
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch(e) {
+    console.warn('[updateRepBadge]', e.message);
+  }
 }
 
 async function approveRep(repId) {
@@ -1514,10 +1546,18 @@ async function saveSquadRoles() {
 ══════════════════════════════════════════════════════════════ */
 async function loadBlogList() {
   var cont=$id('blog-list');
-  cont.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);">Loading…</div>';
+  cont.innerHTML='<div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div>';
   try {
     var blogs=safeArr(await API.fetchBlogs({limit:50,publishedOnly:false,status:_blogFilter==='all'?null:_blogFilter}));
-    if (!blogs.length) { cont.innerHTML='<div style="padding:20px;text-align:center;color:var(--text3);">No posts yet.</div>'; return; }
+    if (!blogs.length) { 
+      cont.innerHTML='<div class="empty-state">'+
+        '<div class="empty-state-icon">📝</div>'+
+        '<div class="empty-state-text">No posts yet</div>'+
+        '<div class="empty-state-sub">Create your first blog post to get started</div>'+
+        '<div class="empty-state-action"><button class="btn btn-accent btn-sm" onclick="showPanel(\'blogs\');loadBlogEdit(null)">Create Post</button></div>'+
+      '</div>'; 
+      return; 
+    }
     var sCols={draft:'var(--gold)',review:'var(--cyan)',published:'var(--green)'};
     cont.innerHTML=blogs.map(function(b,i){
       var col=sCols[b.status]||'var(--text3)';
@@ -1529,7 +1569,7 @@ async function loadBlogList() {
         '<span style="background:'+col+'22;color:'+col+';font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;font-family:var(--f-ui);flex-shrink:0;">'+UI.esc(b.status)+'</span>'+
       '</div>';
     }).join('');
-  } catch(e){ cont.innerHTML='<div style="color:var(--red);padding:14px;font-size:13px;">'+UI.esc(e.message)+'</div>'; }
+  } catch(e){ cont.innerHTML='<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Error loading posts</div><div class="empty-state-sub">'+UI.esc(e.message)+'</div></div>'; }
 }
 
 function filterBlogs(status, btn) {
@@ -1537,6 +1577,18 @@ function filterBlogs(status, btn) {
   document.querySelectorAll('#panel-blogs .btn').forEach(function(b){b.classList.remove('active');});
   if (btn) btn.classList.add('active');
   loadBlogList();
+}
+
+function filterBlogList() {
+  var search = document.getElementById('blog-search').value.toLowerCase();
+  var catFilter = document.getElementById('blog-category-filter').value;
+  var items = document.querySelectorAll('#blog-list .blog-list-item');
+  items.forEach(function(item) {
+    var text = item.textContent.toLowerCase();
+    var matchesSearch = !search || text.includes(search);
+    var matchesCat = !catFilter || text.includes(catFilter);
+    item.style.display = (matchesSearch && matchesCat) ? '' : 'none';
+  });
 }
 
 function newBlog() { clearBlogForm(); }
@@ -1627,6 +1679,15 @@ async function loadUsers() {
   } catch(e){ tbody.innerHTML='<tr><td colspan="7" style="color:var(--red);padding:12px;">'+UI.esc(e.message)+'</td></tr>'; }
 }
 function goToSquad(teamId) { $id('squad-team').value=teamId; showPanel('squads'); loadSquadAdmin(); }
+
+function filterUserList() {
+  var search = document.getElementById('user-search').value.toLowerCase();
+  var rows = document.querySelectorAll('#users-tbody tr');
+  rows.forEach(function(row) {
+    var text = row.textContent.toLowerCase();
+    row.style.display = !search || text.includes(search) ? '' : 'none';
+  });
+}
 
 /* ══════════════════════════════════════════════════════════════
    AUDIT LOG
