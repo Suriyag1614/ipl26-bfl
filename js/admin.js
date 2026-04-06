@@ -1311,7 +1311,7 @@ async function rejectRep(repId) {
 
 async function undoRep(repId) {
   try{
-    await API.updateReplacement(repId,{status:'pending',is_active:false,admin_notes:null});
+    await API.updateReplacement(repId,{status:'pending',is_active:false,admin_notes:null},true);
     UI.toast('Action undone - back to pending','success');
     loadInjuries();
   }catch(e){UI.toast(e.message,'error');}

@@ -111,11 +111,16 @@ const API = {
     return data || [];
   },
 
-  async updateReplacement(replacementId, updates) {
-    const { data, error } = await sb.from('replacements')
+  async updateReplacement(replacementId, updates, allowStatusChange = false) {
+    let query = sb.from('replacements')
       .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', replacementId).eq('status', 'pending')
-      .select().single();
+      .eq('id', replacementId);
+    
+    if (!allowStatusChange) {
+      query = query.eq('status', 'pending');
+    }
+    
+    const { data, error } = await query.select().single();
     if (error) throw error;
     await this._log('replacement_updated', 'replacement', replacementId, null, data);
     return data;
