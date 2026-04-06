@@ -35,7 +35,7 @@
       gap:20px; flex-wrap:wrap; margin-bottom:22px; position:relative; overflow:hidden;
       animation:fade-up .4s ease both;
     }
-    .hero-banner::before { content:''; position:absolute; inset:0; background:rgba(17,26,46,0.7); border-radius:inherit; z-index:1; }
+    .hero-banner::before { content:''; position:absolute; inset:0; background:rgba(17,26,46,0.8); border-radius:inherit; z-index:1; }
     
     .hero-banner > * { position:relative; z-index:1; }
     .hero-rank-chip { background:var(--gold-dim); border:1px solid rgba(245,200,66,.3); border-radius:14px; padding:14px 22px; text-align:center; flex-shrink:0; position:relative; z-index:1; }
@@ -63,7 +63,7 @@
         background-position: center right;
         background-repeat: no-repeat;
       }
-      .hero-banner::before { background:linear-gradient(135deg, rgba(17,26,46,0.55) 0%, rgba(17,26,46,0.3) 100%); }
+      .hero-banner::before { background:linear-gradient(135deg, rgba(17,26,46,0.8) 0%, rgba(17,26,46,0.8) 100%); }
       .widget-grid { grid-template-columns:repeat(2,1fr); gap:10px; }
       .widget-val { font-size:clamp(22px, 8vw, 30px); }
     }
@@ -321,10 +321,15 @@ async function loadImpact() {
 async function loadPerformers() {
   try {
     var breakdown = await API.fetchPointsBreakdown(_myTeamId);
+    var squad = await API.fetchSquad(_myTeamId);
+    var playerTeamMap = {};
+    squad.forEach(function(s){
+      if(s.player&&s.player.name) playerTeamMap[s.player.name]=s.player.ipl_team;
+    });
     var pts = {};
     breakdown.forEach(function(l){
       (l.breakdown&&l.breakdown.players||[]).forEach(function(p){
-        if(!pts[p.name]) pts[p.name]={name:p.name,img:null,ipl:p.ipl_team,role:p.role,total:0};
+        if(!pts[p.name]) pts[p.name]={name:p.name,img:null,ipl_team:p.ipl_team||playerTeamMap[p.name]||'',role:p.role,total:0};
         pts[p.name].total += (p.final||0);
       });
     });
@@ -333,14 +338,13 @@ async function loadPerformers() {
     var rows = [];
     if(top)   rows.push({...top, label:'🔥 Top', color:'var(--accent)'});
     if(worst && worst!==top) rows.push({...worst, label:'📉 Low', color:'var(--red)'});
-    var squad = await API.fetchSquad(_myTeamId);
     var avatar = function(name){ var sp=squad.find(function(s){return s.player&&s.player.name===name;}); return sp&&sp.player&&sp.player.image_url?sp.player.image_url:''; };
     $('#performer-list').innerHTML = !rows.length
       ? '<div style="color:var(--text3);font-size:13px;padding:8px;">No match data yet.</div>'
       : rows.map(function(r){
           return '<div class="performer-row">'+
             '<img class="performer-avatar" src="'+UI.esc(avatar(r.name)||'https://ui-avatars.com/api/?name='+encodeURIComponent(r.name)+'&background=1a2035&color=c8f135&size=80')+'" alt="" onerror="this.src=\'https://ui-avatars.com/api/?name=P&background=1a2035&color=c8f135\'" >'+
-            '<div class="performer-info"><div class="performer-name">'+UI.esc(r.name)+'</div><div class="performer-sub">'+UI.esc(r.role||'')+' · '+UI.esc(UI.tShort(r.ipl)||r.ipl||'')+'</div></div>'+
+            '<div class="performer-info"><div class="performer-name">'+UI.esc(r.name)+'</div><div class="performer-sub">'+UI.esc(r.role||'')+' · '+(UI.tShort(r.ipl_team)||r.ipl_team||'')+'</div></div>'+
             '<div style="text-align:right;"><div class="performer-pts" style="color:'+r.color+'">'+UI.fmtPts(r.total)+'</div><div style="font-size:10px;color:var(--text3);">'+r.label+'</div></div>'+
           '</div>';
         }).join('');

@@ -8,7 +8,12 @@ const UI = {
     'CHENNAI SUPER KINGS':'CSK','DELHI CAPITALS':'DC','GUJARAT TITANS':'GT',
     'KOLKATA KNIGHT RIDERS':'KKR','LUCKNOW SUPER GIANTS':'LSG','MUMBAI INDIANS':'MI',
     'PUNJAB KINGS':'PBKS','RAJASTHAN ROYALS':'RR','ROYAL CHALLENGERS BENGALURU':'RCB',
-    'SUNRISERS HYDERABAD':'SRH','SUPREME RAJAS':'SURA'
+    'SUNRISERS HYDERABAD':'SRH','SUPREME RAJAS':'SURA',
+    // Short codes
+    'CSK':'CSK','DC':'DC','GT':'GT','KKR':'KKR','LSG':'LSG','MI':'MI',
+    'PBKS':'PBKS','RR':'RR','RCB':'RCB','SRH':'SRH','SURA':'SURA',
+    'C':'CSK','D':'DC','G':'GT','K':'KKR','L':'LSG','M':'MI',
+    'P':'PBKS','R':'RR','B':'RCB','S':'SRH','U':'SURA'
   },
   tCode: function(name) {
     var key = String(name || '').trim().toUpperCase();
@@ -18,7 +23,11 @@ const UI = {
     var str = String(name || '').trim();
     if (!str) return '';
     var c = this.tCode(str);
-    return c || str.split(/\s+/).map(function(w){return w[0];}).join('').toUpperCase();
+    if (c) return c;
+    // If already a short code (3-4 chars like CSK, MI), return as-is
+    if (str.length >= 3 && str.length <= 4 && /^[A-Z]+$/.test(str.toUpperCase())) return str.toUpperCase();
+    // Otherwise take first letter of each word
+    return str.split(/\s+/).map(function(w){return w[0];}).join('').toUpperCase();
   },
   rankBadge(curr, prev) {
     if (!prev) return '<span class="rank-new" style="color:var(--cyan);font-size:9px;font-weight:700;margin-left:4px;vertical-align:middle;">NEW</span>';

@@ -1,6 +1,6 @@
 'use strict';
 var _squad=[], _playerPts={}, _filter='', _myTeamId=null, _myTeam=null;
-var _repTarget=null, _repSelectedId=null, _confirmCb=null, _allPlayers=[], _pendingReps=[], _matches=[];
+var _repTarget=null, _repSelectedId=null, _confirmCb=null, _allPlayers=[], _pendingReps=[], _rejectedReps=[], _matches=[];
 
 function safeArr(v){return Array.isArray(v)?v:(v?[v]:[]);}
 function fbUrl(n){return 'https://ui-avatars.com/api/?name='+encodeURIComponent(n||'P')+'&background=1a2035&color=c8f135&size=128';}
@@ -42,6 +42,12 @@ async function loadSquad(){
     }catch(e){
       console.warn('[Squad] Could not load pending replacements:', e.message);
       _pendingReps=[];
+    }
+    try{
+      _rejectedReps=safeArr(await API.fetchRejectedReplacements(_myTeamId));
+    }catch(e){
+      console.warn('[Squad] Could not load rejected replacements:', e.message);
+      _rejectedReps=[];
     }
     renderSquad(); renderSummary(); renderRoleBreakdown(); renderInjuryBanner(); renderReplacements();
     setTimeout(function(){
@@ -132,21 +138,19 @@ function confirmRemoveRep(repId){
 
 function renderPendingReplacements(){
   var pending=_pendingReps||[];
+  var rejected=_rejectedReps||[];
   var card=document.getElementById('pending-replacements-card');
   if(!card) return;
-  if(!pending.length){
+  if(!pending.length && !rejected.length){
     card.style.display='none';
     return;
   }
   card.style.display='';
 
-  var pendingReq=pending.filter(function(r){return r.status==='pending';});
-  var rejected=pending.filter(function(r){return r.status==='rejected';});
-
   var html='';
-  if(pendingReq.length){
+  if(pending.length){
     html+='<div style="margin-bottom:16px;"><div style="font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">⏳ Pending Requests</div>';
-    html+=pendingReq.map(function(r){
+    html+=pending.map(function(r){
       var startMatch=r.start_match&&r.start_match.match_no?'M'+r.start_match.match_no:'N/A';
       return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px;background:var(--bg2);border-radius:6px;margin-bottom:6px;border:1px solid var(--border);">'+
         '<div style="flex:1;">'+

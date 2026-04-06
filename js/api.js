@@ -99,6 +99,18 @@ const API = {
     return data || [];
   },
 
+  async fetchRejectedReplacements(teamId) {
+    const { data, error } = await sb.from('replacements')
+      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,image_url,availability_status),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team,image_url),team:fantasy_teams(team_name)')
+      .eq('fantasy_team_id', teamId).eq('status', 'rejected')
+      .order('updated_at', { ascending: false });
+    if (error) {
+      console.error('[fetchRejectedReplacements] Error:', error);
+      throw error;
+    }
+    return data || [];
+  },
+
   async updateReplacement(replacementId, updates) {
     const { data, error } = await sb.from('replacements')
       .update({ ...updates, updated_at: new Date().toISOString() })
@@ -648,6 +660,7 @@ const API = {
           name: sp.player?.name,
           effective_name: sp.replacement ? sp.replacement.replacement?.name : sp.player?.name,
           role: sp.player?.role || '',
+          ipl_team: sp.player?.ipl_team || '',
           is_unavailable: sp.player?.availability_status !== 'available',
           is_replacement: !!(sp.player?.availability_status !== 'available' && sp.replacement),
           base: base, bat: bat, bowl: bowl,
