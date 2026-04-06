@@ -12,49 +12,141 @@
   <link rel="stylesheet" href="css/styles.css">
   <style>
     .mc-layout { display: flex; gap: 24px; align-items: flex-start; }
-    .mc-sidebar { width: 280px; flex-shrink: 0; position: sticky; top: 80px; max-height: calc(100vh - 120px); overflow-y: auto; padding-right: 4px; }
+    .mc-sidebar { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; height: calc(100vh - 120px); position: sticky; top: 80px; background: var(--bg1); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; overflow: hidden; }
     .mc-main { flex: 1; min-width: 0; }
     
-    /* Scrollbar for sidebar */
-    .mc-sidebar::-webkit-scrollbar { width: 4px; }
+    /* Scrollbar - system theme aware */
+    .mc-sidebar { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    .mc-sidebar::-webkit-scrollbar { width: 6px; }
     .mc-sidebar::-webkit-scrollbar-track { background: transparent; }
-    .mc-sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+    .mc-sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .mc-sidebar::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 
-    .match-selector { display: flex; flex-direction: column; gap: 10px; }
+    .mc-sidebar-header { flex-shrink: 0; margin-bottom: 12px; }
+    .mc-sidebar-title { font-family: var(--f-ui); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); padding-left: 4px; }
+    .mc-sidebar-controls { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .mc-search-wrap { position: relative; flex: 1; min-width: 120px; }
+    .mc-search { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 32px 8px 12px; font-size: 13px; color: var(--text1); box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s; }
+    .mc-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200, 241, 53, 0.15); }
+    .mc-search::placeholder { color: var(--text3); }
+    .mc-search-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; opacity: 0.5; pointer-events: none; }
+    .mc-filter-wrap { position: relative; display: flex; align-items: center; }
+    .mc-filter { appearance: none; -webkit-appearance: none; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 32px 8px 10px; font-size: 12px; color: var(--text2); cursor: pointer; min-width: 90px; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; }
+    .mc-filter:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(200, 241, 53, 0.15); }
+    .mc-filter-icon { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 14px; height: 14px; pointer-events: none; }
+    .mc-nav-btns { display: flex; gap: 6px; }
+    .mc-nav-btn { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s ease; white-space: nowrap; color: var(--text2); }
+    .mc-nav-btn:hover { background: var(--bg3); border-color: var(--accent); color: var(--text1); transform: translateY(-1px); }
+    .mc-nav-btn:active { transform: translateY(0); }
+    .mc-nav-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .match-selector { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; flex: 1; padding-right: 4px; }
     .match-pill {
-      background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius-lg);
-      padding:12px 14px; cursor:pointer; transition:all var(--t);
-      display:flex; flex-direction:column; gap:4px; animation:fade-up .35s ease both;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 12px 14px; cursor: pointer; transition: all 0.2s ease;
+      display: flex; flex-direction: column; gap: 4px;
     }
-    .match-pill:hover { border-color:var(--border-h); background: var(--bg3); }
-    .match-pill.selected { border-color:var(--accent); background:var(--accent-dim); box-shadow: 0 4px 12px rgba(200,241,53,0.1); }
-    .match-pill-teams { font-family:var(--f-display); font-weight:400; font-size: 14px; line-height:1.2; }
-    .match-pill-date  { font-size:11px; color:var(--text3); }
+    .match-pill:hover { border-color: var(--border-h); background: var(--bg3); transform: translateX(4px); }
+    .match-pill.selected { border-color: var(--accent); background: var(--accent-dim); box-shadow: 0 4px 12px rgba(200, 241, 53, 0.15); }
+    .match-pill.selected:hover { transform: translateX(4px); }
+    .match-pill-teams { font-family: var(--f-display); font-weight: 400; font-size: 14px; line-height: 1.2; }
+    .match-pill-date { font-size: 11px; color: var(--text3); }
     
-    .winner-bar { display:flex; border-radius:6px; overflow:hidden; height:24px; margin-top:8px; }
-    .winner-bar-seg { display:flex; align-items:center; justify-content:center; font-family:var(--f-ui); font-size:11px; font-weight:400; transition:flex .8s ease; min-width:30px; }
-    .leaderboard-rank-1 td { background:rgba(245,200,66,.08); }
-    .leaderboard-rank-1 td:first-child { border-left:3px solid var(--gold); }
-    .mc-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-    .pred-winner-bar { height:8px; border-radius:4px; background:var(--bg3); overflow:hidden; display:flex; margin-top:6px; }
+    .winner-bar { display: flex; border-radius: 6px; overflow: hidden; height: 24px; margin-top: 8px; }
+    .winner-bar-seg { display: flex; align-items: center; justify-content: center; font-family: var(--f-ui); font-size: 11px; font-weight: 400; transition: flex 0.8s ease; min-width: 30px; }
+    .leaderboard-rank-1 td { background: rgba(245, 200, 66, 0.08); }
+    .leaderboard-rank-1 td:first-child { border-left: 3px solid var(--gold); }
+    .mc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .pred-winner-bar { height: 8px; border-radius: 4px; background: var(--bg3); overflow: hidden; display: flex; margin-top: 6px; }
+
+    /* Tables */
+    .mc-table-wrap { 
+      max-height: 400px; 
+      overflow-y: auto; 
+      scrollbar-width: thin; 
+      scrollbar-color: var(--border) transparent;
+      border-radius: var(--radius-md);
+    }
+    .mc-table-wrap::-webkit-scrollbar { width: 6px; }
+    .mc-table-wrap::-webkit-scrollbar-track { background: transparent; }
+    .mc-table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .mc-table-wrap::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+    
+    .mc-table { 
+      width: 100%; 
+      border-collapse: collapse; 
+      font-size: 13px;
+    }
+    .mc-table th {
+      font-family: var(--f-ui); 
+      font-size: 10px; 
+      font-weight: 800;
+      text-transform: uppercase; 
+      letter-spacing: 1px; 
+      color: var(--text3);
+      padding: 12px 10px; 
+      text-align: left; 
+      border-bottom: 1px solid var(--border);
+      position: sticky; 
+      top: 0; 
+      background: var(--bg2); 
+      z-index: 1;
+    }
+    .mc-table td { 
+      padding: 14px 10px; 
+      border-bottom: 1px solid var(--border); 
+      font-size: 13px; 
+      vertical-align: middle;
+      color: var(--text2);
+    }
+    .mc-table tbody tr { transition: background 0.2s; }
+    .mc-table tbody tr:hover td { background: var(--bg2); }
+    .mc-table .mc-rank { font-family: var(--f-mono); font-weight: 700; font-size: 14px; color: var(--accent); }
+    .mc-table .mc-pts { font-family: var(--f-display); font-weight: 900; font-size: 15px; color: var(--accent); }
+    .mc-table .mc-team { font-weight: 600; color: var(--text1); }
+    .mc-table .mc-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; }
+    .mc-table .mc-success { color: var(--green); font-weight: 600; }
+    .mc-table .mc-fail { color: var(--red); font-weight: 600; }
 
     @media(max-width:900px) {
       .mc-layout { flex-direction: column; gap: 16px; }
-      .mc-sidebar { width: 100%; position: static; max-height: none; display: flex; flex-direction: row; overflow-x: auto; overflow-y: hidden; padding: 0 0 12px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+      .mc-sidebar { width: 100%; height: auto; max-height: calc(100vh - 120px); position: sticky; top: 70px; display: flex; flex-direction: column; overflow: hidden; padding: 16px; background: var(--bg1); border: 1px solid var(--border); border-radius: var(--radius-lg); z-index: 100; }
+      .mc-sidebar { scrollbar-width: none; -ms-overflow-style: none; }
       .mc-sidebar::-webkit-scrollbar { display: none; }
-      .mc-sidebar > div:first-child { display: none; }
-      .match-selector { flex-direction: row; padding-bottom: 0; gap: 8px; }
+      .mc-sidebar-header { flex-shrink: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+      .mc-sidebar-controls { padding-right: 50px; }
+      .match-selector { flex-direction: row; padding: 0; gap: 8px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex: 1; min-height: 0; }
       .match-pill { min-width: 170px; flex-shrink: 0; padding: 10px 12px; }
-      .mc-grid { gap: 16px; }
-      .data-table { font-size: 13px; }
-      .data-table th, .data-table td { padding: 8px 10px; }
+      .mc-grid { grid-template-columns: 1fr; gap: 16px; }
+      .mc-table { font-size: 12px; }
+      .mc-table th, .mc-table td { padding: 10px 8px; }
     }
     @media(max-width:700px){
-      .mc-grid { grid-template-columns: 1fr; gap: 14px; }
-      .match-pill { min-width: 150px; }
-      .match-pill-teams { font-size: 13px; }
-      .data-table th, .data-table td { padding: 7px 8px; font-size: 12px; }
-      .data-table .pts { font-size: 14px; }
+      .mc-sidebar { padding: 12px; top: 60px; max-height: calc(100vh - 100px); }
+      .mc-sidebar-title { font-size: 10px; }
+      .mc-sidebar-controls { flex-direction: column; gap: 8px; padding-right: 0; }
+      .mc-search-wrap, .mc-filter-wrap { min-width: 100%; width: 100%; }
+      .mc-nav-btns { justify-content: stretch; }
+      .mc-nav-btn { flex: 1; }
+      .match-pill { min-width: 140px; padding: 8px 10px; }
+      .match-pill-teams { font-size: 12px; }
+      .match-pill-date { font-size: 10px; }
+      .mc-grid { gap: 12px; }
+      .mc-table-wrap { max-height: 300px; }
+      .mc-table { font-size: 11px; }
+      .mc-table th { font-size: 9px; padding: 8px 6px; }
+      .mc-table td { padding: 10px 6px; }
+      .mc-table .mc-rank { font-size: 12px; }
+      .mc-table .mc-pts { font-size: 13px; }
+      .mc-table .mc-team { font-size: 12px; }
+      .mc-table .mc-label { font-size: 10px; }
+      .page-title { font-size: 20px; }
+      .page-sub { font-size: 12px; }
+    }
+    @media(max-width:400px){
+      .mc-sidebar { padding: 10px; border-radius: var(--radius-md); }
+      .match-pill { min-width: 120px; padding: 6px 8px; }
+      .mc-table .mc-team, .mc-table .mc-label { display: none; }
     }
   </style>
 </head>
@@ -81,7 +173,28 @@
   <div class="mc-layout">
     <!-- Sidebar: Match Selector -->
     <aside class="mc-sidebar">
-      <div style="font-family: var(--f-ui); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 12px; padding-left: 4px;">Select Match</div>
+      <div class="mc-sidebar-header">
+        <div class="mc-sidebar-title">Select Match</div>
+        <div class="mc-sidebar-controls">
+          <div class="mc-search-wrap">
+            <input type="text" class="mc-search" id="mc-search" placeholder="Search matches..." oninput="filterMatches()">
+            <img src="images/ipl/new-search-icon.svg" class="mc-search-icon" alt="Search">
+          </div>
+          <div class="mc-filter-wrap">
+            <select class="mc-filter" id="mc-filter" onchange="filterMatches()">
+              <option value="all">All</option>
+              <option value="open">Open</option>
+              <option value="locked">Locked</option>
+              <option value="completed">Completed</option>
+            </select>
+            <img src="images/ipl/drop_down_icon.svg" class="mc-filter-icon" alt="Filter">
+          </div>
+          <div class="mc-nav-btns">
+            <button class="mc-nav-btn" onclick="navMatch(-1)">Previous</button>
+            <button class="mc-nav-btn" onclick="navMatch(1)">Next</button>
+          </div>
+        </div>
+      </div>
       <div id="match-selector" class="match-selector">
         <div class="skel skel-card" style="height:60px;"></div>
         <div class="skel skel-card" style="height:60px;"></div>
@@ -99,8 +212,8 @@
           <!-- Match Leaderboard -->
           <div class="card">
             <div class="card-title">Match Leaderboard</div>
-            <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
-              <table class="data-table">
+            <div class="mc-table-wrap">
+              <table class="mc-table">
                 <thead><tr><th style="width:40px;">#</th><th>Team</th><th>Squad</th><th>Pred</th><th>Total</th><th>Season Pts</th></tr></thead>
                 <tbody id="match-lb-tbody"></tbody>
               </table>
@@ -117,9 +230,9 @@
         <!-- All Predictions Table -->
         <div class="card mt-20">
           <div class="card-title">All Team Predictions</div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead><tr><th>Team</th><th>Target Prediction</th><th>Winner Pick</th><th>Actual Target</th><th>Correct?</th></tr></thead>
+          <div class="mc-table-wrap">
+            <table class="mc-table">
+              <thead><tr><th>Team</th><th>Target</th><th>Winner</th><th>Actual</th><th>Result</th></tr></thead>
               <tbody id="all-preds-tbody"></tbody>
             </table>
           </div>
@@ -158,6 +271,11 @@ async function init() {
   var params = new URLSearchParams(window.location.search);
   var mid    = params.get('match');
   if (mid) showMatchDetail(mid);
+  // Keyboard navigation
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); navMatch(1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); navMatch(-1); }
+  });
 }
 
 async function loadMatchPills() {
@@ -165,17 +283,48 @@ async function loadMatchPills() {
   try {
     var matches = await API.fetchMatches({ limit:74 });
     if (!matches.length) { cont.innerHTML = '<div style="color:var(--text3);font-size:13px;">No matches yet</div>'; return; }
-    cont.innerHTML = matches.map(function(m, i) {
-      var status = m.is_locked ? (m.winner ? 'status-done' : 'status-locked') : 'status-open';
-      var statusTxt = m.is_locked ? (m.winner?'Completed':'Locked') : 'Open';
-      var t1s = UI.tShort(m.team1), t2s = UI.tShort(m.team2);
-      return '<div class="match-pill" id="pill-'+m.id+'" onclick="showMatchDetail(\''+m.id+'\')" style="animation-delay:'+(.04*i)+'s;">' +
-        '<div class="match-pill-teams">M'+(m.match_no||i+1)+' · '+UI.esc(t1s)+' vs '+UI.esc(t2s)+'</div>' +
-        '<div class="match-pill-date">'+UI.shortDate(m.match_date)+(m.venue?' · '+m.venue:'')+'</div>' +
-        '<span class="match-status '+status+'" style="font-size:10px;padding:1px 6px;align-self:flex-start;">'+statusTxt+'</span>' +
-      '</div>';
-    }).join('');
+    window._allMatches = matches;
+    filterMatches();
   } catch(e) { cont.innerHTML = '<div style="color:var(--red);">'+UI.esc(e.message)+'</div>'; }
+}
+
+function filterMatches() {
+  var search = document.getElementById('mc-search').value.toLowerCase();
+  var filter = document.getElementById('mc-filter').value;
+  var matches = window._allMatches || [];
+  var filtered = matches.filter(function(m) {
+    var matchText = (m.team1||'') + ' ' + (m.team2||'') + ' ' + (m.venue||'') + ' M' + (m.match_no||'');
+    if (search && !matchText.toLowerCase().includes(search)) return false;
+    if (filter === 'open') return !m.is_locked;
+    if (filter === 'locked') return m.is_locked && !m.winner;
+    if (filter === 'completed') return m.winner;
+    return true;
+  });
+  var cont = document.getElementById('match-selector');
+  cont.innerHTML = filtered.map(function(m, i) {
+    var status = m.is_locked ? (m.winner ? 'status-done' : 'status-locked') : 'status-open';
+    var statusTxt = m.is_locked ? (m.winner?'Completed':'Locked') : 'Open';
+    var t1s = UI.tShort(m.team1), t2s = UI.tShort(m.team2);
+    var isSelected = _selectedMatch === m.id ? ' selected' : '';
+    return '<div class="match-pill'+isSelected+'" id="pill-'+m.id+'" onclick="showMatchDetail(\''+m.id+'\')" style="animation-delay:'+(.04*i)+'s;">' +
+      '<div class="match-pill-teams">M'+(m.match_no||i+1)+' · '+UI.esc(t1s)+' vs '+UI.esc(t2s)+'</div>' +
+      '<div class="match-pill-date">'+UI.shortDate(m.match_date)+(m.venue?' · '+m.venue:'')+'</div>' +
+      '<span class="match-status '+status+'" style="font-size:10px;padding:1px 6px;align-self:flex-start;">'+statusTxt+'</span>' +
+    '</div>';
+  }).join('');
+  if (!filtered.length) {
+    cont.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center;">No matches found</div>';
+  }
+}
+
+function navMatch(dir) {
+  var matches = window._allMatches || [];
+  if (!matches.length || !_selectedMatch) return;
+  var currentIdx = matches.findIndex(function(m){ return m.id === _selectedMatch; });
+  if (currentIdx === -1) currentIdx = 0;
+  var newIdx = currentIdx + dir;
+  if (newIdx < 0 || newIdx >= matches.length) return;
+  showMatchDetail(matches[newIdx].id);
 }
 
 async function showMatchDetail(matchId) {
@@ -243,12 +392,12 @@ function renderMatchLeaderboard(mc) {
   tbody.innerHTML = lb.map(function(r) {
     var isMe = r.fantasy_team_id === _myTeamId;
     return '<tr class="'+(r.match_rank===1?'leaderboard-rank-1':'')+(isMe?' highlight-me':'')+'">' +
-      '<td class="rank">'+(medals[r.match_rank]||r.match_rank)+'</td>' +
-      '<td style="font-family:var(--f-ui);font-weight:400;">' + UI.championName(r.team?.team_name||'—') + (isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'') + '</td>' +
-      '<td class="font-mono">'+UI.fmtPts(r.squad_points)+'</td>' +
-      '<td class="font-mono">'+UI.fmtPts(r.prediction_points)+'</td>' +
-      '<td class="pts">'+UI.fmtPts(r.total_points)+'</td>' +
-      '<td class="pts">' + 
+      '<td class="mc-rank">'+(medals[r.match_rank]||r.match_rank)+'</td>' +
+      '<td class="mc-team">' + UI.championName(r.team?.team_name||'—') + (isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'') + '</td>' +
+      '<td>'+UI.fmtPts(r.squad_points)+'</td>' +
+      '<td>'+UI.fmtPts(r.prediction_points)+'</td>' +
+      '<td class="mc-pts">'+UI.fmtPts(r.total_points)+'</td>' +
+      '<td>' + 
         '<div style="color:var(--gold);">' + UI.fmtPts(r.team_season_pts) + '</div>' +
         UI.rankBadge(r.team_season_rank, r.team_season_prev_rank) + 
       '</td>' +
@@ -294,11 +443,11 @@ function renderAllPredictions(mc) {
     var corW   = m.winner && p.predicted_winner===m.winner;
     var isMe   = p.fantasy_team_id===_myTeamId;
     return '<tr class="'+(isMe?'highlight-me':'')+'">' +
-      '<td style="font-family:var(--f-ui);font-weight:400;">' + UI.championName(p.team?.team_name||'—') + (isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'') + '</td>' +
-      '<td class="font-mono">'+(p.target_score||'—')+'</td>' +
+      '<td class="mc-team">' + UI.championName(p.team?.team_name||'—') + (isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'') + '</td>' +
+      '<td class="mc-label">'+(p.target_score||'—')+'</td>' +
       '<td>'+UI.esc(p.predicted_winner||'—')+'</td>' +
-      '<td class="font-mono">'+(m.actual_target||'—')+'</td>' +
-      '<td>'+(m.winner ? (corW?'<span style="color:var(--green);">✓</span>':'<span style="color:var(--red);">✗</span>') : '—')+(diff!==null?' <span style="font-size:11px;color:var(--text3);">(±'+diff+')</span>':'')+'</td>' +
+      '<td class="mc-label">'+(m.actual_target||'—')+'</td>' +
+      '<td>'+(m.winner ? (corW?'<span class="mc-success">✓</span>':'<span class="mc-fail">✗</span>') : '—')+(diff!==null?' <span style="font-size:11px;color:var(--text3);">(±'+diff+')</span>':'')+'</td>' +
     '</tr>';
   }).join('');
 }
