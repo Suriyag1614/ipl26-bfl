@@ -557,7 +557,7 @@ body { display:flex; flex-direction:column; }
 .player-card.vice-cap::before { background:var(--cyan); }
 .player-card-header { display:flex; justify-content:space-between; align-items:flex-start; padding:8px 10px 0; position:relative; z-index:1; }
 .player-card-header > * { flex-shrink: 0; }
-.player-card-body { padding:8px 12px 14px; }
+.player-card-body { padding:8px 12px 14px; background-color:var(--bg2); background-image: url('../images/ipl/player-back-bg-numbers.png'); background-size:cover; background-position:center;background-blend-mode:overlay; }
 .player-card-header .role-tag { font-size:9px; padding:3px 7px; border-radius:6px; }
 .player-card-header .rt-os { font-size:9px; padding:3px 7px; border-radius:6px; }
 .player-avatar {
