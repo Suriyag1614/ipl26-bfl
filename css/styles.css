@@ -817,6 +817,7 @@ body:has(.login-wrap) #toast-container {
 .match-tab.active { background:var(--accent-dim); border-color:rgba(200,241,53,.35); color:var(--accent); }
 .match-tab.done   { background:rgba(56,217,245,.06); border-color:rgba(56,217,245,.2); color:var(--cyan); }
 .match-tab.locked-tab { background:var(--red-dim); border-color:rgba(255,77,109,.2); color:var(--red); }
+.match-tab.abandoned-tab { background:rgba(138,43,226,.12); border-color:rgba(138,43,226,.25); color: #8a2be2; }
 .match-tab.has-impact { position:relative; }
 .match-tab.has-impact::after { content:'⚡'; position:absolute; top:-6px; right:-6px; font-size:11px; background:var(--bg); border-radius:50%; width:17px; height:17px; display:flex; align-items:center; justify-content:center; }
 .pred-card { background:var(--bg1); border:1px solid var(--border); border-radius:var(--radius-xl); overflow:hidden; animation:fade-up .35s ease both; }

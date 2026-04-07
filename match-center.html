@@ -186,6 +186,7 @@
               <option value="open">Open</option>
               <option value="locked">Locked</option>
               <option value="completed">Completed</option>
+              <option value="abandoned">Abandoned</option>
             </select>
             <img src="images/ipl/drop_down_icon.svg" class="mc-filter-icon" alt="Filter">
           </div>
@@ -296,14 +297,15 @@ function filterMatches() {
     var matchText = (m.team1||'') + ' ' + (m.team2||'') + ' ' + (m.venue||'') + ' M' + (m.match_no||'');
     if (search && !matchText.toLowerCase().includes(search)) return false;
     if (filter === 'open') return !m.is_locked;
-    if (filter === 'locked') return m.is_locked && !m.winner;
-    if (filter === 'completed') return m.winner;
+    if (filter === 'locked') return m.is_locked && !m.winner && !m.is_abandoned;
+    if (filter === 'completed') return m.winner && !m.is_abandoned;
+    if (filter === 'abandoned') return m.is_abandoned || m.status === 'abandoned';
     return true;
   });
   var cont = document.getElementById('match-selector');
   cont.innerHTML = filtered.map(function(m, i) {
-    var status = m.is_locked ? (m.winner ? 'status-done' : 'status-locked') : 'status-open';
-    var statusTxt = m.is_locked ? (m.winner?'Completed':'Locked') : 'Open';
+    var status = m.is_abandoned ? 'status-upcoming' : (m.is_locked ? (m.winner ? 'status-done' : 'status-locked') : 'status-open');
+    var statusTxt = m.is_abandoned ? 'Abandoned' : (m.is_locked ? (m.winner?'Completed':'Locked') : 'Open');
     var t1s = UI.tShort(m.team1), t2s = UI.tShort(m.team2);
     var isSelected = _selectedMatch === m.id ? ' selected' : '';
     return '<div class="match-pill'+isSelected+'" id="pill-'+m.id+'" onclick="showMatchDetail(\''+m.id+'\')" style="animation-delay:'+(.04*i)+'s;">' +
@@ -369,7 +371,7 @@ function renderMatchHeader(mc) {
     hdr.innerHTML =
       '<div class="flex-between mb-8">' +
         '<div style="font-size:13px;color:var(--text3);font-family:var(--f-ui);font-weight:600;">MATCH '+(m.match_no||'')+'</div>' +
-        '<span class="match-status '+(m.is_locked?(m.winner?'status-done':'status-locked'):'status-open')+'">'+(m.is_locked?(m.winner?'Completed':'Locked'):'Open')+'</span>' +
+        '<span class="match-status '+(m.is_abandoned?'status-upcoming':m.is_locked?(m.winner?'status-done':'status-locked'):'status-open')+'">'+(m.is_abandoned?'Abandoned':m.is_locked?(m.winner?'Completed':'Locked'):'Open')+'</span>' +
       '</div>' +
       '<div class="match-teams">' +
         '<div class="match-team">'+UI.esc(m.team1||'—')+'</div>' +

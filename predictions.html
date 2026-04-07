@@ -388,7 +388,7 @@ function renderMatchTabs() {
       var cls = 'match-tab' +
         (si.cls === 'done'      ? ' done'       : '') +
         (si.cls === 'locked'    ? ' locked-tab' : '') +
-        (si.cls === 'abandoned' ? ' locked-tab' : '') +
+        (si.cls === 'abandoned' ? ' abandoned-tab' : '') +
         (hasImpact              ? ' has-impact'  : '') +
         (_activeMatchId === m.id ? ' active'    : '');
       var t1s = UI.tShort(m.team1), t2s = UI.tShort(m.team2);

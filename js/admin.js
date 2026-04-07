@@ -627,7 +627,7 @@ async function loadResultForm() {
       '<div style="font-size:13px;color:var(--text2);margin-bottom:6px;">'+UI.fmtDate(m.match_date)+(m.venue?' · '+UI.esc(m.venue):'')+'</div>'+
       (m.winner?'<div style="color:var(--gold);margin-bottom:4px;">🏆 Winner: <strong>'+UI.esc(m.winner)+'</strong></div>':'')+
       (m.actual_target?'<div style="color:var(--text2);">🎯 Target: <strong style="color:var(--accent);">'+m.actual_target+'</strong>'+(m.is_dls_applied?' <span class="dls-badge">DLS</span>':'')+'</div>':'')+
-      '<div style="margin-top:8px;"><span class="match-status '+(m.is_locked?'status-locked':'status-open')+'" style="font-size:11px;">'+(m.is_locked?'🔒 Locked':'● Open')+'</span></div>'+
+      '<div style="margin-top:8px;"><span class="match-status '+(m.is_abandoned?'status-upcoming':m.is_locked?'status-locked':'status-open')+'" style="font-size:11px;">'+(m.is_abandoned?'☔ Abandoned':m.is_locked?'🔒 Locked':'● Open')+'</span></div>'+
     '</div>';
 }
 
