@@ -181,10 +181,13 @@ function renderPendingReplacements(){
   document.getElementById('pending-replacements-list').innerHTML=html;
 }
 var _releasedPlayers = [];
+var _submittedBlogId = null;
 async function loadReleasedPlayers() {
   try {
     var allSquad = await API.fetchSquad(_myTeamId, true);
     _releasedPlayers = allSquad.filter(function(s){ return s.is_released; });
+    var existingBlog = await sb.from('blogs').select('id').eq('category', 'releases').order('created_at', { ascending: false }).limit(1).maybeSingle();
+    _submittedBlogId = existingBlog ? existingBlog.id : null;
     renderReleasedPlayers();
   } catch(e) { _releasedPlayers = []; }
 }
@@ -202,9 +205,68 @@ function renderReleasedPlayers() {
         '<div style="font-size:13px;font-weight:700;">'+UI.esc(p.name||'—')+'</div>'+
         '<div style="font-size:11px;color:var(--text2);">'+UI.esc(p.ipl_team||'')+' · '+UI.esc(p.role||'')+'</div>'+
       '</div>'+
-      '<button class="btn btn-ghost btn-sm" style="padding:4px 10px;font-size:11px;" onclick="undoRelease(\''+sp.id+'\',\''+UI.esc(p.name||'')+'\')">Undo</button>'+
+      '<div style="display:flex;gap:6px;">'+
+        '<button class="btn btn-ghost btn-sm" style="padding:4px 10px;font-size:11px;" onclick="undoRelease(\''+sp.id+'\',\''+UI.esc(p.name||'')+'\')">Undo</button>'+
+      '</div>'+
     '</div>';
-  }).join('');
+  }).join('') +
+  (_submittedBlogId 
+    ? '<button class="btn btn-danger btn-sm" style="width:100%;margin-top:10px;" onclick="deleteSubmittedRelease()">Delete Submission</button>'
+    : '<button class="btn btn-accent btn-sm" style="width:100%;margin-top:10px;" onclick="submitReleaseForAuction()">Submit for Auction</button>');
+}
+async function submitReleaseForAuction() {
+  if (!_releasedPlayers || !_releasedPlayers.length) {
+    UI.toast('No released players to submit', 'warn');
+    return;
+  }
+  if (_submittedBlogId) {
+    UI.toast('Already submitted! Delete first to resubmit.', 'warn');
+    return;
+  }
+  var playerList = _releasedPlayers.map(function(sp) {
+    var p = sp.player || {};
+    return '• ' + (p.name||'—') + ' (' + (p.role||'') + ', ' + (p.ipl_team||'') + ')';
+  }).join('\n');
+  var teamName = _myTeam ? _myTeam.team_name : 'Your Team';
+  var content = '## ' + teamName + ' - Released Players for Auction\n\n' + playerList + '\n\n---\n*Submitted for Replacement Auction*';
+  try {
+    var blogData = {
+      title: teamName + ' - Released Players for Auction',
+      content: content,
+      excerpt: _releasedPlayers.length + ' player(s) released for auction',
+      category: 'releases',
+      status: 'draft',
+      is_published: false
+    };
+    var result = await sb.from('blogs').insert(blogData).select().single();
+    if (result.data) {
+      _submittedBlogId = result.data.id;
+      renderReleasedPlayers();
+    }
+    UI.toast('Submitted! Admin will review and publish.', 'success');
+  } catch(e) { UI.toast('Failed: ' + e.message, 'error'); }
+}
+async function deleteSubmittedRelease() {
+  if (!_submittedBlogId) {
+    UI.toast('No submission to delete', 'warn');
+    return;
+  }
+  UI.showConfirm({
+    icon: '🗑️',
+    title: 'Delete Submission?',
+    msg: 'This will remove your submitted release request.',
+    consequence: 'You can submit again after undoing releases.',
+    okLabel: 'Delete',
+    okClass: 'btn-danger',
+    onOk: async function() {
+      try {
+        await sb.from('blogs').delete().eq('id', _submittedBlogId);
+        _submittedBlogId = null;
+        UI.toast('Submission deleted', 'warn');
+        renderReleasedPlayers();
+      } catch(e) { UI.toast('Failed: ' + e.message, 'error'); }
+    }
+  });
 }
 async function undoRelease(squadPlayerId, playerName) {
   UI.showConfirm({
@@ -218,7 +280,6 @@ async function undoRelease(squadPlayerId, playerName) {
       try {
         await sb.from('squad_players').update({ is_released: false, released_at: null, release_reason: null }).eq('id', squadPlayerId);
         UI.toast(playerName + ' restored to squad!', 'success');
-        _releaseCount--;
         await loadSquad();
         await loadReleasedPlayers();
         renderSummary();
