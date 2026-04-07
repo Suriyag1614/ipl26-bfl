@@ -36,7 +36,10 @@ function tShort(n){return UI.tShort(n);}
 
 async function loadSquad(){
   try{
-    _squad=safeArr(await API.fetchSquad(_myTeamId));
+    var allSquad = safeArr(await API.fetchSquad(_myTeamId, true));
+    _releaseCount = allSquad.filter(function(s){ return s.is_released; }).length;
+    _cappedReleaseCount = allSquad.filter(function(s){ return s.is_released && s.player && s.player.is_uncapped === false; }).length;
+    _squad = allSquad.filter(function(s){ return !s.is_released; });
     try{
       _pendingReps=safeArr(await API.fetchPendingReplacements(_myTeamId));
     }catch(e){
@@ -52,6 +55,7 @@ async function loadSquad(){
     renderSquad(); renderSummary(); renderRoleBreakdown(); renderInjuryBanner(); renderReplacements();
     setTimeout(function(){
       renderPendingReplacements();
+      loadReleasedPlayers();
     },100);
   }catch(e){
     UI.toast('Could not load squad: '+e.message,'error');
@@ -176,6 +180,52 @@ function renderPendingReplacements(){
 
   document.getElementById('pending-replacements-list').innerHTML=html;
 }
+var _releasedPlayers = [];
+async function loadReleasedPlayers() {
+  try {
+    var allSquad = await API.fetchSquad(_myTeamId, true);
+    _releasedPlayers = allSquad.filter(function(s){ return s.is_released; });
+    renderReleasedPlayers();
+  } catch(e) { _releasedPlayers = []; }
+}
+function renderReleasedPlayers() {
+  var card = document.getElementById('released-card');
+  if (!_releasedPlayers || !_releasedPlayers.length) {
+    if(card) card.style.display = 'none';
+    return;
+  }
+  card.style.display = '';
+  document.getElementById('released-list').innerHTML = _releasedPlayers.map(function(sp) {
+    var p = sp.player || {};
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:rgba(255,77,109,.06);border:1px solid rgba(255,77,109,.2);border-radius:6px;margin-bottom:6px;">'+
+      '<div>'+
+        '<div style="font-size:13px;font-weight:700;">'+UI.esc(p.name||'—')+'</div>'+
+        '<div style="font-size:11px;color:var(--text2);">'+UI.esc(p.ipl_team||'')+' · '+UI.esc(p.role||'')+'</div>'+
+      '</div>'+
+      '<button class="btn btn-ghost btn-sm" style="padding:4px 10px;font-size:11px;" onclick="undoRelease(\''+sp.id+'\',\''+UI.esc(p.name||'')+'\')">Undo</button>'+
+    '</div>';
+  }).join('');
+}
+async function undoRelease(squadPlayerId, playerName) {
+  UI.showConfirm({
+    icon: '↩️',
+    title: 'Undo Release?',
+    msg: 'Bring ' + playerName + ' back to squad?',
+    consequence: 'This will restore the player to your active squad.',
+    okLabel: 'Restore',
+    okClass: 'btn-accent',
+    onOk: async function() {
+      try {
+        await sb.from('squad_players').update({ is_released: false, released_at: null, release_reason: null }).eq('id', squadPlayerId);
+        UI.toast(playerName + ' restored to squad!', 'success');
+        _releaseCount--;
+        await loadSquad();
+        await loadReleasedPlayers();
+        renderSummary();
+      } catch(e) { UI.toast('Undo failed: ' + e.message, 'error'); }
+    }
+  });
+}
 
 function editPendingRep(repId){
   var rep=_pendingReps.find(function(r){return r.id===repId;});
@@ -299,6 +349,7 @@ function renderSquad(){
         (statusHtml?'<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin:4px 0;">'+statusHtml+'</div>':'') +
         (pts!==0?'<div class="player-pts-row"><span style="color:var(--text2)">Season FP</span><span style="font-family:var(--f-mono);font-weight:600;color:var(--accent)">'+pts+'</span></div>':'') +
         (isUnavailable?'<button class="btn btn-sm" style="margin-top:6px;width:100%;background:rgba(56,217,245,.12);color:var(--cyan);border:1px solid rgba(56,217,245,.25);font-size:11px;" onclick="openRepModal(\''+pd+'\');">'+(hasRep?'&#x2194; Change':'+ Set Replacement')+'</button>':'')+
+        (!isUnavailable && !isCap && !isVC ?'<button class="btn btn-sm" style="margin-top:6px;width:100%;background:rgba(255,77,109,.08);color:var(--red);border:1px solid rgba(255,77,109,.2);font-size:10px;" onclick="confirmRelease(\''+sp.id+'\',\''+UI.esc(p.name||'')+'\','+!!(p.is_uncapped)+')">Release for Auction</button>':'')+
       '</div>' +
     '</div>';
   }).join('');
@@ -311,6 +362,7 @@ function renderSummary(){
   var el=document.getElementById('squad-summary'); if(!el)return;
   var items=[{lbl:'Players',val:_squad.length,unit:'/12'},{lbl:'Captain',val:(cap&&cap.player)?cap.player.name:'&mdash;',plain:true},{lbl:'VC',val:(vc&&vc.player)?vc.player.name:'&mdash;',plain:true},{lbl:'Impact',val:(impact&&impact.player)?impact.player.name:'&mdash;',plain:true},{lbl:'Overseas',val:os,unit:'/4'}];
   if(unavail) items.push({lbl:'Unavailable',val:unavail,accent:'var(--red)'});
+  items.push({lbl:'Released',val:_releaseCount,unit:'/'+_maxRelease,accent:_releaseCount>=_maxRelease?'var(--red)':'var(--text2)'});
   el.innerHTML='<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;">'+items.map(function(it,i){
     var sep=i?'<div style="width:1px;height:32px;background:var(--border);flex-shrink:0;"></div>':'';
     var valHtml=it.plain?'<div style="font-family:var(--f-display);font-weight:600;font-size:15px;">'+UI.esc(String(it.val))+'</div>':
@@ -439,6 +491,40 @@ function closeRepModal(){
   var endMatchSel=document.getElementById('rep-end-match');
   if(matchSel) matchSel.value='';
   if(endMatchSel) endMatchSel.value='';
+}
+var _releaseCount = 0;
+var _cappedReleaseCount = 0;
+var _maxRelease = 3;
+var _maxCappedRelease = 2;
+var _releasesEnabled = true;
+async function confirmRelease(squadPlayerId, playerName, isUncapped) {
+  if (!_releasesEnabled) {
+    UI.toast('Release feature is currently disabled', 'warn');
+    return;
+  }
+  if (_releaseCount >= _maxRelease) {
+    UI.toast('Maximum ' + _maxRelease + ' players can be released', 'warn');
+    return;
+  }
+  if (!isUncapped && _cappedReleaseCount >= _maxCappedRelease) {
+    UI.toast('Maximum ' + _maxCappedRelease + ' capped players can be released', 'warn');
+    return;
+  }
+  UI.showConfirm({
+    icon: '🏷️',
+    title: 'Release ' + playerName + '?',
+    msg: 'This player will be released for the auction.',
+    consequence: 'Max ' + _maxRelease + ' total (' + _maxCappedRelease + ' capped).',
+    okLabel: 'Release',
+    okClass: 'btn-danger',
+    onOk: async function() {
+      try {
+        await API.releasePlayer(squadPlayerId, 'Released for auction');
+        UI.toast(playerName + ' released for auction!', 'success');
+        await loadSquad();
+      } catch(e) { UI.toast('Release failed: ' + e.message, 'error'); }
+    }
+  });
 }
 function selectRep(pid){
   _repSelectedId=pid;

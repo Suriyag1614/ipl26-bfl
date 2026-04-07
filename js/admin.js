@@ -149,7 +149,7 @@ function showPanel(id) {
     overrides:  function() { loadAdjustments(); },
     injuries:   loadInjuries,
     squads:     function() {},
-    blogs:      loadBlogList,
+    blogs:      function() { loadBlogList(); initBlogTeamDropdowns(); },
     users:      loadUsers,
     audit:      loadAuditLog,
   };
@@ -1639,6 +1639,58 @@ function clearBlogForm() {
   $id('blog-id').value=''; $id('b-title').value=''; $id('b-excerpt').value='';
   $id('b-cat').value='general'; $id('b-status').value='draft'; $id('b-content').value='';
   $id('blog-editor-title').textContent='New Post'; $id('blog-del-btn').style.display='none'; $id('blog-err').textContent='';
+  $id('blog-mention-team').value=''; $id('blog-insert-squad').value='';
+}
+var _teamListCache = [];
+async function initBlogTeamDropdowns() {
+  var teamSel = $id('blog-mention-team');
+  var squadSel = $id('blog-insert-squad');
+  if (!teamSel || !squadSel) return;
+  if (!_teamListCache.length) {
+    try { var lb = await API.fetchLeaderboard(); _teamListCache = lb.map(function(r){ return r.team; }).filter(Boolean); } catch(e) { _teamListCache = []; }
+  }
+  var opts = '<option value="">— Tag a team —</option>';
+  _teamListCache.forEach(function(t) {
+    opts += '<option value="'+UI.esc(t.team_name||'')+'">'+UI.esc(t.team_name||'')+'</option>';
+  });
+  teamSel.innerHTML = opts;
+  squadSel.innerHTML = opts.replace('— Tag a team —','— Show squad —');
+}
+function insertTeamMention() {
+  var team = $id('blog-mention-team').value;
+  if (!team) return;
+  var textarea = $id('b-content');
+  var cur = textarea.value;
+  textarea.value = cur + (cur ? '\n\n' : '') + '🏏 **' + team + '**';
+  textarea.focus();
+  $id('blog-mention-team').value = '';
+}
+async function insertSquadList() {
+  var teamName = $id('blog-insert-squad').value;
+  if (!teamName) return;
+  var textarea = $id('b-content');
+  var cur = textarea.value;
+  try {
+    var lb = _teamListCache.length ? _teamListCache : (await API.fetchLeaderboard()).map(function(r){ return r.team; });
+    var team = lb.find(function(t){ return t.team_name === teamName; });
+    if (!team) { UI.toast('Team not found','warn'); return; }
+    var squad = await API.fetchSquad(team.id);
+    if (!squad || !squad.length) { UI.toast('No squad found','warn'); return; }
+    var cap = squad.find(function(p){ return p.is_captain; });
+    var vc = squad.find(function(p){ return p.is_vc; });
+    var impact = squad.find(function(p){ return p.is_impact; });
+    var list = squad.map(function(p) {
+      var tags = [];
+      if (p.is_captain) tags.push('C');
+      if (p.is_vc) tags.push('VC');
+      if (p.is_impact) tags.push('IMP');
+      var name = p.player ? p.player.name : '—';
+      return '• ' + name + (tags.length ? ' (' + tags.join(',') + ')' : '');
+    }).join('\n');
+    textarea.value = cur + (cur ? '\n\n' : '') + '📋 **' + teamName + ' Squad**\n' + list;
+    UI.toast('Squad inserted!','success');
+  } catch(e) { UI.toast('Could not load squad','error'); }
+  $id('blog-insert-squad').value = '';
 }
 async function loadBlogEdit(blogId) {
   try {

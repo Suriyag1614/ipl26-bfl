@@ -9,10 +9,14 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   //  SQUADS  — injury + active replacement injected per player
   // ══════════════════════════════════════════════════════════════════
-  async fetchSquad(teamId) {
-    const { data, error } = await sb.from('squad_players')
-      .select('id,is_captain,is_vc,is_impact,player:players(id,name,ipl_team,role,image_url,is_overseas,availability_status,availability_note)')
+  async fetchSquad(teamId, includeReleased = false) {
+    let query = sb.from('squad_players')
+      .select('id,is_captain,is_vc,is_impact,is_released,released_at,release_reason,player:players(id,name,ipl_team,role,image_url,is_overseas,is_uncapped,availability_status,availability_note)')
       .eq('fantasy_team_id', teamId).order('is_captain', { ascending: false });
+    if (!includeReleased) {
+      query = query.eq('is_released', false);
+    }
+    const { data, error } = await query;
     if (error) throw error;
     if (!data) return [];
     const rows = Array.isArray(data) ? data : [data];
@@ -21,6 +25,17 @@ const API = {
       const rep = reps.find(r => r.original_player_id === sp.player?.id);
       return { ...sp, replacement: rep || null };
     });
+  },
+
+  async releasePlayer(squadPlayerId, reason) {
+    const { data: before } = await sb.from('squad_players').select('*').eq('id', squadPlayerId).maybeSingle();
+    const { data, error } = await sb.from('squad_players').update({
+      is_released: true,
+      released_at: new Date().toISOString(),
+      release_reason: reason || 'Released for auction'
+    }).eq('id', squadPlayerId).select().single();
+    if (error) throw error;
+    return data;
   },
 
   async fetchAllPlayers() {

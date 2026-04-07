@@ -161,6 +161,7 @@ CREATE TABLE public.players (
   injury_note text,
   availability_status text DEFAULT 'available'::text CHECK (availability_status = ANY (ARRAY['available'::text, 'injured'::text, 'unavailable'::text])),
   availability_note text,
+  is_uncapped boolean DEFAULT false,
   CONSTRAINT players_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.points_log (
@@ -223,6 +224,9 @@ CREATE TABLE public.squad_players (
   is_captain boolean DEFAULT false,
   is_vc boolean DEFAULT false,
   is_impact boolean DEFAULT false,
+  is_released boolean DEFAULT false,
+  released_at timestamp with time zone,
+  release_reason text,
   CONSTRAINT squad_players_pkey PRIMARY KEY (id),
   CONSTRAINT squad_players_fantasy_team_id_fkey FOREIGN KEY (fantasy_team_id) REFERENCES public.fantasy_teams(id),
   CONSTRAINT squad_players_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
