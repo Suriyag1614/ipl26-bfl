@@ -461,6 +461,12 @@
         <div id="dash-audit"><div class="skel skel-row"></div></div>
       </div>
     </div>
+    <div class="col-2 mt-20">
+      <div class="card">
+        <div class="flex-between mb-12"><div class="card-title">📊 Recent Predictions</div></div>
+        <div id="dash-predictions"><div class="skel skel-row"></div></div>
+      </div>
+    </div>
   </div>
 
   <!-- ════ FIXTURES ════ -->
@@ -539,6 +545,7 @@
 <div class="admin-panel" id="panel-results">
   <div class="section-hdr">
     <div><div class="section-title">Results & Winner</div><div class="section-sub">Enter final target, winner, and Player of Match</div></div>
+    <button class="btn btn-accent btn-sm" onclick="exportPredictionsCSV()">↓ Export CSV</button>
   </div>
   <div class="col-2">
     <div class="card">
@@ -938,6 +945,7 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <input type="text" class="form-input" id="user-search" placeholder="Search users..." oninput="filterUserList()" style="width:150px;min-width:120px;">
         <button class="btn btn-ghost btn-sm" onclick="loadUsers()">↻ Refresh</button>
+        <button class="btn btn-accent btn-sm" onclick="exportUsersCSV()">↓ Export CSV</button>
       </div>
     </div>
     <div class="card" style="padding:0;overflow:hidden;">

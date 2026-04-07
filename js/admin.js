@@ -424,6 +424,25 @@ async function loadDashboard() {
           '</div>';
         }).join('');
 
+    // Recent predictions
+    try {
+      var preds = await sb.from('predictions').select('*,match:matches(match_no,team1,team2,match_date),fantasy_team:fantasy_teams(team_name)').order('submitted_at', {ascending:false}).limit(8);
+      var predData = safeArr(preds.data);
+      $id('dash-predictions').innerHTML = !predData.length
+        ? '<div style="color:var(--text3);font-size:13px;padding:8px 0;">No predictions yet.</div>'
+        : predData.map(function(p) {
+            var t = p.fantasy_team || {};
+            var m = p.match || {};
+            return '<div class="user-row">'+
+              '<div style="flex:1;">'+
+                '<div style="font-weight:700;font-size:13px;">'+UI.esc(t.team_name||'—')+'</div>'+
+                '<div style="font-size:11px;color:var(--text3);">M'+(m.match_no||'?')+' '+UI.esc((m.team1||'').substring(0,3))+' vs '+UI.esc((m.team2||'').substring(0,3))+'</div>'+
+              '</div>'+
+              '<div style="font-size:11px;color:var(--text2);">'+(p.predicted_winner||'—')+(p.target_score ? ' · '+p.target_score : '')+'</div>'+
+            '</div>';
+          }).join('');
+    } catch(e) { $id('dash-predictions').innerHTML = '<div style="color:var(--text3);font-size:12px;">Could not load.</div>'; }
+
   } catch(e) { UI.toast('Dashboard error: '+e.message,'error'); console.error(e); }
 }
 
@@ -659,6 +678,30 @@ async function saveResult() {
       } catch(e) { $id('res-error').textContent=e.message; UI.toast(e.message,'error'); }
     }
   });
+}
+var _allPredictionsCache = [];
+async function exportPredictionsCSV() {
+  try {
+    var preds = await sb.from('predictions').select('*,match:matches(match_no,team1,team2,match_date),fantasy_team:fantasy_teams(team_name,owner_name)').order('submitted_at', {ascending:false});
+    _allPredictionsCache = safeArr(preds.data);
+    if (!_allPredictionsCache.length) { UI.toast('No predictions to export','warn'); return; }
+    var csv = 'Match,Team,Owner,Predicted Winner,Target Score,Submitted At\n';
+    _allPredictionsCache.forEach(function(p) {
+      var m = p.match || {};
+      var t = p.fantasy_team || {};
+      csv += '"M'+(m.match_no||'')+' '+UI.esc((m.team1||'').substring(0,3))+' vs '+UI.esc((m.team2||'').substring(0,3))+'",' +
+        '"'+(t.team_name||'').replace(/"/g,'""')+'",' +
+        '"'+(t.owner_name||'').replace(/"/g,'""')+'",' +
+        (p.predicted_winner||'') + ',' +
+        (p.target_score||'') + ',' +
+        (p.submitted_at||'') + '\n';
+    });
+    var blob = new Blob([csv], {type:'text/csv'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href = url; a.download = 'predictions_export_' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+    URL.revokeObjectURL(url);
+    UI.toast('Predictions CSV exported!','success');
+  } catch(e) { UI.toast('Export failed: '+e.message,'error'); }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1652,6 +1695,7 @@ async function loadUsers() {
   tbody.innerHTML='<tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
   try {
     var lb=safeArr(await API.fetchLeaderboard());
+    _leaderboardData = lb;
     if (lb.some(function(r){ return !r.matches_played; })) {
       try {
         var allLogs = await sb.from('points_log').select('fantasy_team_id');
@@ -1687,6 +1731,23 @@ function filterUserList() {
     var text = row.textContent.toLowerCase();
     row.style.display = !search || text.includes(search) ? '' : 'none';
   });
+}
+var _leaderboardData = [];
+async function exportUsersCSV() {
+  if (!_leaderboardData.length) {
+    try { _leaderboardData = safeArr(await API.fetchLeaderboard()); } catch(e) { _leaderboardData = []; }
+  }
+  if (!_leaderboardData.length) { UI.toast('No data to export','warn'); return; }
+  var csv = 'Rank,Team,Owner,Total Points,Matches\n';
+  _leaderboardData.forEach(function(r) {
+    var t = r.team || {};
+    csv += (r.rank||'') + ',' + (t.team_name||'').replace(/,/g,';') + ',' + (t.owner_name||'').replace(/,/g,';') + ',' + (r.total_points||0) + ',' + (r.matches_played||0) + '\n';
+  });
+  var blob = new Blob([csv], {type:'text/csv'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = 'teams_export_' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+  URL.revokeObjectURL(url);
+  UI.toast('CSV exported!','success');
 }
 
 /* ══════════════════════════════════════════════════════════════
