@@ -1606,7 +1606,7 @@ async function exportReleasesPDF() {
       UI.toast('No releases found in database','warn'); 
       return; 
     }
-    var tradedPlayers = ['Urvil Patel', 'Will Jacks', 'Prasidh Krishna', 'Mohammed Siraj'];
+      var tradedPlayers = ['Urvil Patel', 'Will Jacks', 'Prasidh Krishna', 'Mohammed Siraj'];
     var html = '<!DOCTYPE html><html><head><title>All Releases - PDF</title>'+
       '<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">'+
       '<style>'+
@@ -1614,10 +1614,7 @@ async function exportReleasesPDF() {
       'body{font-family:"Work Sans",Arial,sans-serif;padding:0;background:#0f0f0f;color:#fff;min-height:100vh;}'+
       '.header{background:linear-gradient(135deg,#e5393522 0%,#1a1a1a 100%);padding:40px 40px 30px;border-bottom:3px solid #e53935;}'+
       '.header-title{font-family:"Barlow Condensed",sans-serif;font-size:36px;font-weight:900;letter-spacing:1px;margin-bottom:5px;color:#e53935;}'+
-      '.header-sub{font-size:16px;color:#888;}'+
-      '.trade-note{background:#ffc10722;border:1px solid #ffc107;padding:15px 20px;margin:20px 40px;border-radius:8px;font-size:13px;}'+
-      '.trade-note strong{color:#ffc107;}'+
-      '.subtitle{font-size:14px;color:#888;margin-bottom:20px;padding:15px 40px;background:#1a1a1a;border-bottom:1px solid #333;}'+
+      '.header-sub{font-size:14px;color:#888;margin-bottom:20px;padding:15px 40px;background:#1a1a1a;border-bottom:1px solid #333;}'+
       '.team-card{background:linear-gradient(135deg,#1a1a1a 0%,#252525 100%);border:1px solid #333;border-radius:12px;margin:0 40px 30px;overflow:hidden;}'+
       '.team-card-header{background:#e53935;padding:15px 20px;}'+
       '.team-card-name{font-size:20px;font-weight:700;color:#fff;}'+
@@ -1633,6 +1630,7 @@ async function exportReleasesPDF() {
       '.badge-os{background:#e65100;color:#fff;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;}'+
       '.badge-released{background:#e53935;color:#fff;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;}'+
       '.badge-traded{background:#ffc107;color:#000;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;}'+
+      '.player-card.traded{border-color:#ffc107;}'+
       '@media print{'+
       'body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}'+
       '.player-card{break-inside:avoid;}'+
@@ -1641,22 +1639,22 @@ async function exportReleasesPDF() {
       '<body>'+
       '<div class="header">'+
         '<div class="header-title">📤 Player Releases & Trades</div>'+
-        '<div class="header-sub">IPL 2026 Fantasy League</div>'+
-      '</div>'+
-      '<div class="trade-note"><strong>Trades:</strong> Urvil Patel → CSK (4Cr from SURA) | Will Jacks → CSK (9Cr from LSG) | Prasidh Krishna → CSK (5Cr from KKR, Siraj → KKR)</div>'+
-      '<div class="subtitle">Generated: '+new Date().toLocaleDateString()+' | Total Released/Traded: '+allReleases.reduce(function(acc,t){return acc+t.releases.length;},0)+' players</div>';
+        '<div class="header-sub">IPL 2026 Fantasy League | Generated: '+new Date().toLocaleDateString()+' | Total: '+allReleases.reduce(function(acc,t){return acc+t.releases.length;},0)+' players</div>'+
+      '</div>';
     allReleases.forEach(function(tr) {
       html += '<div class="team-card">'+
         '<div class="team-card-header"><div class="team-card-name">'+UI.esc(tr.team.team_name||'')+'</div>'+
         '<div class="team-card-owner">Owner: '+UI.esc(tr.team.owner_name||'—')+'</div></div>'+
         '<div class="player-grid">';
+      var tradedPlayers = ['urvil', 'will jacks', 'prasidh', 'siraj'];
       tr.releases.forEach(function(sp) {
         var p = sp.player || {};
         var initials = (p.name||'').split(' ').map(function(w) { return w[0]; }).join('').substring(0,2).toUpperCase();
-        var isTraded = tradedPlayers.indexOf(p.name) !== -1;
+        var playerNameLower = (p.name||'').toLowerCase();
+        var isTraded = tradedPlayers.some(function(tp) { return playerNameLower.indexOf(tp) !== -1; });
         var badgeClass = isTraded ? 'badge-traded' : 'badge-released';
         var badgeText = isTraded ? 'Traded' : 'Released';
-        html += '<div class="player-card">'+
+        html += '<div class="player-card'+(isTraded?' traded':'')+'">'+
           '<div class="player-avatar">'+initials+'</div>'+
           '<div class="player-info">'+
             '<div class="player-name">'+UI.esc(p.name||'—')+'</div>'+
@@ -1917,7 +1915,7 @@ async function exportAllSquadsPDF() {
         html += '</div>';
       }
       html += '<div class="player-grid">';
-      var tradedPlayers = ['Urvil Patel', 'Will Jacks', 'Prasidh Krishna', 'Mohammed Siraj'];
+      var tradedPlayers = ['urvil', 'will jacks', 'prasidh', 'siraj'];
       squad.forEach(function(sp) {
         var p = sp.player || {};
         var initials = (p.name||'').split(' ').map(function(w) { return w[0]; }).join('').substring(0,2).toUpperCase();
@@ -1928,7 +1926,8 @@ async function exportAllSquadsPDF() {
         if (p.is_overseas) badges += '<span class="badge badge-os">OS</span>';
         var isReleased = sp.is_released === true;
         var isInjured = p.availability_status !== 'available';
-        var isTraded = isReleased && tradedPlayers.indexOf(p.name) !== -1;
+        var playerNameLower = (p.name||'').toLowerCase();
+        var isTraded = isReleased && tradedPlayers.some(function(tp) { return playerNameLower.indexOf(tp) !== -1; });
         html += '<div class="player-card'+(isTraded?' traded':'')+(isReleased && !isTraded?' released':'')+(isInjured?' injured':'')+'">'+
           '<div class="player-avatar">'+initials+'</div>'+
           '<div class="player-info">'+
