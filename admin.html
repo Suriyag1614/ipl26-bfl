@@ -823,6 +823,11 @@
   <div class="admin-panel" id="panel-squads">
     <div class="section-hdr">
       <div><div class="section-title">Squad Management</div><div class="section-sub">Assign Captain · Vice-Captain · Impact Player</div></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="exportReleasesPDF()">📄 Export Releases</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportAllSquadsPDF()">📋 Export All Squads</button>
+        <button class="btn btn-accent btn-sm" onclick="exportSquadPDF()">📊 Export Selected Squad</button>
+      </div>
     </div>
     <div class="card mb-20">
       <div class="form-row">

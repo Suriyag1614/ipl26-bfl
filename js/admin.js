@@ -1586,6 +1586,199 @@ async function saveSquadRoles() {
   });
 }
 
+async function exportReleasesPDF() {
+  UI.toast('Loading releases...','info');
+  try {
+    var teams = safeArr(await API.fetchLeaderboard());
+    var allReleases = [];
+    for (var i = 0; i < teams.length; i++) {
+      var t = teams[i].team;
+      if (!t) continue;
+      var squad = await API.fetchSquad(t.id);
+      var released = squad.filter(function(s) { return s.is_released; });
+      if (released.length) {
+        allReleases.push({ team: t, releases: released });
+      }
+    }
+    if (!allReleases.length) { UI.toast('No releases found','warn'); return; }
+    var html = '<!DOCTYPE html><html><head><title>All Releases - PDF</title>'+
+      '<style>body{font-family:"Work Sans",Arial,sans-serif;padding:40px;background:#fff;color:#000;}'+
+      'h1{font-size:24px;border-bottom:2px solid #c8f135;padding-bottom:10px;margin-bottom:20px;}'+
+      'h2{font-size:18px;margin-top:30px;margin-bottom:10px;color:#333;}'+
+      '.team-header{background:#f5f5f5;padding:12px;margin:15px 0 10px;border-radius:4px;}'+
+      '.team-name{font-weight:700;font-size:16px;}'+
+      '.owner{font-size:12px;color:#666;}'+
+      'table{width:100%;border-collapse:collapse;margin-bottom:20px;}'+
+      'th,td{padding:8px;border:1px solid #ddd;text-align:left;font-size:12px;}'+
+      'th{background:#333;color:#fff;}'+
+      '.role{background:#e8f5e9;padding:2px 6px;border-radius:3px;font-size:10px;}'+
+      '.os{color:#e65100;font-weight:700;}'+
+      '.released{color:#c62828;}</style></head>'+
+      '<body><h1>🏏 IPL 2026 Fantasy - All Releases</h1>'+
+      '<p>Generated: '+new Date().toLocaleDateString()+'</p>';
+    allReleases.forEach(function(tr) {
+      html += '<div class="team-header"><div class="team-name">'+UI.esc(tr.team.team_name||'')+'</div>'+
+        '<div class="owner">Owner: '+UI.esc(tr.team.owner_name||'—')+'</div></div>';
+      html += '<table><thead><tr><th>Player</th><th>Role</th><th>IPL Team</th><th>OS</th><th>Released</th></tr></thead><tbody>';
+      tr.releases.forEach(function(sp) {
+        var p = sp.player || {};
+        html += '<tr><td>'+UI.esc(p.name||'—')+'</td><td>'+(p.role||'')+'</td><td>'+(p.ipl_team||'')+'</td>'+
+          '<td>'+(p.is_overseas ? '✈️ Yes' : '—')+'</td>'+
+          '<td class="released">Yes</td></tr>';
+      });
+      html += '</tbody></table>';
+    });
+    html += '</body></html>';
+    var win = window.open('','_blank');
+    win.document.write(html);
+    win.document.close();
+    setTimeout(function() { win.print(); }, 500);
+    UI.toast('PDF ready - use print dialog to save','success');
+  } catch(e) { UI.toast(e.message,'error'); }
+}
+
+async function exportSquadPDF() {
+  var teamId = $id('squad-team').value;
+  if (!teamId) { UI.toast('Select a team first','warn'); return; }
+  UI.toast('Loading squad...','info');
+  try {
+    var teams = safeArr(await API.fetchLeaderboard());
+    var teamInfo = teams.find(function(t) { return t.fantasy_team_id === teamId; });
+    var team = teamInfo ? teamInfo.team : {};
+    var squad = safeArr(await API.fetchSquad(teamId));
+    if (!squad.length) { UI.toast('No squad found','warn'); return; }
+    var captain = squad.find(function(s) { return s.is_captain; });
+    var vc = squad.find(function(s) { return s.is_vc; });
+    var impact = squad.find(function(s) { return s.is_impact; });
+    var totalValue = squad.length;
+    var overseas = squad.filter(function(s) { return s.player && s.player.is_overseas; }).length;
+    var injured = squad.filter(function(s) { return s.player && s.player.availability_status !== 'available'; }).length;
+    var html = '<!DOCTYPE html><html><head><title>Squad - '+UI.esc(team.team_name||'')+'</title>'+
+      '<style>body{font-family:"Work Sans",Arial,sans-serif;padding:40px;background:#fff;color:#000;}'+
+      'h1{font-size:28px;border-bottom:3px solid #c8f135;padding-bottom:15px;margin-bottom:5px;}'+
+      '.subtitle{font-size:14px;color:#666;margin-bottom:20px;}'+
+      '.stats-row{display:flex;gap:30px;margin-bottom:30px;padding:15px;background:#f5f5f5;border-radius:8px;}'+
+      '.stat-item{text-align:center;}'+
+      '.stat-val{font-size:24px;font-weight:700;color:#c8f135;}'+
+      '.stat-label{font-size:11px;text-transform:uppercase;color:#666;}'+
+      '.captain-box{background:#fff3e0;padding:15px;margin-bottom:20px;border-radius:8px;border-left:4px solid #ff9800;}'+
+      '.captain-label{font-size:11px;text-transform:uppercase;color:#e65100;}'+
+      '.captain-name{font-size:18px;font-weight:700;}'+
+      'table{width:100%;border-collapse:collapse;margin-top:20px;}'+
+      'th,td{padding:10px;border:1px solid #ddd;text-align:left;font-size:12px;}'+
+      'th{background:#333;color:#fff;}'+
+      '.badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;margin-right:5px;}'+
+      '.badge-cap{background:#ff9800;color:#fff;}'+
+      '.badge-vc{background:#ffc107;color:#000;}'+
+      '.badge-impact{background:#c8f135;color:#000;}'+
+      '.role{background:#e8f5e9;padding:2px 6px;border-radius:3px;font-size:10px;}'+
+      '.os{color:#e65100;font-weight:700;}'+
+      '.injured{color:#c62828;}</style></head>'+
+      '<body><h1>'+UI.esc(team.team_name||'Team')+'</h1>'+
+      '<div class="subtitle">Owner: '+UI.esc(team.owner_name||'—')+' | Rank: #'+(teamInfo.rank||'—')+' | Total Points: '+(teamInfo.total_points||0)+'</div>'+
+      '<div class="stats-row">'+
+        '<div class="stat-item"><div class="stat-val">'+totalValue+'</div><div class="stat-label">Players</div></div>'+
+        '<div class="stat-item"><div class="stat-val">'+overseas+'</div><div class="stat-label">Overseas</div></div>'+
+        '<div class="stat-item"><div class="stat-val">'+injured+'</div><div class="stat-label">Injured</div></div>'+
+        '<div class="stat-item"><div class="stat-val">'+(teamInfo.matches_played||0)+'</div><div class="stat-label">Matches</div></div>'+
+      '</div>';
+    if (captain || vc || impact) {
+      html += '<div class="captain-box">';
+      html += '<div class="captain-label">Team Leadership</div>';
+      if (captain && captain.player) html += '<div class="captain-name">👑 Captain: '+UI.esc(captain.player.name||'')+'</div>';
+      if (vc && vc.player) html += '<div class="captain-name">🎖️ Vice-Captain: '+UI.esc(vc.player.name||'')+'</div>';
+      if (impact && impact.player) html += '<div class="captain-name">⚡ Impact: '+UI.esc(impact.player.name||'')+'</div>';
+      html += '</div>';
+    }
+    html += '<table><thead><tr><th>Player</th><th>Role</th><th>IPL Team</th><th>OS</th><th>Status</th><th>Role</th></tr></thead><tbody>';
+    squad.forEach(function(sp) {
+      var p = sp.player || {};
+      var badges = '';
+      if (sp.is_captain) badges += '<span class="badge badge-cap">C</span>';
+      if (sp.is_vc) badges += '<span class="badge badge-vc">VC</span>';
+      if (sp.is_impact) badges += '<span class="badge badge-impact">IMP</span>';
+      html += '<tr><td><strong>'+UI.esc(p.name||'—')+'</strong></td><td>'+(p.role||'')+'</td><td>'+(p.ipl_team||'')+'</td>'+
+        '<td>'+(p.is_overseas ? '<span class="os">✈️ Yes</span>' : '—')+'</td>'+
+        '<td>'+(p.availability_status !== 'available' ? '<span class="injured">🏥 '+(p.availability_status||'')+'</span>' : '✅ Available')+'</td>'+
+        '<td>'+badges+'</td></tr>';
+    });
+    html += '</tbody></table></body></html>';
+    var win = window.open('','_blank');
+    win.document.write(html);
+    win.document.close();
+    setTimeout(function() { win.print(); }, 500);
+    UI.toast('PDF ready - use print dialog to save','success');
+  } catch(e) { UI.toast(e.message,'error'); }
+}
+
+async function exportAllSquadsPDF() {
+  UI.toast('Loading all squads...','info');
+  try {
+    var teams = safeArr(await API.fetchLeaderboard());
+    var html = '<!DOCTYPE html><html><head><title>All Squads - PDF</title>'+
+      '<style>body{font-family:"Work Sans",Arial,sans-serif;padding:30px;background:#fff;color:#000;}'+
+      'h1{font-size:24px;border-bottom:2px solid #c8f135;padding-bottom:10px;margin-bottom:20px;}'+
+      '.page-break{page-break-after:always;}'+
+      '.team-header{background:#f5f5f5;padding:15px;margin:20px 0 10px;border-radius:4px;}'+
+      '.team-name{font-weight:700;font-size:18px;}'+
+      '.team-stats{font-size:12px;color:#666;margin-top:5px;}'+
+      'table{width:100%;border-collapse:collapse;margin-bottom:20px;}'+
+      'th,td{padding:8px;border:1px solid #ddd;text-align:left;font-size:11px;}'+
+      'th{background:#333;color:#fff;}'+
+      '.badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700;margin-right:3px;}'+
+      '.badge-cap{background:#ff9800;color:#fff;}'+
+      '.badge-vc{background:#ffc107;color:#000;}'+
+      '.badge-impact{background:#c8f135;color:#000;}'+
+      '.role{background:#e8f5e9;padding:2px 6px;border-radius:3px;font-size:9px;}'+
+      '.os{color:#e65100;font-weight:700;}'+
+      '.injured{color:#c62828;}'+
+      '</style></head>'+
+      '<body><h1>🏏 IPL 2026 Fantasy - All Squads</h1>'+
+      '<p>Generated: '+new Date().toLocaleDateString()+' | Total Teams: '+teams.length+'</p>';
+    for (var i = 0; i < teams.length; i++) {
+      var ti = teams[i];
+      if (!ti.team) continue;
+      var squad = safeArr(await API.fetchSquad(ti.fantasy_team_id));
+      if (!squad.length) continue;
+      var captain = squad.find(function(s) { return s.is_captain; });
+      var vc = squad.find(function(s) { return s.is_vc; });
+      var impact = squad.find(function(s) { return s.is_impact; });
+      var overseas = squad.filter(function(s) { return s.player && s.player.is_overseas; }).length;
+      var injured = squad.filter(function(s) { return s.player && s.player.availability_status !== 'available'; }).length;
+      if (i > 0) html += '<div class="page-break">';
+      html += '<div class="team-header"><div class="team-name">'+UI.esc(ti.team.team_name||'')+'</div>'+
+        '<div class="team-stats">Owner: '+UI.esc(ti.team.owner_name||'—')+' | Rank: #'+(ti.rank||'—')+' | Points: '+(ti.total_points||0)+' | Players: '+squad.length+' | Overseas: '+overseas+' | Injured: '+injured+'</div></div>';
+      if (captain || vc || impact) {
+        html += '<div style="background:#fff3e0;padding:8px;margin-bottom:10px;border-radius:4px;font-size:12px;">';
+        if (captain && captain.player) html += '👑 <strong>'+UI.esc(captain.player.name||'')+'</strong> (C) ';
+        if (vc && vc.player) html += '🎖️ <strong>'+UI.esc(vc.player.name||'')+'</strong> (VC) ';
+        if (impact && impact.player) html += '⚡ <strong>'+UI.esc(impact.player.name||'')+'</strong> (IMP)';
+        html += '</div>';
+      }
+      html += '<table><thead><tr><th>Player</th><th>Role</th><th>IPL Team</th><th>OS</th><th>Status</th><th>Role</th></tr></thead><tbody>';
+      squad.forEach(function(sp) {
+        var p = sp.player || {};
+        var badges = '';
+        if (sp.is_captain) badges += '<span class="badge badge-cap">C</span>';
+        if (sp.is_vc) badges += '<span class="badge badge-vc">VC</span>';
+        if (sp.is_impact) badges += '<span class="badge badge-impact">IMP</span>';
+        html += '<tr><td><strong>'+UI.esc(p.name||'—')+'</strong></td><td>'+(p.role||'')+'</td><td>'+(p.ipl_team||'')+'</td>'+
+          '<td>'+(p.is_overseas ? '<span class="os">✈️</span>' : '—')+'</td>'+
+          '<td>'+(p.availability_status !== 'available' ? '<span class="injured">🏥</span>' : '✅')+'</td>'+
+          '<td>'+badges+'</td></tr>';
+      });
+      html += '</tbody></table>';
+      if (i > 0) html += '</div>';
+    }
+    html += '</body></html>';
+    var win = window.open('','_blank');
+    win.document.write(html);
+    win.document.close();
+    setTimeout(function() { win.print(); }, 500);
+    UI.toast('PDF ready - use print dialog to save','success');
+  } catch(e) { UI.toast(e.message,'error'); }
+}
+
 /* ══════════════════════════════════════════════════════════════
    AUDIT LOG
 
