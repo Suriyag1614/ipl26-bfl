@@ -1654,56 +1654,115 @@ async function exportSquadPDF() {
     var totalValue = squad.length;
     var overseas = squad.filter(function(s) { return s.player && s.player.is_overseas; }).length;
     var injured = squad.filter(function(s) { return s.player && s.player.availability_status !== 'available'; }).length;
+    var iplTeams = {};
+    squad.forEach(function(s) { if (s.player && s.player.ipl_team) iplTeams[s.player.ipl_team] = (iplTeams[s.player.ipl_team] || 0) + 1; });
+    var topIplTeam = Object.keys(iplTeams).reduce(function(a, b) { return iplTeams[a] > iplTeam[b] ? a : b; }, '');
+    var teamColor = '#c8f135';
+    if (team.team_name && team.team_name.toLowerCase().includes('mumbai')) teamColor = '#004ba0';
+    else if (team.team_name && team.team_name.toLowerCase().includes('chennai')) teamColor = '#f2c512';
+    else if (team.team_name && team.team_name.toLowerCase().includes('kolkata')) teamColor = '#2e2b5e';
+    else if (team.team_name && team.team_name.toLowerCase().includes('delhi')) teamColor = '#17449b';
+    else if (team.team_name && team.team_name.toLowerCase().includes('hyderabad')) teamColor = '#e61d2b';
+    else if (team.team_name && team.team_name.toLowerCase().includes('rajasthan')) teamColor = '#fb6537';
+    else if (team.team_name && team.team_name.toLowerCase().includes('punjab')) teamColor = '#d01c1f';
+    else if (team.team_name && team.team_name.toLowerCase().includes('bangalore')) teamColor = '#d01c1f';
     var html = '<!DOCTYPE html><html><head><title>Squad - '+UI.esc(team.team_name||'')+'</title>'+
-      '<style>body{font-family:"Work Sans",Arial,sans-serif;padding:40px;background:#fff;color:#000;}'+
-      'h1{font-size:28px;border-bottom:3px solid #c8f135;padding-bottom:15px;margin-bottom:5px;}'+
-      '.subtitle{font-size:14px;color:#666;margin-bottom:20px;}'+
-      '.stats-row{display:flex;gap:30px;margin-bottom:30px;padding:15px;background:#f5f5f5;border-radius:8px;}'+
-      '.stat-item{text-align:center;}'+
-      '.stat-val{font-size:24px;font-weight:700;color:#c8f135;}'+
-      '.stat-label{font-size:11px;text-transform:uppercase;color:#666;}'+
-      '.captain-box{background:#fff3e0;padding:15px;margin-bottom:20px;border-radius:8px;border-left:4px solid #ff9800;}'+
-      '.captain-label{font-size:11px;text-transform:uppercase;color:#e65100;}'+
-      '.captain-name{font-size:18px;font-weight:700;}'+
-      'table{width:100%;border-collapse:collapse;margin-top:20px;}'+
-      'th,td{padding:10px;border:1px solid #ddd;text-align:left;font-size:12px;}'+
-      'th{background:#333;color:#fff;}'+
-      '.badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;margin-right:5px;}'+
-      '.badge-cap{background:#ff9800;color:#fff;}'+
+      '<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">'+
+      '<style>'+
+      '*{box-sizing:border-box;margin:0;padding:0;}'+
+      'body{font-family:"Work Sans",Arial,sans-serif;padding:0;background:#0f0f0f;color:#fff;min-height:100vh;}'+
+      '.header{background:linear-gradient(135deg,'+teamColor+'22 0%,#1a1a1a 100%);padding:40px 40px 30px;border-bottom:3px solid '+teamColor+';}'+
+      '.team-name{font-family:"Barlow Condensed",sans-serif;font-size:42px;font-weight:900;letter-spacing:1px;margin-bottom:5px;color:'+teamColor+';}'+
+      '.owner{font-size:16px;color:#888;margin-bottom:20px;}'+
+      '.rank-badge{display:inline-block;background:'+teamColor+';color:#000;font-weight:700;padding:8px 20px;border-radius:25px;font-size:14px;margin-right:15px;}'+
+      '.points-badge{display:inline-block;background:#222;border:1px solid '+teamColor+';color:'+teamColor+';font-weight:700;padding:8px 20px;border-radius:25px;font-size:14px;}'+
+      '.stats-bar{background:#1a1a1a;padding:25px 40px;display:flex;justify-content:space-between;border-bottom:1px solid #333;}'+
+      '.stat-box{text-align:center;flex:1;}'+
+      '.stat-num{font-size:32px;font-weight:700;color:'+teamColor+';}'+
+      '.stat-lbl{font-size:11px;text-transform:uppercase;color:#666;letter-spacing:1px;margin-top:5px;}'+
+      '.section{padding:30px 40px;}'+
+      '.section-title{font-size:18px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#666;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid #333;}'+
+      '.leadership{display:flex;gap:20px;margin-bottom:30px;}'+
+      '.leader-card{background:linear-gradient(135deg,#222 0%,#1a1a1a 100%);padding:20px;border-radius:12px;flex:1;text-align:center;border:1px solid #333;}'+
+      '.leader-card.captain{border-color:#ff9800;background:linear-gradient(135deg,#ff980022 0%,#1a1a1a 100%);}'+
+      '.leader-card.vc{border-color:#ffc107;background:linear-gradient(135deg,#ffc10722 0%,#1a1a1a 100%);}'+
+      '.leader-card.impact{border-color:#c8f135;background:linear-gradient(135deg,#c8f13522 0%,#1a1a1a 100%);}'+
+      '.leader-icon{font-size:28px;margin-bottom:8px;}'+
+      '.leader-role{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#888;}'+
+      '.leader-name{font-size:18px;font-weight:700;margin-top:5px;}'+
+      '.player-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:15px;}'+
+      '.player-card{background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:15px;display:flex;align-items:center;gap:12px;transition:all 0.2s;}'+
+      '.player-card:hover{border-color:'+teamColor+';transform:translateY(-2px);}'+
+      '.player-card.injured{border-color:#e51c23;}'+
+      '.player-avatar{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,'+teamColor+',#666);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#000;flex-shrink:0;}'+
+      '.player-info{flex:1;min-width:0;}'+
+      '.player-name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'+
+      '.player-role{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;}'+
+      '.player-team{font-size:12px;color:#666;margin-top:2px;}'+
+      '.player-badges{display:flex;gap:5px;margin-top:5px;}'+
+      '.badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;}'+
+      '.badge-c{background:#ff9800;color:#fff;}'+
       '.badge-vc{background:#ffc107;color:#000;}'+
-      '.badge-impact{background:#c8f135;color:#000;}'+
-      '.role{background:#e8f5e9;padding:2px 6px;border-radius:3px;font-size:10px;}'+
-      '.os{color:#e65100;font-weight:700;}'+
-      '.injured{color:#c62828;}</style></head>'+
-      '<body><h1>'+UI.esc(team.team_name||'Team')+'</h1>'+
-      '<div class="subtitle">Owner: '+UI.esc(team.owner_name||'—')+' | Rank: #'+(teamInfo.rank||'—')+' | Total Points: '+(teamInfo.total_points||0)+'</div>'+
-      '<div class="stats-row">'+
-        '<div class="stat-item"><div class="stat-val">'+totalValue+'</div><div class="stat-label">Players</div></div>'+
-        '<div class="stat-item"><div class="stat-val">'+overseas+'</div><div class="stat-label">Overseas</div></div>'+
-        '<div class="stat-item"><div class="stat-val">'+injured+'</div><div class="stat-label">Injured</div></div>'+
-        '<div class="stat-item"><div class="stat-val">'+(teamInfo.matches_played||0)+'</div><div class="stat-label">Matches</div></div>'+
+      '.badge-imp{background:'+teamColor+';color:#000;}'+
+      '.badge-os{background:#e65100;color:#fff;}'+
+      '.status-available{color:#4caf50;font-size:11px;}'+
+      '.status-injured{color:#e51c23;font-size:11px;}'+
+      '@media print{'+
+      'body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}'+
+      '.player-card{break-inside:avoid;}'+
+      '}'+
+      '</style></head>'+
+      '<body>'+
+      '<div class="header">'+
+        '<div class="team-name">'+UI.esc(team.team_name||'Team')+'</div>'+
+        '<div class="owner">Owned by '+UI.esc(team.owner_name||'—')+'</div>'+
+        '<div><span class="rank-badge">#'+(teamInfo.rank||'—')+'</span><span class="points-badge">'+(teamInfo.total_points||0)+' PTS</span></div>'+
+      '</div>'+
+      '<div class="stats-bar">'+
+        '<div class="stat-box"><div class="stat-num">'+totalValue+'</div><div class="stat-lbl">Players</div></div>'+
+        '<div class="stat-box"><div class="stat-num">'+overseas+'</div><div class="stat-lbl">Overseas</div></div>'+
+        '<div class="stat-box"><div class="stat-num">'+injured+'</div><div class="stat-lbl">Injured</div></div>'+
+        '<div class="stat-box"><div class="stat-num">'+(teamInfo.matches_played||0)+'</div><div class="stat-lbl">Matches</div></div>'+
+        '<div class="stat-box"><div class="stat-num">'+Object.keys(iplTeams).length+'</div><div class="stat-lbl">IPL Teams</div></div>'+
       '</div>';
     if (captain || vc || impact) {
-      html += '<div class="captain-box">';
-      html += '<div class="captain-label">Team Leadership</div>';
-      if (captain && captain.player) html += '<div class="captain-name">👑 Captain: '+UI.esc(captain.player.name||'')+'</div>';
-      if (vc && vc.player) html += '<div class="captain-name">🎖️ Vice-Captain: '+UI.esc(vc.player.name||'')+'</div>';
-      if (impact && impact.player) html += '<div class="captain-name">⚡ Impact: '+UI.esc(impact.player.name||'')+'</div>';
-      html += '</div>';
+      html += '<div class="section"><div class="section-title">🏆 Team Leadership</div>'+
+        '<div class="leadership">';
+      if (captain && captain.player) {
+        var capInitials = (captain.player.name||'').split(' ').map(function(w) { return w[0]; }).join('').substring(0,2).toUpperCase();
+        html += '<div class="leader-card captain"><div class="leader-icon">👑</div><div class="leader-role">Captain</div><div class="leader-name">'+UI.esc(captain.player.name||'')+'</div></div>';
+      }
+      if (vc && vc.player) {
+        html += '<div class="leader-card vc"><div class="leader-icon">🎖️</div><div class="leader-role">Vice Captain</div><div class="leader-name">'+UI.esc(vc.player.name||'')+'</div></div>';
+      }
+      if (impact && impact.player) {
+        html += '<div class="leader-card impact"><div class="leader-icon">⚡</div><div class="leader-role">Impact Player</div><div class="leader-name">'+UI.esc(impact.player.name||'')+'</div></div>';
+      }
+      html += '</div></div>';
     }
-    html += '<table><thead><tr><th>Player</th><th>Role</th><th>IPL Team</th><th>OS</th><th>Status</th><th>Role</th></tr></thead><tbody>';
+    html += '<div class="section"><div class="section-title">👥 Full Squad</div>'+
+      '<div class="player-grid">';
     squad.forEach(function(sp) {
       var p = sp.player || {};
+      var initials = (p.name||'').split(' ').map(function(w) { return w[0]; }).join('').substring(0,2).toUpperCase();
+      var isInjured = p.availability_status !== 'available';
       var badges = '';
-      if (sp.is_captain) badges += '<span class="badge badge-cap">C</span>';
+      if (sp.is_captain) badges += '<span class="badge badge-c">C</span>';
       if (sp.is_vc) badges += '<span class="badge badge-vc">VC</span>';
-      if (sp.is_impact) badges += '<span class="badge badge-impact">IMP</span>';
-      html += '<tr><td><strong>'+UI.esc(p.name||'—')+'</strong></td><td>'+(p.role||'')+'</td><td>'+(p.ipl_team||'')+'</td>'+
-        '<td>'+(p.is_overseas ? '<span class="os">✈️ Yes</span>' : '—')+'</td>'+
-        '<td>'+(p.availability_status !== 'available' ? '<span class="injured">🏥 '+(p.availability_status||'')+'</span>' : '✅ Available')+'</td>'+
-        '<td>'+badges+'</td></tr>';
+      if (sp.is_impact) badges += '<span class="badge badge-imp">IMP</span>';
+      if (p.is_overseas) badges += '<span class="badge badge-os">OS</span>';
+      html += '<div class="player-card'+(isInjured?' injured':'')+'">'+
+        '<div class="player-avatar">'+initials+'</div>'+
+        '<div class="player-info">'+
+          '<div class="player-name">'+UI.esc(p.name||'—')+'</div>'+
+          '<div class="player-role">'+(p.role||'')+'</div>'+
+          '<div class="player-team">'+(p.ipl_team||'')+'</div>'+
+          '<div class="player-badges">'+badges+'</div>'+
+        '</div>'+
+        '<div class="'+(isInjured?'status-injured':'status-available')+'">'+(isInjured?'🏥':'✓')+'</div>'+
+      '</div>';
     });
-    html += '</tbody></table></body></html>';
+    html += '</div></div></body></html>';
     var printWin = window.open('','_blank');
     if (!printWin) { UI.toast('Please allow popups and try again','warn'); return; }
     printWin.document.write(html);
