@@ -233,8 +233,22 @@
     .inj-card.injured { border-color: rgba(255,77,109,.4); }
     .inj-card.replaced { border-color: rgba(56,217,245,.35); }
 
+    /* User table styles */
+    .users-table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .users-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    .users-table th {
+      position: sticky; top: 0; background: var(--bg1); z-index: 2;
+      font-family: var(--f-ui); font-size: 11px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 1.1px; color: var(--text3);
+      padding: 12px; text-align: left; border-bottom: 1px solid var(--border);
+    }
+    .users-table td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+    .users-table tr:hover td { background: var(--bg2); }
+
     /* User rows */
     .user-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .users-table .pts { font-family: var(--f-display); font-weight: 900; font-size: 16px; color: var(--accent); }
+    .users-table .rank { font-family: var(--f-mono); font-weight: 600; color: var(--text2); }
     .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg,var(--accent),var(--cyan)); display: flex; align-items: center; justify-content: center; font-family: var(--f-display); font-weight: 900; font-size: 13px; color: #000; flex-shrink: 0; }
 
     /* Inline row form */
@@ -978,9 +992,9 @@
         <button class="btn btn-accent btn-sm" onclick="exportUsersCSV()">↓ Export CSV</button>
       </div>
     </div>
-    <div class="card" style="padding:0;overflow:hidden;">
-      <div class="table-wrap table-scroller">
-        <table class="data-table">
+    <div class="card">
+      <div class="users-table-container">
+        <table class="users-table">
           <thead><tr><th>#</th><th>Team</th><th>Owner</th><th>Rank</th><th>Total Pts</th><th>Matches</th><th>Actions</th></tr></thead>
           <tbody id="users-tbody"><tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
         </table>
