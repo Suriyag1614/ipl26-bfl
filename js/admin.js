@@ -1593,9 +1593,11 @@ async function exportReleasesPDF() {
     if (ftError) throw ftError;
     teams = teams || [];
     var allReleases = [];
+    var seenTeams = {};
     for (var i = 0; i < teams.length; i++) {
       var team = teams[i];
-      if (!team.id) continue;
+      if (!team.id || seenTeams[team.id]) continue;
+      seenTeams[team.id] = true;
       var squad = safeArr(await API.fetchSquad(team.id, true));
       var released = squad.filter(function(s) { return s.is_released === true; });
       if (released.length) {
