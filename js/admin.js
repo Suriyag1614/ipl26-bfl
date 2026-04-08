@@ -1595,12 +1595,15 @@ async function exportReleasesPDF() {
       var ti = teams[i];
       if (!ti.team || !ti.team.id) continue;
       var squad = safeArr(await API.fetchSquad(ti.team.id, true));
-      var released = squad.filter(function(s) { return s.is_released; });
+      var released = squad.filter(function(s) { return s.is_released === true; });
       if (released.length) {
         allReleases.push({ team: ti.team, releases: released });
       }
     }
-    if (!allReleases.length) { UI.toast('No releases found','warn'); return; }
+    if (!allReleases.length) { 
+      UI.toast('No releases found in database','warn'); 
+      return; 
+    }
     var html = '<!DOCTYPE html><html><head><title>All Releases - PDF</title>'+
       '<style>body{font-family:"Work Sans",Arial,sans-serif;padding:40px;background:#fff;color:#000;}'+
       'h1{font-size:24px;border-bottom:2px solid #c8f135;padding-bottom:10px;margin-bottom:20px;}'+
@@ -1808,7 +1811,7 @@ async function exportAllSquadsPDF() {
       var impact = squad.find(function(s) { return s.is_impact; });
       var overseas = squad.filter(function(s) { return s.player && s.player.is_overseas; }).length;
       var injured = squad.filter(function(s) { return s.player && s.player.availability_status !== 'available'; }).length;
-      var releasedCount = squad.filter(function(s) { return s.is_released; }).length;
+      var releasedCount = squad.filter(function(s) { return s.is_released === true; }).length;
       if (i > 0) html += '<div class="page-break">';
       html += '<div class="team-header"><div class="team-name">'+UI.esc(ti.team.team_name||'')+'</div>'+
         '<div class="team-stats">Owner: '+UI.esc(ti.team.owner_name||'—')+' | Rank: #'+(ti.rank||'—')+' | Points: '+(ti.total_points||0)+' | Players: '+squad.length+' | Overseas: '+overseas+' | Injured: '+injured+'</div></div>';
