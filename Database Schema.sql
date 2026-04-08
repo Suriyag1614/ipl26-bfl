@@ -33,25 +33,6 @@ CREATE TABLE public.badge_definitions (
   criteria jsonb DEFAULT '{}'::jsonb,
   CONSTRAINT badge_definitions_pkey PRIMARY KEY (id)
 );
-CREATE TABLE public.blogs (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  title text NOT NULL,
-  slug text UNIQUE,
-  content text NOT NULL,
-  excerpt text,
-  category text DEFAULT 'general'::text CHECK (category = ANY (ARRAY['general'::text, 'preview'::text, 'tips'::text, 'announcement'::text, 'recap'::text])),
-  cover_image text,
-  is_published boolean DEFAULT false,
-  author_name text DEFAULT 'BFL Admin'::text,
-  views integer DEFAULT 0,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone DEFAULT now(),
-  status text NOT NULL DEFAULT 'published'::text CHECK (status = ANY (ARRAY['draft'::text, 'review'::text, 'published'::text])),
-  ai_generated boolean NOT NULL DEFAULT false,
-  reviewed_by text,
-  reviewed_at timestamp with time zone,
-  CONSTRAINT blogs_pkey PRIMARY KEY (id)
-);
 CREATE TABLE public.fantasy_teams (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid,

@@ -170,14 +170,6 @@
         </div>
         <div id="recent-results"><div class="skel skel-row"></div><div class="skel skel-row"></div></div>
       </div>
-
-      <!-- Latest blog -->
-      <div class="card" id="latest-blog-card">
-        <div class="card-title">Latest from Blog</div>
-        <div class="skel skel-row"></div>
-      </div>
-
-    </div>
   </div>
 
   <!-- Mini leaderboard -->
@@ -217,7 +209,7 @@ async function init() {
   document.getElementById('hero-greeting').innerHTML = greet + ' · <span id="hero-date">'+now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})+'</span>';
   document.getElementById('hero-name').innerHTML = 'Welcome back, ' + UI.championName(_myTeam.team_name) + ' 👋';
 
-  await Promise.all([loadStats(), loadNextMatch(), loadImpact(), loadPerformers(), loadRecent(), loadMiniLB(), loadBlog()]);
+  await Promise.all([loadStats(), loadNextMatch(), loadImpact(), loadPerformers(), loadRecent(), loadMiniLB()]);
   await API.checkAndAwardBadges(_myTeamId);
   fixGrid();
 }
@@ -403,21 +395,6 @@ async function loadMiniLB() {
           '<td style="color:var(--text2);">'+r.matches_played+'</td>'+
           '<td class="pts">'+UI.fmtPts(r.total_points)+'</td></tr>';
       }).join('')+'</tbody></table></div>';
-  } catch(e) {}
-}
-
-async function loadBlog() {
-  var card = $('#latest-blog-card');
-  try {
-    var blogs = await API.fetchBlogs({limit:1,publishedOnly:true});
-    var b = blogs[0];
-    if(!b){ card.innerHTML='<div class="card-title">Latest from Blog</div><div style="color:var(--text3);font-size:13px;">No posts yet.</div>'; return; }
-    card.innerHTML='<div class="card-title">Latest from Blog</div>'+
-      '<div style="cursor:pointer;" onclick="window.location.href=\'blogs.html?slug='+UI.esc(b.slug||b.id)+'\'">'+
-        '<div style="font-family:var(--f-display);font-weight:700;font-size:15px;margin-bottom:5px;transition:color var(--t);" onmouseover="this.style.color=\'var(--accent)\'" onmouseout="this.style.color=\'\'">'+UI.esc(b.title)+'</div>'+
-        '<div style="font-size:12px;color:var(--text2);">'+UI.esc(b.excerpt||'')+'</div>'+
-        '<div style="font-size:11px;color:var(--text3);margin-top:6px;">'+UI.shortDate(b.created_at)+' · '+UI.esc(b.category||'general')+'</div>'+
-      '</div>';
   } catch(e) {}
 }
 

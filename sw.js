@@ -8,7 +8,6 @@ const ASSETS = [
   '/squad.html',
   '/leaderboard.html',
   '/analytics.html',
-  '/blogs.html',
   '/admin.html',
   '/css/styles.css',
   '/js/supabase.js',

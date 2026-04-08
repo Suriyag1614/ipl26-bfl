@@ -40,7 +40,6 @@ var _statsMatchId = null;
 var _statsPlayerId= null;
 var _statPlayers  = [];   // players filtered to current match teams
 var _ctrlMatchId  = null;
-var _blogFilter   = 'all';
 var _squadEdits   = {};   // teamId → {captainId,vcId,impactId}
 var _sidebarOpen  = true;
 
@@ -154,8 +153,6 @@ function showPanel(id) {
     overrides:  function() { loadAdjustments(); },
     injuries:   loadInjuries,
     squads:     function() {},
-    blogs:      function() { loadBlogList(); initBlogTeamDropdowns(); },
-    users:      loadUsers,
     audit:      loadAuditLog,
   };
   if (loaders[id]) loaders[id]();
@@ -1590,200 +1587,8 @@ async function saveSquadRoles() {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   BLOG MANAGER
-══════════════════════════════════════════════════════════════ */
-async function loadBlogList() {
-  var cont=$id('blog-list');
-  cont.innerHTML='<div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div>';
-  try {
-    var blogs=safeArr(await API.fetchBlogs({limit:50,publishedOnly:false,status:_blogFilter==='all'?null:_blogFilter}));
-    if (!blogs.length) { 
-      cont.innerHTML='<div class="empty-state">'+
-        '<div class="empty-state-icon">📝</div>'+
-        '<div class="empty-state-text">No posts yet</div>'+
-        '<div class="empty-state-sub">Create your first blog post to get started</div>'+
-        '<div class="empty-state-action"><button class="btn btn-accent btn-sm" onclick="showPanel(\'blogs\');loadBlogEdit(null)">Create Post</button></div>'+
-      '</div>'; 
-      return; 
-    }
-    var sCols={draft:'var(--gold)',review:'var(--cyan)',published:'var(--green)'};
-    cont.innerHTML=blogs.map(function(b,i){
-      var col=sCols[b.status]||'var(--text3)';
-      return '<div class="blog-list-item" style="animation:row-in .2s ease '+(i*.04)+'s both;" onclick="loadBlogEdit(\''+b.id+'\')">'+
-        '<div style="flex:1;min-width:0;">'+
-          '<div style="font-family:var(--f-ui);font-weight:700;font-size:13px;">'+(b.ai_generated?'🤖 ':'')+UI.esc(b.title)+'</div>'+
-          '<div style="font-size:11px;color:var(--text2);">'+UI.esc(b.category)+' · '+UI.shortDate(b.created_at)+' · '+UI.esc(b.views||0)+' views</div>'+
-        '</div>'+
-        '<span style="background:'+col+'22;color:'+col+';font-size:9px;font-weight:700;padding:2px 7px;border-radius:3px;font-family:var(--f-ui);flex-shrink:0;">'+UI.esc(b.status)+'</span>'+
-      '</div>';
-    }).join('');
-  } catch(e){ cont.innerHTML='<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Error loading posts</div><div class="empty-state-sub">'+UI.esc(e.message)+'</div></div>'; }
-}
+   AUDIT LOG
 
-function filterBlogs(status, btn) {
-  _blogFilter=status;
-  document.querySelectorAll('#panel-blogs .btn').forEach(function(b){b.classList.remove('active');});
-  if (btn) btn.classList.add('active');
-  loadBlogList();
-}
-
-function filterBlogList() {
-  var search = document.getElementById('blog-search').value.toLowerCase();
-  var catFilter = document.getElementById('blog-category-filter').value;
-  var items = document.querySelectorAll('#blog-list .blog-list-item');
-  items.forEach(function(item) {
-    var text = item.textContent.toLowerCase();
-    var matchesSearch = !search || text.includes(search);
-    var matchesCat = !catFilter || text.includes(catFilter);
-    item.style.display = (matchesSearch && matchesCat) ? '' : 'none';
-  });
-}
-
-function newBlog() { clearBlogForm(); }
-function clearBlogForm() {
-  $id('blog-id').value=''; $id('b-title').value=''; $id('b-excerpt').value='';
-  $id('b-cat').value='general'; $id('b-status').value='draft'; $id('b-content').value='';
-  $id('blog-editor-title').textContent='New Post'; $id('blog-del-btn').style.display='none'; $id('blog-err').textContent='';
-  $id('blog-mention-team').value=''; $id('blog-insert-squad').value='';
-}
-var _teamListCache = [];
-async function initBlogTeamDropdowns() {
-  var teamSel = $id('blog-mention-team');
-  var squadSel = $id('blog-insert-squad');
-  if (!teamSel || !squadSel) return;
-  if (!_teamListCache.length) {
-    try { var lb = await API.fetchLeaderboard(); _teamListCache = lb.map(function(r){ return r.team; }).filter(Boolean); } catch(e) { _teamListCache = []; }
-  }
-  var opts = '<option value="">— Tag a team —</option>';
-  _teamListCache.forEach(function(t) {
-    opts += '<option value="'+UI.esc(t.team_name||'')+'">'+UI.esc(t.team_name||'')+'</option>';
-  });
-  teamSel.innerHTML = opts;
-  squadSel.innerHTML = opts.replace('— Tag a team —','— Show squad —');
-}
-function insertTeamMention() {
-  var team = $id('blog-mention-team').value;
-  if (!team) return;
-  var textarea = $id('b-content');
-  var cur = textarea.value;
-  textarea.value = cur + (cur ? '\n\n' : '') + '🏏 **' + team + '**';
-  textarea.focus();
-  $id('blog-mention-team').value = '';
-}
-async function insertSquadList() {
-  var teamName = $id('blog-insert-squad').value;
-  if (!teamName) return;
-  var textarea = $id('b-content');
-  var cur = textarea.value;
-  try {
-    var lb = _teamListCache.length ? _teamListCache : (await API.fetchLeaderboard()).map(function(r){ return r.team; });
-    var team = lb.find(function(t){ return t.team_name === teamName; });
-    if (!team) { UI.toast('Team not found','warn'); return; }
-    var squad = await API.fetchSquad(team.id);
-    if (!squad || !squad.length) { UI.toast('No squad found','warn'); return; }
-    var cap = squad.find(function(p){ return p.is_captain; });
-    var vc = squad.find(function(p){ return p.is_vc; });
-    var impact = squad.find(function(p){ return p.is_impact; });
-    var list = squad.map(function(p) {
-      var tags = [];
-      if (p.is_captain) tags.push('C');
-      if (p.is_vc) tags.push('VC');
-      if (p.is_impact) tags.push('IMP');
-      var name = p.player ? p.player.name : '—';
-      return '• ' + name + (tags.length ? ' (' + tags.join(',') + ')' : '');
-    }).join('\n');
-    textarea.value = cur + (cur ? '\n\n' : '') + '📋 **' + teamName + ' Squad**\n' + list;
-    UI.toast('Squad inserted!','success');
-  } catch(e) { UI.toast('Could not load squad','error'); }
-  $id('blog-insert-squad').value = '';
-}
-async function loadBlogEdit(blogId) {
-  try {
-    var b=await API.fetchBlog(blogId,true); if(!b) return;
-    $id('blog-id').value=b.id; $id('b-title').value=b.title||''; $id('b-excerpt').value=b.excerpt||'';
-    $id('b-cat').value=b.category||'general'; $id('b-status').value=b.status||'draft'; $id('b-content').value=b.content||'';
-    $id('blog-editor-title').textContent='Editing: '+b.title.substring(0,30); $id('blog-del-btn').style.display='';
-  } catch(e){ UI.toast(e.message,'error'); }
-}
-async function saveBlog() {
-  var id=$id('blog-id').value, title=$id('b-title').value.trim(), content=$id('b-content').value.trim();
-  var errEl=$id('blog-err'); errEl.textContent='';
-  if (!title||!content) { errEl.textContent='Title and content are required.'; return; }
-  var blog={title,content,excerpt:$id('b-excerpt').value.trim()||null,category:$id('b-cat').value,status:$id('b-status').value,is_published:$id('b-status').value==='published'};
-  if (id) blog.id=id;
-  try { await API.upsertBlog(blog); UI.toast('Saved!','success'); clearBlogForm(); await loadBlogList(); }
-  catch(e){ errEl.textContent=e.message; UI.toast(e.message,'error'); }
-}
-async function publishBlog() {
-  var id=$id('blog-id').value; if(!id){ UI.toast('Save the post first','warn'); return; }
-  UI.showConfirm({ icon:'🚀', title:'Publish Post?', msg:'Make this post visible to all users.', okLabel:'Publish', okClass:'btn-accent',
-    onOk: async function(){ try { await API.publishBlog(id,'admin'); UI.toast('Published!','success'); clearBlogForm(); await loadBlogList(); } catch(e){ UI.toast(e.message,'error'); } }
-  });
-}
-async function deleteBlog() {
-  var id=$id('blog-id').value; if(!id) return;
-  UI.showConfirm({ icon:'🗑️', title:'Delete Post?', msg:'Permanently remove this blog post.', okLabel:'Delete', okClass:'btn-danger',
-    onOk: async function(){ try { await API.deleteBlog(id); UI.toast('Deleted','warn'); clearBlogForm(); await loadBlogList(); } catch(e){ UI.toast(e.message,'error'); } }
-  });
-}
-function toggleAIGen() {
-  var p=$id('ai-gen-panel'); if(p) p.style.display=p.style.display==='none'?'':'none';
-}
-async function generateAIBlog() {
-  var title=$id('ai-title').value.trim(), cat=$id('ai-cat').value, ctx=$id('ai-ctx').value.trim();
-  if (!title) { UI.toast('Enter a topic','warn'); return; }
-  var btn=$id('ai-btn'), icon=$id('ai-icon');
-  if (btn._busy) return; btn._busy=true; btn.disabled=true; icon.textContent='⏳';
-  try {
-    var blog=await API.generateAIBlog({title,category:cat,context:ctx});
-    await loadBlogEdit(blog.id);
-    $id('ai-gen-panel').style.display='none';
-    await loadBlogList();
-    UI.toast('AI draft generated — review and publish!','success',5000);
-  } catch(e){ UI.toast('AI failed: '+e.message,'error'); }
-  btn._busy=false; btn.disabled=false; icon.textContent='✨';
-}
-
-/* ══════════════════════════════════════════════════════════════
-   USERS
-══════════════════════════════════════════════════════════════ */
-async function loadUsers() {
-  var tbody=$id('users-tbody'); if(!tbody) return;
-  tbody.innerHTML='<tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
-  try {
-    var lb=safeArr(await API.fetchLeaderboard());
-    _leaderboardData = lb;
-    if (lb.some(function(r){ return !r.matches_played; })) {
-      try {
-        var allLogs = await sb.from('points_log').select('fantasy_team_id');
-        var counts = {};
-        (allLogs.data || []).forEach(function(l){ counts[l.fantasy_team_id] = (counts[l.fantasy_team_id] || 0) + 1; });
-        lb.forEach(function(r){ if (!r.matches_played) r.matches_played = counts[r.fantasy_team_id] || 0; });
-      } catch(e) {}
-    }
-    var medals={1:'🥇',2:'🥈',3:'🥉'};
-    tbody.innerHTML=lb.map(function(r,i){
-      var t=r.team||{};
-      var initials=(t.team_name||'?').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
-      var logo = UI.getTeamLogo(t.team_name);
-      var avatarObj = logo ? '<img src="'+logo+'" style="width:100%;height:100%;object-fit:contain;padding:2px;" onerror="this.outerHTML=\''+initials+'\'">' : initials;
-      return '<tr style="animation:row-in .2s ease '+(i*.04)+'s both;">'+
-        '<td><div class="user-avatar" style="font-size:11px;">'+avatarObj+'</div></td>'+
-        '<td style="font-family:var(--f-ui);font-weight:700;">'+UI.championName(t.team_name||'—')+'</td>'+
-        '<td style="font-size:13px;color:var(--text2);">'+UI.esc(t.owner_name||'—')+'</td>'+
-        '<td class="rank">'+(medals[r.rank]||r.rank)+'</td>'+
-        '<td class="pts">'+r.total_points+'</td>'+
-        '<td style="color:var(--text2);">'+r.matches_played+'</td>'+
-        '<td><button class="btn btn-ghost btn-sm" style="font-size:11px;" onclick="goToSquad(\''+r.fantasy_team_id+'\')">Squad</button></td>'+
-      '</tr>';
-    }).join('');
-  } catch(e){ tbody.innerHTML='<tr><td colspan="7" style="color:var(--red);padding:12px;">'+UI.esc(e.message)+'</td></tr>'; }
-}
-function goToSquad(teamId) { $id('squad-team').value=teamId; showPanel('squads'); loadSquadAdmin(); }
-
-function filterUserList() {
-  var search = document.getElementById('user-search').value.toLowerCase();
-  var rows = document.querySelectorAll('#users-tbody tr');
   rows.forEach(function(row) {
     var text = row.textContent.toLowerCase();
     row.style.display = !search || text.includes(search) ? '' : 'none';
