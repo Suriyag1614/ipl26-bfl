@@ -1594,7 +1594,7 @@ async function exportReleasesPDF() {
     for (var i = 0; i < teams.length; i++) {
       var ti = teams[i];
       if (!ti.team || !ti.team.id) continue;
-      var squad = safeArr(await API.fetchSquad(ti.team.id));
+      var squad = safeArr(await API.fetchSquad(ti.team.id, true));
       var released = squad.filter(function(s) { return s.is_released; });
       if (released.length) {
         allReleases.push({ team: ti.team, releases: released });
@@ -1656,7 +1656,7 @@ async function exportSquadPDF() {
     var injured = squad.filter(function(s) { return s.player && s.player.availability_status !== 'available'; }).length;
     var iplTeams = {};
     squad.forEach(function(s) { if (s.player && s.player.ipl_team) iplTeams[s.player.ipl_team] = (iplTeams[s.player.ipl_team] || 0) + 1; });
-    var topIplTeam = Object.keys(iplTeams).reduce(function(a, b) { return iplTeams[a] > iplTeam[b] ? a : b; }, '');
+    var topIplTeam = Object.keys(iplTeams).reduce(function(a, b) { return iplTeams[a] > iplTeams[b] ? a : b; }, '');
     var teamColor = '#c8f135';
     if (team.team_name && team.team_name.toLowerCase().includes('mumbai')) teamColor = '#004ba0';
     else if (team.team_name && team.team_name.toLowerCase().includes('chennai')) teamColor = '#f2c512';
@@ -1801,13 +1801,14 @@ async function exportAllSquadsPDF() {
       if (!ti.team) continue;
       var teamId = ti.team.id;
       if (!teamId) continue;
-      var squad = safeArr(await API.fetchSquad(teamId));
+      var squad = safeArr(await API.fetchSquad(teamId, true));
       if (!squad.length) continue;
       var captain = squad.find(function(s) { return s.is_captain; });
       var vc = squad.find(function(s) { return s.is_vc; });
       var impact = squad.find(function(s) { return s.is_impact; });
       var overseas = squad.filter(function(s) { return s.player && s.player.is_overseas; }).length;
       var injured = squad.filter(function(s) { return s.player && s.player.availability_status !== 'available'; }).length;
+      var releasedCount = squad.filter(function(s) { return s.is_released; }).length;
       if (i > 0) html += '<div class="page-break">';
       html += '<div class="team-header"><div class="team-name">'+UI.esc(ti.team.team_name||'')+'</div>'+
         '<div class="team-stats">Owner: '+UI.esc(ti.team.owner_name||'—')+' | Rank: #'+(ti.rank||'—')+' | Points: '+(ti.total_points||0)+' | Players: '+squad.length+' | Overseas: '+overseas+' | Injured: '+injured+'</div></div>';
