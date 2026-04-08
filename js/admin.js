@@ -133,7 +133,12 @@ function showPanel(id) {
   document.querySelectorAll('.sb-link').forEach(function(l) { l.classList.remove('active'); });
 
   var panel = $id('panel-' + id);
-  if (panel) panel.classList.add('active');
+  if (panel) {
+    panel.classList.add('active');
+    if (id === 'users') {
+      setTimeout(function() { $id('admin-body').scrollTop = 0; }, 50);
+    }
+  }
 
   var link = document.querySelector('.sb-link[data-panel="' + id + '"]');
   if (link) link.classList.add('active');
