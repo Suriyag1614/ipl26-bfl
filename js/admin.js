@@ -1589,15 +1589,17 @@ async function saveSquadRoles() {
 async function exportReleasesPDF() {
   UI.toast('Loading releases...','info');
   try {
-    var teams = safeArr(await API.fetchLeaderboard());
+    var { data: teams, error: ftError } = await sb.from('fantasy_teams').select('*');
+    if (ftError) throw ftError;
+    teams = teams || [];
     var allReleases = [];
     for (var i = 0; i < teams.length; i++) {
-      var ti = teams[i];
-      if (!ti.team || !ti.team.id) continue;
-      var squad = safeArr(await API.fetchSquad(ti.team.id, true));
+      var team = teams[i];
+      if (!team.id) continue;
+      var squad = safeArr(await API.fetchSquad(team.id, true));
       var released = squad.filter(function(s) { return s.is_released === true; });
       if (released.length) {
-        allReleases.push({ team: ti.team, releases: released });
+        allReleases.push({ team: team, releases: released });
       }
     }
     if (!allReleases.length) { 
@@ -1778,7 +1780,9 @@ async function exportSquadPDF() {
 async function exportAllSquadsPDF() {
   UI.toast('Loading all squads...','info');
   try {
-    var teams = safeArr(await API.fetchLeaderboard());
+    var { data: teams, error: ftError } = await sb.from('fantasy_teams').select('*');
+    if (ftError) throw ftError;
+    teams = teams || [];
     var html = '<!DOCTYPE html><html><head><title>All Squads - PDF</title>'+
       '<style>body{font-family:"Work Sans",Arial,sans-serif;padding:30px;background:#fff;color:#000;}'+
       'h1{font-size:24px;border-bottom:2px solid #c8f135;padding-bottom:10px;margin-bottom:20px;}'+
@@ -1800,11 +1804,9 @@ async function exportAllSquadsPDF() {
       '<body><h1>🏏 IPL 2026 Fantasy - All Squads</h1>'+
       '<p>Generated: '+new Date().toLocaleDateString()+' | Total Teams: '+teams.length+'</p>';
     for (var i = 0; i < teams.length; i++) {
-      var ti = teams[i];
-      if (!ti.team) continue;
-      var teamId = ti.team.id;
-      if (!teamId) continue;
-      var squad = safeArr(await API.fetchSquad(teamId, true));
+      var team = teams[i];
+      if (!team || !team.id) continue;
+      var squad = safeArr(await API.fetchSquad(team.id, true));
       if (!squad.length) continue;
       var captain = squad.find(function(s) { return s.is_captain; });
       var vc = squad.find(function(s) { return s.is_vc; });
@@ -1813,8 +1815,8 @@ async function exportAllSquadsPDF() {
       var injured = squad.filter(function(s) { return s.player && s.player.availability_status !== 'available'; }).length;
       var releasedCount = squad.filter(function(s) { return s.is_released === true; }).length;
       if (i > 0) html += '<div class="page-break">';
-      html += '<div class="team-header"><div class="team-name">'+UI.esc(ti.team.team_name||'')+'</div>'+
-        '<div class="team-stats">Owner: '+UI.esc(ti.team.owner_name||'—')+' | Rank: #'+(ti.rank||'—')+' | Points: '+(ti.total_points||0)+' | Players: '+squad.length+' | Overseas: '+overseas+' | Injured: '+injured+'</div></div>';
+      html += '<div class="team-header"><div class="team-name">'+UI.esc(team.team_name||'')+'</div>'+
+        '<div class="team-stats">Owner: '+UI.esc(team.owner_name||'—')+' | Players: '+(squad.length - releasedCount)+' | Released: '+releasedCount+' | Overseas: '+overseas+' | Injured: '+injured+'</div></div>';
       if (captain || vc || impact) {
         html += '<div style="background:#fff3e0;padding:8px;margin-bottom:10px;border-radius:4px;font-size:12px;">';
         if (captain && captain.player) html += '👑 <strong>'+UI.esc(captain.player.name||'')+'</strong> (C) ';
