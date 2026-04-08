@@ -1606,32 +1606,88 @@ async function exportReleasesPDF() {
       UI.toast('No releases found in database','warn'); 
       return; 
     }
+    var tradedPlayers = ['Urvil Patel', 'Will Jacks', 'Prasidh Krishna', 'Mohammed Siraj'];
     var html = '<!DOCTYPE html><html><head><title>All Releases - PDF</title>'+
-      '<style>body{font-family:"Work Sans",Arial,sans-serif;padding:40px;background:#fff;color:#000;}'+
-      'h1{font-size:24px;border-bottom:2px solid #c8f135;padding-bottom:10px;margin-bottom:20px;}'+
-      'h2{font-size:18px;margin-top:30px;margin-bottom:10px;color:#333;}'+
-      '.team-header{background:#f5f5f5;padding:12px;margin:15px 0 10px;border-radius:4px;}'+
-      '.team-name{font-weight:700;font-size:16px;}'+
-      '.owner{font-size:12px;color:#666;}'+
-      'table{width:100%;border-collapse:collapse;margin-bottom:20px;}'+
-      'th,td{padding:8px;border:1px solid #ddd;text-align:left;font-size:12px;}'+
-      'th{background:#333;color:#fff;}'+
-      '.role{background:#e8f5e9;padding:2px 6px;border-radius:3px;font-size:10px;}'+
-      '.os{color:#e65100;font-weight:700;}'+
-      '.released{color:#c62828;}</style></head>'+
-      '<body><h1>🏏 IPL 2026 Fantasy - All Releases</h1>'+
-      '<p>Generated: '+new Date().toLocaleDateString()+'</p>';
+      '<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">'+
+      '<style>'+
+      '*{box-sizing:border-box;margin:0;padding:0;}'+
+      'body{font-family:"Work Sans",Arial,sans-serif;padding:0;background:#0f0f0f;color:#fff;min-height:100vh;}'+
+      '.header{background:linear-gradient(135deg,#e5393522 0%,#1a1a1a 100%);padding:40px 40px 30px;border-bottom:3px solid #e53935;}'+
+      '.header-title{font-family:"Barlow Condensed",sans-serif;font-size:36px;font-weight:900;letter-spacing:1px;margin-bottom:5px;color:#e53935;}'+
+      '.header-sub{font-size:16px;color:#888;}'+
+      '.trade-note{background:#ffc10722;border:1px solid #ffc107;padding:15px 20px;margin:20px 40px;border-radius:8px;font-size:13px;}'+
+      '.trade-note strong{color:#ffc107;}'+
+      '.subtitle{font-size:14px;color:#888;margin-bottom:20px;padding:15px 40px;background:#1a1a1a;border-bottom:1px solid #333;}'+
+      '.team-card{background:linear-gradient(135deg,#1a1a1a 0%,#252525 100%);border:1px solid #333;border-radius:12px;margin:0 40px 30px;overflow:hidden;}'+
+      '.team-card-header{background:#e53935;padding:15px 20px;}'+
+      '.team-card-name{font-size:20px;font-weight:700;color:#fff;}'+
+      '.team-card-owner{font-size:12px;color:#ffcdd2;}'+
+      '.player-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:15px;padding:20px;}'+
+      '.player-card{background:#1a1a1a;border:1px solid #333;border-radius:10px;padding:15px;display:flex;align-items:center;gap:12px;transition:all 0.2s;}'+
+      '.player-card:hover{border-color:#e53935;transform:translateY(-2px);}'+
+      '.player-avatar{width:50px;height:50px;border-radius:50%;background:linear-gradient(135deg,#e53935,#8c1b1b);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0;}'+
+      '.player-info{flex:1;min-width:0;}'+
+      '.player-name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'+
+      '.player-role{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:0.5px;}'+
+      '.player-team{font-size:12px;color:#666;margin-top:2px;}'+
+      '.badge-os{background:#e65100;color:#fff;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;}'+
+      '.badge-released{background:#e53935;color:#fff;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;}'+
+      '.badge-traded{background:#ffc107;color:#000;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;}'+
+      '@media print{'+
+      'body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}'+
+      '.player-card{break-inside:avoid;}'+
+      '}'+
+      '</style></head>'+
+      '<body>'+
+      '<div class="header">'+
+        '<div class="header-title">📤 Player Releases & Trades</div>'+
+        '<div class="header-sub">IPL 2026 Fantasy League</div>'+
+      '</div>'+
+      '<div class="trade-note"><strong>Trades:</strong> Urvil Patel → CSK (4Cr from SURA) | Will Jacks → CSK (9Cr from LSG) | Prasidh Krishna → CSK (5Cr from KKR, Siraj → KKR)</div>'+
+      '<div class="subtitle">Generated: '+new Date().toLocaleDateString()+' | Total Released/Traded: '+allReleases.reduce(function(acc,t){return acc+t.releases.length;},0)+' players</div>';
     allReleases.forEach(function(tr) {
-      html += '<div class="team-header"><div class="team-name">'+UI.esc(tr.team.team_name||'')+'</div>'+
-        '<div class="owner">Owner: '+UI.esc(tr.team.owner_name||'—')+'</div></div>';
-      html += '<table><thead><tr><th>Player</th><th>Role</th><th>IPL Team</th><th>OS</th><th>Released</th></tr></thead><tbody>';
+      html += '<div class="team-card">'+
+        '<div class="team-card-header"><div class="team-card-name">'+UI.esc(tr.team.team_name||'')+'</div>'+
+        '<div class="team-card-owner">Owner: '+UI.esc(tr.team.owner_name||'—')+'</div></div>'+
+        '<div class="player-grid">';
       tr.releases.forEach(function(sp) {
         var p = sp.player || {};
-        html += '<tr><td>'+UI.esc(p.name||'—')+'</td><td>'+(p.role||'')+'</td><td>'+(p.ipl_team||'')+'</td>'+
-          '<td>'+(p.is_overseas ? '✈️ Yes' : '—')+'</td>'+
-          '<td class="released">Yes</td></tr>';
+        var initials = (p.name||'').split(' ').map(function(w) { return w[0]; }).join('').substring(0,2).toUpperCase();
+        var isTraded = tradedPlayers.indexOf(p.name) !== -1;
+        var badgeClass = isTraded ? 'badge-traded' : 'badge-released';
+        var badgeText = isTraded ? 'Traded' : 'Released';
+        html += '<div class="player-card">'+
+          '<div class="player-avatar">'+initials+'</div>'+
+          '<div class="player-info">'+
+            '<div class="player-name">'+UI.esc(p.name||'—')+'</div>'+
+            '<div class="player-role">'+(p.role||'')+'</div>'+
+            '<div class="player-team">'+(p.ipl_team||'')+'</div>'+
+            '<div style="margin-top:5px;">'+(p.is_overseas ? '<span class="badge-os">OS</span>' : '')+' <span class="'+badgeClass+'">'+badgeText+'</span></div>'+
+          '</div>'+
+        '</div>';
       });
-      html += '</tbody></table>';
+      html += '</div></div>';
+    });
+    html += '</body></html>';
+    allReleases.forEach(function(tr) {
+      html += '<div class="team-card">'+
+        '<div class="team-card-header"><div class="team-card-name">'+UI.esc(tr.team.team_name||'')+'</div>'+
+        '<div class="team-card-owner">Owner: '+UI.esc(tr.team.owner_name||'—')+'</div></div>'+
+        '<div class="player-grid">';
+      tr.releases.forEach(function(sp) {
+        var p = sp.player || {};
+        var initials = (p.name||'').split(' ').map(function(w) { return w[0]; }).join('').substring(0,2).toUpperCase();
+        html += '<div class="player-card">'+
+          '<div class="player-avatar">'+initials+'</div>'+
+          '<div class="player-info">'+
+            '<div class="player-name">'+UI.esc(p.name||'—')+'</div>'+
+            '<div class="player-role">'+(p.role||'')+'</div>'+
+            '<div class="player-team">'+(p.ipl_team||'')+'</div>'+
+            '<div style="margin-top:5px;">'+(p.is_overseas ? '<span class="badge-os">OS</span>' : '')+' <span class="badge-released">Released</span></div>'+
+          '</div>'+
+        '</div>';
+      });
+      html += '</div></div>';
     });
     html += '</body></html>';
     var printWin = window.open('','_blank');
@@ -1784,25 +1840,52 @@ async function exportAllSquadsPDF() {
     if (ftError) throw ftError;
     teams = teams || [];
     var html = '<!DOCTYPE html><html><head><title>All Squads - PDF</title>'+
-      '<style>body{font-family:"Work Sans",Arial,sans-serif;padding:30px;background:#fff;color:#000;}'+
-      'h1{font-size:24px;border-bottom:2px solid #c8f135;padding-bottom:10px;margin-bottom:20px;}'+
+      '<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;900&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">'+
+      '<style>'+
+      '*{box-sizing:border-box;margin:0;padding:0;}'+
+      'body{font-family:"Work Sans",Arial,sans-serif;padding:0;background:#0f0f0f;color:#fff;min-height:100vh;}'+
       '.page-break{page-break-after:always;}'+
-      '.team-header{background:#f5f5f5;padding:15px;margin:20px 0 10px;border-radius:4px;}'+
-      '.team-name{font-weight:700;font-size:18px;}'+
-      '.team-stats{font-size:12px;color:#666;margin-top:5px;}'+
-      'table{width:100%;border-collapse:collapse;margin-bottom:20px;}'+
-      'th,td{padding:8px;border:1px solid #ddd;text-align:left;font-size:11px;}'+
-      'th{background:#333;color:#fff;}'+
+      '.header{background:linear-gradient(135deg,#c8f13522 0%,#1a1a1a 100%);padding:40px 40px 30px;border-bottom:3px solid #c8f135;}'+
+      '.header-title{font-family:"Barlow Condensed",sans-serif;font-size:42px;font-weight:900;letter-spacing:1px;margin-bottom:5px;color:#c8f135;}'+
+      '.header-sub{font-size:14px;color:#888;}'+
+      '.team-card{background:linear-gradient(135deg,#1a1a1a 0%,#252525 100%);border:1px solid #333;border-radius:12px;margin:20px 40px 40px;overflow:hidden;}'+
+      '.team-card-header{background:linear-gradient(135deg,#c8f13522 0%,#1a1a1a 100%);padding:20px 25px;border-bottom:1px solid #333;display:flex;justify-content:space-between;align-items:center;}'+
+      '.team-card-name{font-family:"Barlow Condensed",sans-serif;font-size:24px;font-weight:700;color:#c8f135;}'+
+      '.team-card-stats{display:flex;gap:20px;}'+
+      '.stat-pill{background:#222;border:1px solid #444;padding:5px 12px;border-radius:20px;font-size:11px;}'+
+      '.stat-pill span{color:#c8f135;font-weight:700;}'+
+      '.leadership-bar{background:#1a1a1a;padding:15px 25px;display:flex;gap:15px;border-bottom:1px solid #333;}'+
+      '.leader-chip{background:#222;border:1px solid #444;padding:8px 15px;border-radius:8px;display:flex;align-items:center;gap:8px;font-size:13px;}'+
+      '.leader-chip.cap{border-color:#ff9800;}'+
+      '.leader-chip.vc{border-color:#ffc107;}'+
+      '.leader-chip.imp{border-color:#c8f135;}'+
+      '.player-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;padding:20px;}'+
+      '.player-card{background:#1a1a1a;border:1px solid #333;border-radius:8px;padding:12px;display:flex;align-items:center;gap:10px;transition:all 0.2s;}'+
+      '.player-card:hover{border-color:#c8f135;}'+
+      '.player-card.released{opacity:0.5;border-color:#e53935;}'+
+      '.player-card.injured{border-color:#e51c23;}'+
+      '.player-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#c8f135,#666);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#000;flex-shrink:0;}'+
+      '.player-info{flex:1;min-width:0;}'+
+      '.player-name{font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'+
+      '.player-role{font-size:10px;color:#888;text-transform:uppercase;}'+
+      '.player-team{font-size:11px;color:#666;}'+
       '.badge{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700;margin-right:3px;}'+
-      '.badge-cap{background:#ff9800;color:#fff;}'+
+      '.badge-c{background:#ff9800;color:#fff;}'+
       '.badge-vc{background:#ffc107;color:#000;}'+
-      '.badge-impact{background:#c8f135;color:#000;}'+
-      '.role{background:#e8f5e9;padding:2px 6px;border-radius:3px;font-size:9px;}'+
-      '.os{color:#e65100;font-weight:700;}'+
-      '.injured{color:#c62828;}'+
+      '.badge-imp{background:#c8f135;color:#000;}'+
+      '.badge-os{background:#e65100;color:#fff;}'+
+      '.badge-traded{background:#ffc107;color:#000;}'+
+      '.player-card.traded{border-color:#ffc107;}'+
+      '@media print{'+
+      'body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}'+
+      '.player-card{break-inside:avoid;}'+
+      '}'+
       '</style></head>'+
-      '<body><h1>🏏 IPL 2026 Fantasy - All Squads</h1>'+
-      '<p>Generated: '+new Date().toLocaleDateString()+' | Total Teams: '+teams.length+'</p>';
+      '<body>'+
+      '<div class="header">'+
+        '<div class="header-title">👥 All Squads</div>'+
+        '<div class="header-sub">IPL 2026 Fantasy League | Generated: '+new Date().toLocaleDateString()+' | Total Teams: '+teams.length+'</div>'+
+      '</div>';
     for (var i = 0; i < teams.length; i++) {
       var team = teams[i];
       if (!team || !team.id) continue;
@@ -1814,30 +1897,49 @@ async function exportAllSquadsPDF() {
       var overseas = squad.filter(function(s) { return s.player && s.player.is_overseas; }).length;
       var injured = squad.filter(function(s) { return s.player && s.player.availability_status !== 'available'; }).length;
       var releasedCount = squad.filter(function(s) { return s.is_released === true; }).length;
+      var activeCount = squad.length - releasedCount;
       if (i > 0) html += '<div class="page-break">';
-      html += '<div class="team-header"><div class="team-name">'+UI.esc(team.team_name||'')+'</div>'+
-        '<div class="team-stats">Owner: '+UI.esc(team.owner_name||'—')+' | Players: '+(squad.length - releasedCount)+' | Released: '+releasedCount+' | Overseas: '+overseas+' | Injured: '+injured+'</div></div>';
+      html += '<div class="team-card">'+
+        '<div class="team-card-header">'+
+          '<div class="team-card-name">'+UI.esc(team.team_name||'')+'</div>'+
+          '<div class="team-card-stats">'+
+            '<div class="stat-pill">Players: <span>'+activeCount+'</span></div>'+
+            '<div class="stat-pill">Released: <span>'+releasedCount+'</span></div>'+
+            '<div class="stat-pill">OS: <span>'+overseas+'</span></div>'+
+            '<div class="stat-pill">Injured: <span>'+injured+'</span></div>'+
+          '</div>'+
+        '</div>';
       if (captain || vc || impact) {
-        html += '<div style="background:#fff3e0;padding:8px;margin-bottom:10px;border-radius:4px;font-size:12px;">';
-        if (captain && captain.player) html += '👑 <strong>'+UI.esc(captain.player.name||'')+'</strong> (C) ';
-        if (vc && vc.player) html += '🎖️ <strong>'+UI.esc(vc.player.name||'')+'</strong> (VC) ';
-        if (impact && impact.player) html += '⚡ <strong>'+UI.esc(impact.player.name||'')+'</strong> (IMP)';
+        html += '<div class="leadership-bar">';
+        if (captain && captain.player) html += '<div class="leader-chip cap">👑 '+UI.esc(captain.player.name||'')+'</div>';
+        if (vc && vc.player) html += '<div class="leader-chip vc">🎖️ '+UI.esc(vc.player.name||'')+'</div>';
+        if (impact && impact.player) html += '<div class="leader-chip imp">⚡ '+UI.esc(impact.player.name||'')+'</div>';
         html += '</div>';
       }
-      html += '<table><thead><tr><th>Player</th><th>Role</th><th>IPL Team</th><th>OS</th><th>Status</th><th>Role</th></tr></thead><tbody>';
+      html += '<div class="player-grid">';
+      var tradedPlayers = ['Urvil Patel', 'Will Jacks', 'Prasidh Krishna', 'Mohammed Siraj'];
       squad.forEach(function(sp) {
         var p = sp.player || {};
+        var initials = (p.name||'').split(' ').map(function(w) { return w[0]; }).join('').substring(0,2).toUpperCase();
         var badges = '';
-        if (sp.is_captain) badges += '<span class="badge badge-cap">C</span>';
+        if (sp.is_captain) badges += '<span class="badge badge-c">C</span>';
         if (sp.is_vc) badges += '<span class="badge badge-vc">VC</span>';
-        if (sp.is_impact) badges += '<span class="badge badge-impact">IMP</span>';
-        html += '<tr><td><strong>'+UI.esc(p.name||'—')+'</strong></td><td>'+(p.role||'')+'</td><td>'+(p.ipl_team||'')+'</td>'+
-          '<td>'+(p.is_overseas ? '<span class="os">✈️</span>' : '—')+'</td>'+
-          '<td>'+(p.availability_status !== 'available' ? '<span class="injured">🏥</span>' : '✅')+'</td>'+
-          '<td>'+badges+'</td></tr>';
+        if (sp.is_impact) badges += '<span class="badge badge-imp">IMP</span>';
+        if (p.is_overseas) badges += '<span class="badge badge-os">OS</span>';
+        var isReleased = sp.is_released === true;
+        var isInjured = p.availability_status !== 'available';
+        var isTraded = isReleased && tradedPlayers.indexOf(p.name) !== -1;
+        html += '<div class="player-card'+(isTraded?' traded':'')+(isReleased && !isTraded?' released':'')+(isInjured?' injured':'')+'">'+
+          '<div class="player-avatar">'+initials+'</div>'+
+          '<div class="player-info">'+
+            '<div class="player-name">'+UI.esc(p.name||'—')+'</div>'+
+            '<div class="player-role">'+(p.role||'')+'</div>'+
+            '<div class="player-team">'+(p.ipl_team||'')+'</div>'+
+            '<div style="margin-top:4px;">'+badges+(isTraded?' <span class="badge badge-traded">Traded</span>':'')+'</div>'+
+          '</div>'+
+        '</div>';
       });
-      html += '</tbody></table>';
-      if (i > 0) html += '</div>';
+      html += '</div></div>';
     }
     html += '</body></html>';
     var printWin = window.open('','_blank');
