@@ -1650,8 +1650,11 @@ async function exportReleasesPDF() {
       tr.releases.forEach(function(sp) {
         var p = sp.player || {};
         var initials = (p.name||'').split(' ').map(function(w) { return w[0]; }).join('').substring(0,2).toUpperCase();
-        var playerNameLower = (p.name||'').toLowerCase();
-        var isTraded = tradedPlayers.some(function(tp) { return playerNameLower.indexOf(tp) !== -1; });
+        var playerNameLower = (p.name||'').toLowerCase().trim();
+        var isTraded = false;
+        for (var ti = 0; ti < tradedPlayers.length; ti++) {
+          if (playerNameLower.includes(tradedPlayers[ti])) { isTraded = true; break; }
+        }
         var badgeClass = isTraded ? 'badge-traded' : 'badge-released';
         var badgeText = isTraded ? 'Traded' : 'Released';
         html += '<div class="player-card'+(isTraded?' traded':'')+'">'+
@@ -1926,8 +1929,13 @@ async function exportAllSquadsPDF() {
         if (p.is_overseas) badges += '<span class="badge badge-os">OS</span>';
         var isReleased = sp.is_released === true;
         var isInjured = p.availability_status !== 'available';
-        var playerNameLower = (p.name||'').toLowerCase();
-        var isTraded = isReleased && tradedPlayers.some(function(tp) { return playerNameLower.indexOf(tp) !== -1; });
+        var playerNameLower = (p.name||'').toLowerCase().trim();
+        var isTraded = false;
+        if (isReleased) {
+          for (var ti = 0; ti < tradedPlayers.length; ti++) {
+            if (playerNameLower.includes(tradedPlayers[ti])) { isTraded = true; break; }
+          }
+        }
         html += '<div class="player-card'+(isTraded?' traded':'')+(isReleased && !isTraded?' released':'')+(isInjured?' injured':'')+'">'+
           '<div class="player-avatar">'+initials+'</div>'+
           '<div class="player-info">'+
