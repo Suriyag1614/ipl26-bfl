@@ -1592,12 +1592,12 @@ async function exportReleasesPDF() {
     var teams = safeArr(await API.fetchLeaderboard());
     var allReleases = [];
     for (var i = 0; i < teams.length; i++) {
-      var t = teams[i].team;
-      if (!t) continue;
-      var squad = await API.fetchSquad(t.id);
+      var ti = teams[i];
+      if (!ti.team || !ti.team.id) continue;
+      var squad = safeArr(await API.fetchSquad(ti.team.id));
       var released = squad.filter(function(s) { return s.is_released; });
       if (released.length) {
-        allReleases.push({ team: t, releases: released });
+        allReleases.push({ team: ti.team, releases: released });
       }
     }
     if (!allReleases.length) { UI.toast('No releases found','warn'); return; }
@@ -1629,10 +1629,11 @@ async function exportReleasesPDF() {
       html += '</tbody></table>';
     });
     html += '</body></html>';
-    var win = window.open('','_blank');
-    win.document.write(html);
-    win.document.close();
-    setTimeout(function() { win.print(); }, 500);
+    var printWin = window.open('','_blank');
+    if (!printWin) { UI.toast('Please allow popups and try again','warn'); return; }
+    printWin.document.write(html);
+    printWin.document.close();
+    setTimeout(function() { printWin.print(); }, 500);
     UI.toast('PDF ready - use print dialog to save','success');
   } catch(e) { UI.toast(e.message,'error'); }
 }
@@ -1703,10 +1704,11 @@ async function exportSquadPDF() {
         '<td>'+badges+'</td></tr>';
     });
     html += '</tbody></table></body></html>';
-    var win = window.open('','_blank');
-    win.document.write(html);
-    win.document.close();
-    setTimeout(function() { win.print(); }, 500);
+    var printWin = window.open('','_blank');
+    if (!printWin) { UI.toast('Please allow popups and try again','warn'); return; }
+    printWin.document.write(html);
+    printWin.document.close();
+    setTimeout(function() { printWin.print(); }, 500);
     UI.toast('PDF ready - use print dialog to save','success');
   } catch(e) { UI.toast(e.message,'error'); }
 }
@@ -1738,7 +1740,9 @@ async function exportAllSquadsPDF() {
     for (var i = 0; i < teams.length; i++) {
       var ti = teams[i];
       if (!ti.team) continue;
-      var squad = safeArr(await API.fetchSquad(ti.fantasy_team_id));
+      var teamId = ti.team.id;
+      if (!teamId) continue;
+      var squad = safeArr(await API.fetchSquad(teamId));
       if (!squad.length) continue;
       var captain = squad.find(function(s) { return s.is_captain; });
       var vc = squad.find(function(s) { return s.is_vc; });
@@ -1771,10 +1775,11 @@ async function exportAllSquadsPDF() {
       if (i > 0) html += '</div>';
     }
     html += '</body></html>';
-    var win = window.open('','_blank');
-    win.document.write(html);
-    win.document.close();
-    setTimeout(function() { win.print(); }, 500);
+    var printWin = window.open('','_blank');
+    if (!printWin) { UI.toast('Please allow popups and try again','warn'); return; }
+    printWin.document.write(html);
+    printWin.document.close();
+    setTimeout(function() { printWin.print(); }, 500);
     UI.toast('PDF ready - use print dialog to save','success');
   } catch(e) { UI.toast(e.message,'error'); }
 }
