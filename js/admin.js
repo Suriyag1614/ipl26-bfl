@@ -1643,13 +1643,18 @@ async function exportReleasesPDF() {
         '<div class="header-title">📤 Player Releases & Trades</div>'+
         '<div class="header-sub">IPL 2026 Fantasy League | Generated: '+new Date().toLocaleDateString()+' | Total: '+allReleases.reduce(function(acc,t){return acc+t.releases.length;},0)+' players</div>'+
       '</div>';
+    var shownPlayers = {};
     allReleases.forEach(function(tr) {
       html += '<div class="team-card">'+
         '<div class="team-card-header"><div class="team-card-name">'+UI.esc(tr.team.team_name||'')+'</div>'+
         '<div class="team-card-owner">Owner: '+UI.esc(tr.team.owner_name||'—')+'</div></div>'+
         '<div class="player-grid">';
       var tradedPlayers = ['urvil', 'will jacks', 'prasidh', 'siraj'];
+      var hasPlayers = false;
       tr.releases.forEach(function(sp) {
+        if (shownPlayers[sp.player_id]) return;
+        shownPlayers[sp.player_id] = true;
+        hasPlayers = true;
         var p = sp.player || {};
         var initials = (p.name||'').split(' ').map(function(w) { return w[0]; }).join('').substring(0,2).toUpperCase();
         var playerNameLower = (p.name||'').toLowerCase().trim();
