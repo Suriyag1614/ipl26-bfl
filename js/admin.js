@@ -144,16 +144,22 @@ function showPanel(id) {
 
   // Lazy-load panel
   var loaders = {
-    dashboard:  loadDashboard,
-    fixtures:   renderFixtureList,
-    results:    loadResultsPanel,
-    matchctrl:  loadMatchCtrlPanel,
-    stats:      function() {}, // match dropdown already populated
-    calculate:  function() {},
-    overrides:  function() { loadAdjustments(); },
-    injuries:   loadInjuries,
-    squads:     function() {},
-    audit:      loadAuditLog,
+    dashboard:      loadDashboard,
+    fixtures:       renderFixtureList,
+    results:        loadResultsPanel,
+    matchctrl:      loadMatchCtrlPanel,
+    stats:          function() {},
+    calculate:      function() {},
+    overrides:      function() { loadAdjustments(); },
+    injuries:       loadInjuries,
+    squads:         function() {},
+    audit:          loadAuditLog,
+    'pred-summary': loadPredictionsSummary,
+    'fantasy-leaderboard': loadFantasyLeaderboard,
+    'user-teams':   loadUserTeams,
+    'pred-accuracy': loadPredictionAccuracy,
+    'match-preds':  loadMatchPredictionsPanel,
+    'power-rankings': loadPowerRankings,
   };
   if (loaders[id]) loaders[id]();
 
@@ -248,8 +254,7 @@ async function loadAllPlayers() {
 
 async function loadAllTeams() {
   try {
-    var raw = safeArr(await API.fetchTeams());
-    // Create an object format that matches what the admin logic expects
+    var raw = safeArr(await API.fetchAllTeamPoints());
     _teams = raw.map(function(t) {
       return {
         fantasy_team_id: t.id,
@@ -2031,8 +2036,312 @@ async function undoAction(logId, actionType, entityId) {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   LOGOUT
+   PREDICTIONS SUMMARY
 ══════════════════════════════════════════════════════════════ */
+async function loadPredictionsSummary() {
+  var teamWins = $id('pred-team-wins');
+  var targetDist = $id('pred-target-dist');
+  if (!teamWins || !targetDist) return;
+  teamWins.innerHTML = '<div class="skel skel-row"></div>';
+  targetDist.innerHTML = '<div class="skel skel-row"></div>';
+  try {
+    var preds = safeArr(await API.fetchAllPredictionsAllMatches());
+    var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var teamCounts = {};
+    var targetScores = [];
+    preds.forEach(function(p) {
+      if (p.predicted_winner) {
+        teamCounts[p.predicted_winner] = (teamCounts[p.predicted_winner] || 0) + 1;
+      }
+      if (p.target_score) {
+        targetScores.push(p.target_score);
+      }
+    });
+    var teamList = Object.keys(teamCounts).sort(function(a,b) { return teamCounts[b] - teamCounts[a]; });
+    if (teamList.length === 0) {
+      teamWins.innerHTML = '<div class="empty-state" style="padding:20px;">No completed matches with predictions yet.</div>';
+    } else {
+      teamWins.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;">' + teamList.map(function(t) {
+        var cnt = teamCounts[t];
+        var pct = Math.round(cnt / preds.length * 100);
+        var shortCode = UI.tShort(t) || t.substring(0,3).toUpperCase();
+        return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:50px;font-weight:700;">' + shortCode + '</span><div style="flex:1;background:var(--bg3);height:24px;border-radius:4px;overflow:hidden;"><div style="width:' + pct + '%;background:var(--accent);height:100%;"></div></div><span style="width:60px;text-align:right;color:var(--text2);">' + cnt + ' (' + pct + '%)</span></div>';
+      }).join('') + '</div>';
+    }
+    if (targetScores.length === 0) {
+      targetDist.innerHTML = '<div class="empty-state" style="padding:20px;">No target score predictions yet.</div>';
+    } else {
+      var ranges = { 
+        '<100': 0, '100-120': 0, '121-140': 0, '141-160': 0, '161-180': 0, 
+        '181-190': 0, '191-200': 0, '201-210': 0, '211-220': 0, '221-230': 0, '231-250': 0, '250+': 0 
+      };
+      targetScores.forEach(function(s) {
+        if (s < 100) ranges['<100']++;
+        else if (s <= 120) ranges['100-120']++;
+        else if (s <= 140) ranges['121-140']++;
+        else if (s <= 160) ranges['141-160']++;
+        else if (s <= 180) ranges['161-180']++;
+        else if (s <= 190) ranges['181-190']++;
+        else if (s <= 200) ranges['191-200']++;
+        else if (s <= 210) ranges['201-210']++;
+        else if (s <= 220) ranges['211-220']++;
+        else if (s <= 230) ranges['221-230']++;
+        else if (s <= 250) ranges['231-250']++;
+        else ranges['250+']++;
+      });
+      targetDist.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' + Object.keys(ranges).map(function(r) {
+        var cnt = ranges[r];
+        var pct = Math.round(cnt / targetScores.length * 100);
+        return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:70px;font-size:11px;">' + r + '</span><div style="flex:1;background:var(--bg3);height:18px;border-radius:3px;overflow:hidden;"><div style="width:' + pct + '%;background:var(--purple);height:100%;"></div></div><span style="width:40px;text-align:right;font-size:11px;color:var(--text2);">' + cnt + '</span></div>';
+      }).join('') + '</div>';
+    }
+  } catch(e) { teamWins.innerHTML = '<div style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</div>'; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FANTASY PLAYERS LEADERBOARD
+══════════════════════════════════════════════════════════════ */
+async function loadFantasyLeaderboard() {
+  var tbody = $id('fantasy-leaderboard-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
+  try {
+    var stats = safeArr(await API.fetchAllPlayerStats());
+    var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var completedMatchIds = completedMatches.map(function(m) { return m.id; });
+    var playerPoints = {};
+    var playerMatches = {};
+    var playerIds = [];
+    stats.forEach(function(s) {
+      if (s.match_id && completedMatchIds.includes(s.match_id)) {
+        var pid = s.player_id;
+        if (!playerIds.includes(pid)) playerIds.push(pid);
+        var pts = API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s);
+        playerPoints[pid] = (playerPoints[pid] || 0) + pts;
+        playerMatches[pid] = (playerMatches[pid] || 0) + 1;
+      }
+    });
+    var playerMap = {};
+    if (playerIds.length > 0) {
+      var allPlayers = safeArr(await API.fetchAllPlayers());
+      allPlayers.forEach(function(p) { playerMap[p.id] = p; });
+    }
+    var playerList = [];
+    for (var pid in playerPoints) {
+      var p = playerMap[pid];
+      if (p) {
+        playerList.push({ id: pid, name: p.name, team: p.ipl_team, points: playerPoints[pid], matches: playerMatches[pid] });
+      }
+    }
+    playerList.sort(function(a,b) { return b.points - a.points; });
+    var top20 = playerList.slice(0, 20);
+    if (!top20.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="padding:20px;">No player stats yet.</td></tr>'; return; }
+    tbody.innerHTML = top20.map(function(p,i) {
+      return '<tr style="animation:row-in .2s ease ' + (i*.02) + 's both;">' +
+        '<td style="font-weight:700;' + (i<3?'color:var(--gold);':'') + '">' + (i+1) + '</td>' +
+        '<td style="font-weight:600;">' + UI.esc(p.name) + '</td>' +
+        '<td><span style="background:var(--bg3);padding:2px 8px;border-radius:3px;font-size:10px;">' + UI.esc(UI.tShort(p.team)||'-') + '</span></td>' +
+        '<td style="font-weight:700;color:var(--accent);">' + p.points + '</td>' +
+        '<td>' + p.matches + '</td>' +
+        '<td>' + (p.matches > 0 ? Math.round(p.points/p.matches*10)/10 : 0) + '</td>' +
+      '</tr>';
+    }).join('');
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   USER TEAMS OVERVIEW
+══════════════════════════════════════════════════════════════ */
+async function loadUserTeams() {
+  var tbody = $id('user-teams-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
+  try {
+    var teams = safeArr(await API.fetchAllFantasyTeams());
+    if (!teams.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="padding:20px;">No fantasy teams found.</td></tr>'; return; }
+    var allPlayers = safeArr(await API.fetchAllPlayers());
+    var playerMap = {}; allPlayers.forEach(function(p) { playerMap[p.id] = p; });
+    var squadData = safeArr(await API.fetchSquadPlayersAll());
+    var squadByTeam = {};
+    squadData.forEach(function(sp) {
+      if (!squadByTeam[sp.fantasy_team_id]) squadByTeam[sp.fantasy_team_id] = [];
+      squadByTeam[sp.fantasy_team_id].push({ ...sp, player: playerMap[sp.player_id] });
+    });
+    tbody.innerHTML = teams.map(function(t,i) {
+      var sps = squadByTeam[t.id] || [];
+      var captain = sps.find(function(p) { return p.is_captain === true; });
+      var vc = sps.find(function(p) { return p.is_vc === true; });
+      var impact = sps.find(function(p) { return p.is_impact === true; });
+      var playerCount = sps.filter(function(p) { return p.is_released !== true; }).length;
+      return '<tr style="animation:row-in .2s ease ' + (i*.02) + 's both;">' +
+        '<td style="font-size:12px;">' + UI.esc(t.owner_name || '-') + '</td>' +
+        '<td style="font-weight:600;">' + UI.esc(UI.tShort(t.team_name)) + '</td>' +
+        '<td>' + (captain ? UI.esc(captain.player?.name || '-') : '-') + '</td>' +
+        '<td>' + (vc ? UI.esc(vc.player?.name || '-') : '-') + '</td>' +
+        '<td>' + (impact ? UI.esc(impact.player?.name || '-') : '-') + '</td>' +
+        '<td>' + playerCount + '</td>' +
+      '</tr>';
+    }).join('');
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PREDICTION ACCURACY
+═════════════════════════════════════════════════════════════ */
+async function loadPredictionAccuracy() {
+  var byMatch = $id('accuracy-by-match');
+  var overall = $id('accuracy-overall');
+  if (!byMatch || !overall) return;
+  byMatch.innerHTML = '<div class="skel skel-row"></div>';
+  overall.innerHTML = '';
+  try {
+    var preds = safeArr(await API.fetchAllPredictionsAllMatches());
+    var matches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var matchStats = [];
+    matches.forEach(function(m) {
+      var matchPreds = preds.filter(function(p) { return p.match_id === m.id; });
+      var correct = matchPreds.filter(function(p) { return p.predicted_winner === m.winner; }).length;
+      var total = matchPreds.length;
+      matchStats.push({ match: m, correct: correct, total: total, pct: total > 0 ? Math.round(correct/total*100) : 0 });
+    });
+    if (!matchStats.length) {
+      byMatch.innerHTML = '<div class="empty-state" style="padding:20px;">No completed matches yet.</div>';
+      overall.innerHTML = '<div class="empty-state">No data</div>';
+      return;
+    }
+    matchStats.sort(function(a,b) { return b.pct - a.pct; });
+    byMatch.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;">' + matchStats.map(function(m) {
+      var color = m.pct >= 70 ? 'var(--green)' : m.pct >= 40 ? 'var(--gold)' : 'var(--red)';
+      return '<div style="display:flex;align-items:center;gap:10px;font-size:12px;"><span style="width:80px;">Match ' + m.match.match_no + '</span><div style="flex:1;background:var(--bg3);height:20px;border-radius:3px;overflow:hidden;"><div style="width:' + m.pct + '%;background:' + color + ';height:100%;"></div></div><span style="width:50px;text-align:right;color:' + color + ';">' + m.correct + '/' + m.total + '</span></div>';
+    }).join('') + '</div>';
+    var totalCorrect = matchStats.reduce(function(s,m) { return s + m.correct; }, 0);
+    var totalPreds = matchStats.reduce(function(s,m) { return s + m.total; }, 0);
+    var overallPct = totalPreds > 0 ? Math.round(totalCorrect / totalPreds * 100) : 0;
+    overall.innerHTML = '<div class="kpi-chip"><div class="kpi-label">Overall Accuracy</div><div class="kpi-value" style="color:var(--accent);">' + overallPct + '%</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Correct Predictions</div><div class="kpi-value">' + totalCorrect + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Total Predictions</div><div class="kpi-value">' + totalPreds + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Matches Analyzed</div><div class="kpi-value">' + matchStats.length + '</div></div>';
+  } catch(e) { byMatch.innerHTML = '<div style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</div>'; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MATCH PREDICTIONS PANEL (Team-wise)
+═════════════════════════════════════════════════════════════ */
+async function loadMatchPredictionsPanel() {
+  var sel = $id('mp-team-select');
+  if (!sel) return;
+  var teams = safeArr(await API.fetchAllTeamPoints());
+  if (sel.options.length <= 1) {
+    sel.innerHTML = '<option value="">— Select BFL Team —</option>' + 
+      teams.map(function(t) {
+        return '<option value="' + t.id + '">' + UI.esc(UI.tShort(t.team_name)) + '</option>';
+      }).join('');
+  }
+  loadTeamMatchPredictions();
+}
+
+async function loadTeamMatchPredictions() {
+  var list = $id('team-preds-list');
+  var stats = $id('team-preds-stats');
+  if (!list || !stats) return;
+  var teamId = $id('mp-team-select') ? $id('mp-team-select').value : null;
+  if (!teamId) { list.innerHTML = '<div class="empty-state" style="padding:20px;">Select a BFL Team</div>'; return; }
+  list.innerHTML = '<div class="skel skel-row"></div>';
+  stats.innerHTML = '';
+  try {
+    var preds = safeArr(await API.fetchAllPredictionsAllMatches());
+    var teamPreds = preds.filter(function(p) { return p.fantasy_team_id === teamId; });
+    var teamInfo = await API.fetchAllTeamPoints();
+    var tInfo = teamInfo.find(function(t) { return t.id === teamId; });
+    if (!teamPreds.length) { list.innerHTML = '<div class="empty-state" style="padding:20px;">No predictions by this team.</div>'; return; }
+    teamPreds.sort(function(a,b) { return (a.match_id < b.match_id) ? -1 : 1; });
+    list.innerHTML = teamPreds.map(function(p,i) {
+      var match = _matches.find(function(m) { return m.id === p.match_id; });
+      if (!match) return '';
+      var isCorrect = match.winner && p.predicted_winner === match.winner;
+      var isAbandoned = match.status === 'abandoned';
+      var matchStatus = match.status === 'completed' || match.status === 'processed';
+      var predVsActual = matchStatus ? 
+        '<div style="font-size:11px;color:var(--text2);">Pred: ' + p.target_score + (match.actual_target ? ' | Actual: ' + match.actual_target : '') + '</div>' :
+        '<div style="font-size:11px;color:var(--text2);">Target: ' + (p.target_score || '-') + '</div>';
+      var statusText = isAbandoned ? 'Abandoned' : (isCorrect ? '✓ Correct' : (matchStatus ? '✗ Wrong' : 'Pending'));
+      var statusColor = isAbandoned ? 'var(--orange);' : (isCorrect ? 'var(--green);' : (matchStatus ? 'var(--red);' : 'var(--text3);'));
+      return '<div style="padding:10px 16px;border-bottom:1px solid var(--border);animation:row-in .2s ease ' + (i*.02) + 's both;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<div><div style="font-weight:600;">M' + (match.match_no||'?') + ': ' + UI.tShort(match.team1) + ' vs ' + UI.tShort(match.team2) + '</div>' + predVsActual + '</div>' +
+          '<div style="text-align:right;font-weight:700;color:' + statusColor + '">' + statusText + '</div>' +
+        '</div>' +
+        '<div style="font-size:10px;color:var(--text3);margin-top:4px;">Predicted: ' + UI.esc(p.predicted_winner || '-') + (match.winner ? ' | Winner: ' + UI.esc(match.winner) : (isAbandoned ? ' | Match Abandoned' : '')) + '</div>' +
+      '</div>';
+    }).join('');
+    var correctCount = teamPreds.filter(function(p) {
+      var match = _matches.find(function(m) { return m.id === p.match_id });
+      return match && match.winner && p.predicted_winner === match.winner;
+    }).length;
+    var totalWithResult = teamPreds.filter(function(p) {
+      var match = _matches.find(function(m) { return m.id === p.match_id });
+      return match && (match.status === 'completed' || match.status === 'processed');
+    }).length;
+    var accuracy = totalWithResult > 0 ? Math.round(correctCount / totalWithResult * 100) : 0;
+    stats.innerHTML = '<div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);">' +
+      '<div class="kpi-chip"><div class="kpi-label">Total Preds</div><div class="kpi-value">' + teamPreds.length + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Accuracy</div><div class="kpi-value">' + (totalWithResult > 0 ? accuracy + '%' : '-') + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Correct</div><div class="kpi-value">' + correctCount + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Team</div><div class="kpi-value">' + UI.esc(UI.tShort(tInfo ? tInfo.team_name : '-')) + '</div></div>' +
+    '</div>';
+  } catch(e) { list.innerHTML = '<div style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</div>'; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   POWER RANKINGS
+═════════════════════════════════════════════════════════════ */
+async function loadPowerRankings() {
+  var tbody = $id('power-rankings-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
+  try {
+    var teams = safeArr(await API.fetchAllTeamPoints());
+    var preds = safeArr(await API.fetchAllPredictionsAllMatches());
+    var matches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var completedMatchIds = matches.map(function(m) { return m.id; });
+    var userStats = {};
+    teams.forEach(function(t) {
+      var uid = t.id;
+      if (!userStats[uid]) { userStats[uid] = { teamName: UI.tShort(t.team_name), fantasyPoints: t.total_points || 0, correctPreds: 0, totalPreds: 0 }; }
+      else { userStats[uid].fantasyPoints = Math.max(userStats[uid].fantasyPoints, t.total_points || 0); }
+    });
+    preds.forEach(function(p) {
+      if (p.fantasy_team_id && userStats[p.fantasy_team_id] && p.match_id && completedMatchIds.includes(p.match_id)) {
+        var match = matches.find(function(m) { return m.id === p.match_id; });
+        userStats[p.fantasy_team_id].totalPreds++;
+        if (match && match.winner && p.predicted_winner === match.winner) {
+          userStats[p.fantasy_team_id].correctPreds++;
+        }
+      }
+    });
+    var rankings = Object.values(userStats).map(function(u) {
+      var predAcc = u.totalPreds > 0 ? u.correctPreds / u.totalPreds : 0;
+      var fantasyNorm = u.fantasyPoints / 1000;
+      var combined = Math.round((predAcc * 50 + fantasyNorm * 50) * 100) / 100;
+      return { teamName: u.teamName, predAcc: Math.round(predAcc * 100), fantasyPoints: u.fantasyPoints, combined: combined };
+    });
+    rankings.sort(function(a,b) { return b.combined - a.combined; });
+    if (!rankings.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="padding:20px;">No data yet.</td></tr>'; return; }
+    tbody.innerHTML = rankings.slice(0, 20).map(function(r,i) {
+      return '<tr style="animation:row-in .2s ease ' + (i*.02) + 's both;">' +
+        '<td style="font-weight:700;' + (i<3?'color:var(--gold);':'') + '">' + (i+1) + '</td>' +
+        '<td style="font-weight:600;">' + UI.esc(r.teamName || '-') + '</td>' +
+        '<td>' + r.predAcc + '%</td>' +
+        '<td style="font-weight:700;color:var(--accent);">' + r.fantasyPoints + '</td>' +
+        '<td style="font-weight:700;">' + r.combined + '</td>' +
+      '</tr>';
+    }).join('');
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LOGOUT
+═════════════════════════════════════════════════════════════ */
 async function doLogout() { await Auth.signOut(); }
 
 /* ══════════════════════════════════════════════════════════════

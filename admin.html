@@ -397,6 +397,32 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       Audit Log
     </button>
+
+    <span class="sb-section-label">Analytics</span>
+    <button class="sb-link" data-panel="pred-summary" onclick="showPanel('pred-summary')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+      Predictions Summary
+    </button>
+    <button class="sb-link" data-panel="fantasy-leaderboard" onclick="showPanel('fantasy-leaderboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 15l-2 5-3-1-3 1-2-5"/><circle cx="12" cy="8" r="5"/></svg>
+      Fantasy Players
+    </button>
+    <button class="sb-link" data-panel="user-teams" onclick="showPanel('user-teams')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      User Teams
+    </button>
+    <button class="sb-link" data-panel="pred-accuracy" onclick="showPanel('pred-accuracy')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      Prediction Accuracy
+    </button>
+    <button class="sb-link" data-panel="match-preds" onclick="showPanel('match-preds')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Match Predictions
+    </button>
+    <button class="sb-link" data-panel="power-rankings" onclick="showPanel('power-rankings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Power Rankings
+    </button>
   </div>
 
   <div class="sb-footer">
@@ -876,6 +902,111 @@
         <table class="data-table" style="min-width:640px;">
           <thead><tr><th>Time</th><th>Action</th><th>Entity</th><th>ID</th><th>By</th><th>Undo</th></tr></thead>
           <tbody id="audit-tbody"><tr><td colspan="6"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PREDICTIONS SUMMARY ════ -->
+  <div class="admin-panel" id="panel-pred-summary">
+    <div class="section-hdr">
+      <div><div class="section-title">Predictions Summary</div><div class="section-sub">BFL teams prediction breakdown</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="loadPredictionsSummary()">↻ Refresh</button>
+    </div>
+    <div class="col-2">
+      <div class="card">
+        <div class="card-title">Team Win Predictions</div>
+        <div id="pred-team-wins"><div class="skel skel-row"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Target Score Distribution</div>
+        <div id="pred-target-dist"><div class="skel skel-row"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ FANTASY PLAYERS LEADERBOARD ════ -->
+  <div class="admin-panel" id="panel-fantasy-leaderboard">
+    <div class="section-hdr">
+      <div><div class="section-title">Fantasy Players Leaderboard</div><div class="section-sub">Top performing players across all matches</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="loadFantasyLeaderboard()">↻ Refresh</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="table-wrap table-scroller" style="max-height:500px;">
+        <table class="data-table" style="min-width:500px;">
+          <thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Total Points</th><th>Matches</th><th>Avg Points</th></tr></thead>
+          <tbody id="fantasy-leaderboard-tbody"><tr><td colspan="6"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ USER TEAMS OVERVIEW ════ -->
+  <div class="admin-panel" id="panel-user-teams">
+    <div class="section-hdr">
+      <div><div class="section-title">User Teams Overview</div><div class="section-sub">All fantasy teams with captains and selections</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="loadUserTeams()">↻ Refresh</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="table-wrap table-scroller" style="max-height:500px;">
+        <table class="data-table" style="min-width:600px;">
+          <thead><tr><th>User</th><th>Team Name</th><th>Captain</th><th>Vice-Captain</th><th>Impact</th><th>Players</th></tr></thead>
+          <tbody id="user-teams-tbody"><tr><td colspan="6"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PREDICTION ACCURACY ════ -->
+  <div class="admin-panel" id="panel-pred-accuracy">
+    <div class="section-hdr">
+      <div><div class="section-title">Prediction Accuracy</div><div class="section-sub">Track prediction accuracy over time</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="loadPredictionAccuracy()">↻ Refresh</button>
+    </div>
+    <div class="col-2">
+      <div class="card">
+        <div class="card-title">Accuracy by Match</div>
+        <div id="accuracy-by-match"><div class="skel skel-row"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Overall Stats</div>
+        <div id="accuracy-overall" class="kpi-grid" style="grid-template-columns:repeat(2,1fr);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ MATCH-WISE PREDICTIONS ════ -->
+  <div class="admin-panel" id="panel-match-preds">
+    <div class="section-hdr">
+      <div><div class="section-title">Match Predictions</div><div class="section-sub">Team predictions per match - Predicted vs Actual</div></div>
+    </div>
+    <div class="col-2">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--border);">
+          <select class="form-select" id="mp-team-select" onchange="loadTeamMatchPredictions()" style="width:100%;">
+            <option value="">— Select BFL Team —</option>
+          </select>
+        </div>
+        <div id="team-preds-list" style="max-height:450px;overflow-y:auto;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Team Stats</div>
+        <div id="team-preds-stats"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ POWER RANKINGS ════ -->
+  <div class="admin-panel" id="panel-power-rankings">
+    <div class="section-hdr">
+      <div><div class="section-title">Power Rankings</div><div class="section-sub">Users ranked by predictions accuracy + fantasy points</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="loadPowerRankings()">↻ Refresh</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="table-wrap table-scroller" style="max-height:500px;">
+        <table class="data-table" style="min-width:600px;">
+          <thead><tr><th>Rank</th><th>Team</th><th>Pred Accuracy</th><th>Fantasy Points</th><th>Combined Score</th></tr></thead>
+          <tbody id="power-rankings-tbody"><tr><td colspan="5"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
         </table>
       </div>
     </div>

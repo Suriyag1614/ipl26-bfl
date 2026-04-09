@@ -45,6 +45,13 @@ const API = {
     return data || [];
   },
 
+  async fetchSquadPlayersAll() {
+    const { data, error } = await sb.from('squad_players')
+      .select('*');
+    if (error) throw error;
+    return data || [];
+  },
+
   // Dynamic dropdown: players filtered by IPL team
   async fetchPlayersByTeam(iplTeam) {
     const { data, error } = await sb.from('players')
@@ -318,7 +325,7 @@ const API = {
 
   async fetchAllPredictions(matchId) {
     const { data, error } = await sb.from('predictions')
-      .select('*,team:fantasy_teams(team_name)')
+      .select('*')
       .eq('match_id', matchId);
     if (error) throw error;
     return data || [];
@@ -1590,6 +1597,64 @@ async fetchTeams() {
     if (error) throw error;
     await this.lockMatch(matchId);
     await this._log('predictions_locked', 'match', matchId, null, { matchId });
+  },
+
+  /**
+   * Admin: Fetch all predictions across all matches (for summary).
+   */
+  async fetchAllPredictionsAllMatches() {
+    const { data, error } = await sb.from('predictions')
+      .select('*')
+      .order('submitted_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
+   * Admin: Fetch player match stats aggregated across all matches.
+   */
+  async fetchAllPlayerStats() {
+    const { data, error } = await sb.from('player_match_stats')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  /**
+   * Admin: Fetch all fantasy teams with user info.
+   */
+  async fetchAllFantasyTeams() {
+    const { data, error } = await sb.from('fantasy_teams')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('[fetchAllFantasyTeams] Error:', error);
+      throw error;
+    }
+    return data || [];
+  },
+
+  /**
+   * Admin: Fetch total points for all teams (from leaderboard table joined with fantasy_teams).
+   */
+  async fetchAllTeamPoints() {
+    const { data, error } = await sb.from('leaderboard')
+      .select('*,fantasy_team:fantasy_teams(id,team_name,owner_name)')
+      .order('total_points', { ascending: false });
+    if (error) {
+      console.error('[fetchAllTeamPoints] Error:', error);
+      throw error;
+    }
+    return (data || []).map(function(r) {
+      return {
+        id: r.fantasy_team_id,
+        team_name: r.fantasy_team?.team_name || 'Unknown',
+        owner_name: r.fantasy_team?.owner_name || '-',
+        total_points: r.total_points,
+        matches_played: r.matches_played
+      };
+    });
   },
 };
 
