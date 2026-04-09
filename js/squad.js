@@ -55,7 +55,6 @@ async function loadSquad(){
     renderSquad(); renderSummary(); renderRoleBreakdown(); renderInjuryBanner(); renderReplacements();
     setTimeout(function(){
       renderPendingReplacements();
-      loadReleasedPlayers();
     },100);
   }catch(e){
     UI.toast('Could not load squad: '+e.message,'error');
@@ -209,10 +208,7 @@ function renderReleasedPlayers() {
         '<button class="btn btn-ghost btn-sm" style="padding:4px 10px;font-size:11px;" onclick="undoRelease(\''+sp.id+'\',\''+UI.esc(p.name||'')+'\')">Undo</button>'+
       '</div>'+
     '</div>';
-  }).join('') +
-  (_submittedBlogId 
-    ? '<button class="btn btn-danger btn-sm" style="width:100%;margin-top:10px;" onclick="deleteSubmittedRelease()">Delete Submission</button>'
-    : '<button class="btn btn-accent btn-sm" style="width:100%;margin-top:10px;" onclick="submitReleaseForAuction()">Submit for Auction</button>');
+  }).join('');
 }
 async function submitReleaseForAuction() {
   if (!_releasedPlayers || !_releasedPlayers.length) {
@@ -410,7 +406,6 @@ function renderSquad(){
         (statusHtml?'<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:center;margin:4px 0;">'+statusHtml+'</div>':'') +
         (pts!==0?'<div class="player-pts-row"><span style="color:var(--text2)">Season FP</span><span style="font-family:var(--f-mono);font-weight:600;color:var(--accent)">'+pts+'</span></div>':'') +
         (isUnavailable?'<button class="btn btn-sm" style="margin-top:6px;width:100%;background:rgba(56,217,245,.12);color:var(--cyan);border:1px solid rgba(56,217,245,.25);font-size:11px;" onclick="openRepModal(\''+pd+'\');">'+(hasRep?'&#x2194; Change':'+ Set Replacement')+'</button>':'')+
-        (!isUnavailable && !isCap && !isVC ?'<button class="btn btn-sm" style="margin-top:6px;width:100%;background:rgba(255,77,109,.08);color:var(--red);border:1px solid rgba(255,77,109,.2);font-size:10px;" onclick="confirmRelease(\''+sp.id+'\',\''+UI.esc(p.name||'')+'\','+!!(p.is_uncapped)+')">Release for Auction</button>':'')+
       '</div>' +
     '</div>';
   }).join('');
@@ -423,7 +418,6 @@ function renderSummary(){
   var el=document.getElementById('squad-summary'); if(!el)return;
   var items=[{lbl:'Players',val:_squad.length,unit:'/12'},{lbl:'Captain',val:(cap&&cap.player)?cap.player.name:'&mdash;',plain:true},{lbl:'VC',val:(vc&&vc.player)?vc.player.name:'&mdash;',plain:true},{lbl:'Impact',val:(impact&&impact.player)?impact.player.name:'&mdash;',plain:true},{lbl:'Overseas',val:os,unit:'/4'}];
   if(unavail) items.push({lbl:'Unavailable',val:unavail,accent:'var(--red)'});
-  items.push({lbl:'Released',val:_releaseCount,unit:'/'+_maxRelease,accent:_releaseCount>=_maxRelease?'var(--red)':'var(--text2)'});
   el.innerHTML='<div style="display:flex;gap:20px;flex-wrap:wrap;align-items:center;">'+items.map(function(it,i){
     var sep=i?'<div style="width:1px;height:32px;background:var(--border);flex-shrink:0;"></div>':'';
     var valHtml=it.plain?'<div style="font-family:var(--f-display);font-weight:600;font-size:15px;">'+UI.esc(String(it.val))+'</div>':
@@ -557,7 +551,7 @@ var _releaseCount = 0;
 var _cappedReleaseCount = 0;
 var _maxRelease = 3;
 var _maxCappedRelease = 2;
-var _releasesEnabled = true;
+var _releasesEnabled = false;
 async function confirmRelease(squadPlayerId, playerName, isUncapped) {
   if (!_releasesEnabled) {
     UI.toast('Release feature is currently disabled', 'warn');
