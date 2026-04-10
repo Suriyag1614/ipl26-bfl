@@ -39,6 +39,7 @@ var _fixtureQ     = '';
 var _statsMatchId = null;
 var _statsPlayerId= null;
 var _statPlayers  = [];   // players filtered to current match teams
+var _playerSquadMap = {}; // player_id → {team_id, team_name} (BFL team that picked this player)
 var _ctrlMatchId  = null;
 var _squadEdits   = {};   // teamId → {captainId,vcId,impactId}
 var _sidebarOpen  = true;
@@ -210,8 +211,8 @@ async function init() {
       applySidebarState();
     });
 
-    // Load core data
-    await Promise.all([loadAllMatches(), loadAllPlayers(), loadAllTeams()]);
+// Load core data
+await Promise.all([loadAllMatches(), loadAllPlayers(), loadAllTeams(), loadPlayerSquadMap()]);
 
     // Update notification badge for pending replacements
     updateRepBadge();
@@ -262,6 +263,23 @@ async function loadAllTeams() {
       };
     });
   } catch(e) { console.error('[loadAllTeams]', e); _teams = []; }
+}
+
+async function loadPlayerSquadMap() {
+  try {
+    var squadData = safeArr(await API.fetchSquadPlayersAll());
+    var teamMap = {};
+    _teams.forEach(function(t) { teamMap[t.fantasy_team_id] = t.team && t.team.team_name; });
+    _playerSquadMap = {};
+    squadData.forEach(function(sp) {
+      if (sp.player_id && sp.fantasy_team_id && !sp.is_released) {
+        _playerSquadMap[sp.player_id] = {
+          team_id: sp.fantasy_team_id,
+          team_name: teamMap[sp.fantasy_team_id] || ''
+        };
+      }
+    });
+  } catch(e) { console.error('[loadPlayerSquadMap]', e); _playerSquadMap = {}; }
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -874,7 +892,10 @@ function populateStatsPlayerSelect() {
   if (!sel) return;
   sel.innerHTML = '<option value="">— Select player to enter stats —</option>' + 
     _statPlayers.map(function(p){
-      return '<option value="'+p.id+'">'+UI.esc(p.name)+' ('+UI.esc(p.ipl_team||'')+')</option>';
+      var squad = _playerSquadMap[p.id];
+      var teamLabel = squad ? UI.tShort(squad.team_name) : null;
+      var optionText = teamLabel ? UI.esc(p.name)+' ('+teamLabel+')' : UI.esc(p.name);
+      return '<option value="'+p.id+'">'+optionText+'</option>';
     }).join('');
 }
 
@@ -895,14 +916,17 @@ function closePlayerSearch() {
   // deprecated, kept for safety
 }
 
-async function selectStatPlayer(id, name, role, team) {
+async function selectStatPlayer(id, name, role, iplTeam) {
   _statsPlayerId = id;
   $id('stats-player-id').value = id;
 
+  var squad = _playerSquadMap[id];
+  var bflTeam = squad ? UI.tShort(squad.team_name) : '';
   var chip = $id('stats-player-chip');
   if (chip) {
+    var teamSpan = bflTeam ? ' <span style="color:var(--text2);">'+bflTeam+'</span>' : '';
     chip.innerHTML = '<div style="display:inline-flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:13px;">'+
-      UI.roleBadge(role)+' <strong>'+UI.esc(name)+'</strong> <span style="color:var(--text2);">'+UI.esc(team)+'</span></div>';
+      UI.roleBadge(role)+' <strong>'+UI.esc(name)+'</strong>'+teamSpan+'</div>';
     chip.style.display='';
   }
 
