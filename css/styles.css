@@ -490,7 +490,9 @@ body { display:flex; flex-direction:column; }
 /* ═══════════════════════════════════════════════
    TABLES
  ═══════════════════════════════════════════════ */
-.table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width: thin; 
+      scrollbar-color: var(--border) transparent;
+      border-radius: var(--radius-md);}
 .table-scroller { max-height: 440px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
 .table-scroller::-webkit-scrollbar { width: 6px; }
 .table-scroller::-webkit-scrollbar-track { background: transparent; }

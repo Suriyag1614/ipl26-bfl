@@ -840,7 +840,7 @@
             </select>
           </div>
         </div>
-        <div id="injuries-list" style="margin-top:16px;max-height:400px;overflow-y:auto;"><div class="skel skel-row"></div></div>
+        <div id="injuries-list" style="margin-top:16px;max-height:400px;overflow-y:auto;scrollbar-width: thin;scrollbar-color: var(--border) transparent;border-radius: var(--radius-md);"><div class="skel skel-row"></div></div>
       </div>
     </div>
   </div>
@@ -932,7 +932,7 @@
       <button class="btn btn-ghost btn-sm" onclick="loadFantasyLeaderboard()">↻ Refresh</button>
     </div>
     <div class="card" style="padding:0;overflow:hidden;">
-      <div class="table-wrap table-scroller" style="max-height:500px;">
+      <div class="table-wrap table-scroller" style="max-height:100%;">
         <table class="data-table" style="min-width:500px;">
           <thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>Total Points</th><th>Matches</th><th>Avg Points</th></tr></thead>
           <tbody id="fantasy-leaderboard-tbody"><tr><td colspan="6"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
@@ -948,7 +948,7 @@
       <button class="btn btn-ghost btn-sm" onclick="loadUserTeams()">↻ Refresh</button>
     </div>
     <div class="card" style="padding:0;overflow:hidden;">
-      <div class="table-wrap table-scroller" style="max-height:500px;">
+      <div class="table-wrap table-scroller" style="max-height:100%;">
         <table class="data-table" style="min-width:600px;">
           <thead><tr><th>User</th><th>Team Name</th><th>Captain</th><th>Vice-Captain</th><th>Impact</th><th>Players</th></tr></thead>
           <tbody id="user-teams-tbody"><tr><td colspan="6"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
@@ -987,7 +987,7 @@
             <option value="">— Select BFL Team —</option>
           </select>
         </div>
-        <div id="team-preds-list" style="max-height:450px;overflow-y:auto;"></div>
+        <div id="team-preds-list" style="max-height:450px;overflow-y:auto;scrollbar-width: thin; scrollbar-color: var(--border) transparent;border-radius: var(--radius-md);"></div>
       </div>
       <div class="card">
         <div class="card-title">Team Stats</div>
@@ -1003,7 +1003,7 @@
       <button class="btn btn-ghost btn-sm" onclick="loadPowerRankings()">↻ Refresh</button>
     </div>
     <div class="card" style="padding:0;overflow:hidden;">
-      <div class="table-wrap table-scroller" style="max-height:500px;">
+      <div class="table-wrap table-scroller" style="max-height:100%;">
         <table class="data-table" style="min-width:600px;">
           <thead><tr><th>Rank</th><th>Team</th><th>Pred Accuracy</th><th>Fantasy Points</th><th>Combined Score</th></tr></thead>
           <tbody id="power-rankings-tbody"><tr><td colspan="5"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
