@@ -1561,7 +1561,7 @@ async function loadSquadAdmin() {
         '<td><input type="radio" name="cap-'+teamId+'" value="'+p.id+'" '+(sp.is_captain?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'captain\',\''+p.id+'\')"></td>'+
         '<td><input type="radio" name="vc-'+teamId+'"  value="'+p.id+'" '+(sp.is_vc?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'vc\',\''+p.id+'\')"></td>'+
         '<td><input type="radio" name="ip-'+teamId+'"  value="'+p.id+'" '+(sp.is_impact?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'impact\',\''+p.id+'\')"></td>'+
-        '<td style="font-size:13px;">'+(p.is_overseas?'✈️':'—')+'</td>'+
+        '<td style="font-size:13px;">'+(p.is_overseas?'<img src="images/ipl/teams-foreign-player-icon.svg" style="width:14px;vertical-align:middle;transform:rotate(45deg);">':'—')+'</td>'+
         '<td style="font-size:13px;">'+(p.availability_status!=='available'?statusIcon:'—')+'</td>'+
       '</tr>';
     }).join('');

@@ -760,7 +760,7 @@ async function exportSquadPDF() {
                                 <div class="p-info">
                                     <div>
                                         <div class="p-name">
-                                            ${UI.esc(pName)} ${p.is_overseas ? '✈️' : ''}
+                                            ${UI.esc(pName)} ${p.is_overseas ? '<img src="images/ipl/teams-foreign-player-icon.svg" style="width:14px;vertical-align:middle;transform:rotate(45deg)">' : ''}
                                             ${sqP.is_captain ? '<span class="badge c">C</span>' : sqP.is_vc ? '<span class="badge vc">VC</span>' : sqP.is_impact ? '<span class="badge imp">IMP</span>' : ''}
                                         </div>
                                         <div class="p-team">${UI.esc(p.ipl_team || '—')}</div>
