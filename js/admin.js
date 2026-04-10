@@ -1442,7 +1442,7 @@ function onInjPlayerChange() {
 
 function selectInjPlayer(id, name, playerJson) {
   var p; try { p = JSON.parse(playerJson); } catch(e){ p={}; }
-  $id('inj-player-id').value=id; $id('inj-player-input').value=name;
+  $id('inj-player-id').value=id;
   closeInjSearch();
   if (p.availability_note) $id('avail-note').value=p.availability_note;
   if (p.availability_status) $id('avail-status').value=p.availability_status;
