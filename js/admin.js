@@ -2128,7 +2128,7 @@ async function loadPredictionsSummary() {
 async function loadFantasyLeaderboard() {
   var tbody = $id('fantasy-leaderboard-tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="6"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
   try {
     var stats = safeArr(await API.fetchAllPlayerStats());
     var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
@@ -2154,17 +2154,21 @@ async function loadFantasyLeaderboard() {
     for (var pid in playerPoints) {
       var p = playerMap[pid];
       if (p) {
-        playerList.push({ id: pid, name: p.name, team: p.ipl_team, points: playerPoints[pid], matches: playerMatches[pid] });
+        var squad = _playerSquadMap[pid];
+        playerList.push({ id: pid, name: p.name, role: p.role, ipl_team: p.ipl_team, bfl_team: squad ? squad.team_name : null, points: playerPoints[pid], matches: playerMatches[pid] });
       }
     }
     playerList.sort(function(a,b) { return b.points - a.points; });
     var top20 = playerList.slice(0, 20);
-    if (!top20.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="padding:20px;">No player stats yet.</td></tr>'; return; }
+    if (!top20.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:20px;">No player stats yet.</td></tr>'; return; }
     tbody.innerHTML = top20.map(function(p,i) {
+      var iplLogo = p.ipl_team ? '<img src="images/teams/'+UI.tCode(p.ipl_team).toLowerCase()+'outline.png" style="width:24px;height:24px;object-fit:contain;" alt="'+UI.esc(p.ipl_team)+'">' : '-';
+      var bflTeam = p.bfl_team ? UI.tShort(p.bfl_team) : '-';
       return '<tr style="animation:row-in .2s ease ' + (i*.02) + 's both;">' +
         '<td style="font-weight:700;' + (i<3?'color:var(--gold);':'') + '">' + (i+1) + '</td>' +
-        '<td style="font-weight:600;">' + UI.esc(p.name) + '</td>' +
-        '<td><span style="background:var(--bg3);padding:2px 8px;border-radius:3px;font-size:10px;">' + UI.esc(UI.tShort(p.team)||'-') + '</span></td>' +
+        '<td>' + iplLogo + '</td>' +
+        '<td style="font-weight:600;">' + UI.esc(p.name) + ' ' + UI.roleBadge(p.role) + '</td>' +
+        '<td><span style="background:var(--bg3);padding:2px 8px;border-radius:3px;font-size:10px;">' + UI.esc(bflTeam) + '</span></td>' +
         '<td style="font-weight:700;color:var(--accent);">' + p.points + '</td>' +
         '<td>' + p.matches + '</td>' +
         '<td>' + (p.matches > 0 ? Math.round(p.points/p.matches*10)/10 : 0) + '</td>' +
