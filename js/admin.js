@@ -2162,7 +2162,7 @@ async function loadFantasyLeaderboard() {
     var top20 = playerList.slice(0, 20);
     if (!top20.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:20px;">No player stats yet.</td></tr>'; return; }
     tbody.innerHTML = top20.map(function(p,i) {
-      var iplLogo = p.ipl_team ? '<img src="images/teams/'+UI.tCode(p.ipl_team).toLowerCase()+'outline.png" style="width:24px;height:24px;object-fit:contain;" alt="'+UI.esc(p.ipl_team)+'">' : '-';
+      var iplLogo = p.ipl_team ? '<img src="images/teams/'+UI.tCode(p.ipl_team)+'outline.png" style="width:24px;height:24px;object-fit:contain;" alt="'+UI.esc(p.ipl_team)+'">' : '-';
       var bflTeam = p.bfl_team ? UI.tShort(p.bfl_team) : '-';
       return '<tr style="animation:row-in .2s ease ' + (i*.02) + 's both;">' +
         '<td style="font-weight:700;' + (i<3?'color:var(--gold);':'') + '">' + (i+1) + '</td>' +
