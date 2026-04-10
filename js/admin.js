@@ -2332,8 +2332,8 @@ async function loadPowerRankings() {
         '<td style="font-weight:700;' + (i<3?'color:var(--gold);':'') + '">' + (i+1) + '</td>' +
         '<td style="font-weight:600;">' + UI.esc(r.teamName || '-') + '</td>' +
         '<td>' + r.predAcc + '%</td>' +
-        '<td style="font-weight:700;color:var(--accent);">' + r.fantasyPoints + '</td>' +
-        '<td style="font-weight:700;">' + r.combined + '</td>' +
+        '<td style="font-weight:700;">' + r.fantasyPoints + '</td>' +
+        '<td style="font-weight:700;color:var(--accent);">' + r.combined + '</td>' +
       '</tr>';
     }).join('');
   } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
