@@ -47,7 +47,7 @@ const API = {
 
   async fetchSquadPlayersAll() {
     const { data, error } = await sb.from('squad_players')
-      .select('*');
+      .select('*,fantasy_team:fantasy_teams(team_name)');
     if (error) throw error;
     return data || [];
   },

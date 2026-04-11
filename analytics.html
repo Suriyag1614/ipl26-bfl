@@ -308,6 +308,8 @@
 <script>
 'use strict';
 var _myTeamId = null, _analytics = null, _matches = [], _teams = [], _playerSquadMap = {};
+function $id(i){return document.getElementById(i);}
+function safeArr(a){return Array.isArray(a)?a:[];}
 
 // Fantasy Leaderboard State
 var _flData = [], _flPage = 1, _flSort = { col: 'points', asc: false }, _flPerPage = 15;
@@ -328,7 +330,7 @@ async function init() {
   var params = new URLSearchParams(window.location.search);
   var activeTab = params.get('tab') || 'overview';
   
-  await initNavbar('analytics'); // Keep sidebar highlighted on analytics
+  await initNavbar(activeTab); // Highlight the specific sub-link in the sidebar
   var team = await Auth.fetchTeam(sess.user.id); if(!team) return;
   _myTeamId = team.id;
 
@@ -531,72 +533,133 @@ async function renderBadges() {
 }
 
 async function loadPredictionsSummary() {
-  var teamWins = document.getElementById('pred-team-wins');
-  var targetDist = document.getElementById('pred-target-dist');
+  var teamWins = $id('pred-team-wins');
+  var targetDist = $id('pred-target-dist');
   if (!teamWins || !targetDist) return;
+  teamWins.innerHTML = '<div class="skel skel-row"></div>';
+  targetDist.innerHTML = '<div class="skel skel-row"></div>';
   try {
-    var preds = await API.fetchAllPredictionsAllMatches();
+    var preds = safeArr(await API.fetchAllPredictionsAllMatches());
     var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
-    var teamCounts = {}, targetScores = [], validCount = 0;
+    var teamCounts = {};
+    var targetScores = [];
+    var validPredsCount = 0;
+
     preds.forEach(function(p) {
-      var m = completedMatches.find(function(mx){ return String(mx.id) === String(p.match_id); });
-      if (!m) return;
-      validCount++;
-      if (p.predicted_winner) teamCounts[p.predicted_winner] = (teamCounts[p.predicted_winner] || 0) + 1;
-      if (p.target_score) targetScores.push(p.target_score);
+      var match = completedMatches.find(function(m) { return String(m.id) === String(p.match_id); });
+      if (!match) return; 
+
+      validPredsCount++;
+      if (p.predicted_winner) {
+        teamCounts[p.predicted_winner] = (teamCounts[p.predicted_winner] || 0) + 1;
+      }
+      if (p.target_score) {
+        targetScores.push(p.target_score);
+      }
     });
-    var teamList = Object.keys(teamCounts).sort(function(a,b){ return teamCounts[b] - teamCounts[a]; });
-    teamWins.innerHTML = teamList.length ? teamList.map(function(t){
-      var cnt = teamCounts[t], pct = Math.round(cnt/validCount*100);
-      return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="width:50px;font-weight:700;font-size:12px;">'+UI.tShort(t)+'</span><div style="flex:1;background:var(--bg3);height:18px;border-radius:4px;overflow:hidden;"><div style="width:'+pct+'%;background:var(--accent);height:100%;"></div></div><span style="width:60px;text-align:right;color:var(--text2);font-size:11px;">'+cnt+' ('+pct+'%)</span></div>';
-    }).join('') : '<div class="empty-state">No predictions data.</div>';
-    
-    var ranges = { '<100':0,'100-140':0,'141-170':0,'171-190':0,'191-210':0,'211-230':0,'230+':0 };
-    targetScores.forEach(function(s){
-      if(s<100) ranges['<100']++; else if(s<=140) ranges['100-140']++; else if(s<=170) ranges['141-170']++; else if(s<=190) ranges['171-190']++; else if(s<=210) ranges['191-210']++; else if(s<=230) ranges['211-230']++; else ranges['230+']++;
-    });
-    targetDist.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' + Object.keys(ranges).map(function(r){
-      var cnt=ranges[r], pct=Math.round(cnt/Math.max(targetScores.length,1)*100);
-      return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:70px;font-size:12px;">'+r+'</span><div style="flex:1;background:var(--bg3);height:14px;border-radius:3px;overflow:hidden;"><div style="width:'+pct+'%;background:var(--purple);height:100%;"></div></div><span style="width:40px;text-align:right;color:var(--text2);font-size:11px;">'+cnt+'</span></div>';
-    }).join('') + '</div>';
-  } catch(e){}
+
+    var teamList = Object.keys(teamCounts).sort(function(a,b) { return teamCounts[b] - teamCounts[a]; });
+    if (teamList.length === 0) {
+      teamWins.innerHTML = '<div class="empty-state" style="padding:20px;">No completed matches with predictions yet.</div>';
+    } else {
+      teamWins.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;">' + teamList.map(function(t) {
+        var cnt = teamCounts[t];
+        var pct = Math.round(cnt / validPredsCount * 100);
+        return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:50px;font-weight:800;font-family:var(--f-ui);font-size:12px;">' + UI.tShort(t) + '</span><div style="flex:1;background:var(--bg3);height:20px;border-radius:4px;overflow:hidden;"><div style="width:' + pct + '%;background:var(--accent);height:100%;"></div></div><span style="width:60px;text-align:right;color:var(--text2);font-size:11px;">' + cnt + ' (' + pct + '%)</span></div>';
+      }).join('') + '</div>';
+    }
+
+    if (targetScores.length === 0) {
+      targetDist.innerHTML = '<div class="empty-state" style="padding:20px;">No target score predictions yet.</div>';
+    } else {
+      var ranges = { 
+        '<100': 0, '100-120': 0, '121-140': 0, '141-160': 0, '161-180': 0, 
+        '181-190': 0, '191-200': 0, '201-210': 0, '211-220': 0, '221-230': 0, '231-250': 0, '250+': 0 
+      };
+      targetScores.forEach(function(s) {
+        if (s < 100) ranges['<100']++;
+        else if (s <= 120) ranges['100-120']++;
+        else if (s <= 140) ranges['121-140']++;
+        else if (s <= 160) ranges['141-160']++;
+        else if (s <= 180) ranges['161-180']++;
+        else if (s <= 190) ranges['181-190']++;
+        else if (s <= 200) ranges['191-200']++;
+        else if (s <= 210) ranges['201-210']++;
+        else if (s <= 220) ranges['211-220']++;
+        else if (s <= 230) ranges['221-230']++;
+        else if (s <= 250) ranges['231-250']++;
+        else ranges['250+']++;
+      });
+      targetDist.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' + Object.keys(ranges).map(function(r) {
+        var cnt = ranges[r];
+        var pct = Math.round(cnt / targetScores.length * 100);
+        return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:70px;font-size:12px;">' + r + '</span><div style="flex:1;background:var(--bg3);height:14px;border-radius:3px;overflow:hidden;"><div style="width:' + pct + '%;background:var(--purple);height:100%;"></div></div><span style="width:40px;text-align:right;color:var(--text2);font-size:11px;">' + cnt + '</span></div>';
+      }).join('') + '</div>';
+    }
+  } catch(e) { teamWins.innerHTML = '<div style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</div>'; }
 }
 
 async function loadPredictionAccuracy() {
-  var byMatch = document.getElementById('accuracy-by-match');
-  var overall = document.getElementById('accuracy-overall');
-  var teamLeaderboard = document.getElementById('accuracy-team-leaderboard');
-  if(!byMatch) return;
+  var byMatch = $id('accuracy-by-match');
+  var overall = $id('accuracy-overall');
+  var teamLeaderboard = $id('accuracy-team-leaderboard');
+  if (!byMatch || !overall) return;
+  byMatch.innerHTML = '<div class="skel skel-row"></div>';
+  overall.innerHTML = '';
+  if (teamLeaderboard) teamLeaderboard.innerHTML = '<div class="skel skel-row"></div>';
   try {
-    var preds = await API.fetchAllPredictionsAllMatches();
-    var matches = _matches.filter(function(m){ return m.status === 'completed' || m.status === 'processed'; });
-    var stats = [];
-    matches.forEach(function(m){
-      var mp = preds.filter(function(p){ return String(p.match_id) === String(m.id); });
-      var cor = mp.filter(function(p){ return p.predicted_winner === m.winner; }).length;
-      stats.push({ m, cor, tot:mp.length, pct: mp.length?Math.round(cor/mp.length*100):0 });
+    var preds = safeArr(await API.fetchAllPredictionsAllMatches());
+    var matches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var matchStats = [];
+    matches.forEach(function(m) {
+      var matchPreds = preds.filter(function(p) { return String(p.match_id) === String(m.id); });
+      var correct = matchPreds.filter(function(p) { return p.predicted_winner === m.winner; }).length;
+      var total = matchPreds.length;
+      matchStats.push({ match: m, correct: correct, total: total, pct: total > 0 ? Math.round(correct/total*100) : 0 });
     });
-    byMatch.innerHTML = stats.reverse().map(function(s){
-      var col = s.pct>=70?'var(--green)':s.pct>=40?'var(--gold)':'var(--red)';
-      return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:12px;"><span style="width:80px;">Match '+s.m.match_no+'</span><div style="flex:1;background:var(--bg3);height:18px;border-radius:3px;overflow:hidden;"><div style="width:'+s.pct+'%;background:'+col+';height:100%;"></div></div><span style="width:50px;text-align:right;color:'+col+';">'+s.cor+'/'+s.tot+'</span></div>';
-    }).join('');
-    
-    var tCor = stats.reduce(function(a,b){return a+b.cor;},0), tTot = stats.reduce(function(a,b){return a+b.tot;},0);
-    overall.innerHTML = '<div class="kpi-grid" style="grid-template-columns:1fr 1fr;"><div class="kpi-chip"><div class="kpi-label">Overall Acc.</div><div class="kpi-value">'+(tTot?Math.round(tCor/tTot*100):0)+'%</div></div><div class="kpi-chip"><div class="kpi-label">Total Correct</div><div class="kpi-value">'+tCor+'</div></div></div>';
-
-    var us = {};
-    _teams.forEach(function(t){ us[t.id] = { name: t.team_name, cor:0, tot:0 }; });
-    preds.forEach(function(p){
-      if(!us[p.fantasy_team_id]) return;
-      var m = matches.find(function(mx){ return String(mx.id)===String(p.match_id); });
-      if(m){ us[p.fantasy_team_id].tot++; if(p.predicted_winner===m.winner) us[p.fantasy_team_id].cor++; }
+    if (!matchStats.length) {
+      byMatch.innerHTML = '<div class="empty-state" style="padding:20px;">No completed matches yet.</div>';
+      overall.innerHTML = '<div class="empty-state">No data</div>';
+      return;
+    }
+    var sortedStats = matchStats.slice().sort(function(a,b) { return (b.match.match_no||0) - (a.match.match_no||0); });
+    byMatch.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;">' + sortedStats.map(function(m) {
+      var color = m.pct >= 70 ? 'var(--green)' : m.pct >= 40 ? 'var(--gold)' : 'var(--red)';
+      return '<div style="display:flex;align-items:center;gap:10px;font-size:12px;"><span style="width:80px;">Match ' + m.match.match_no + '</span><div style="flex:1;background:var(--bg3);height:20px;border-radius:3px;overflow:hidden;"><div style="width:' + m.pct + '%;background:' + color + ';height:100%;"></div></div><span style="width:50px;text-align:right;color:' + color + ';">' + m.correct + '/' + m.total + '</span></div>';
+    }).join('') + '</div>';
+    var totalCorrect = matchStats.reduce(function(s,m) { return s + m.correct; }, 0);
+    var totalPreds = matchStats.reduce(function(s,m) { return s + m.total; }, 0);
+    var overallPct = totalPreds > 0 ? Math.round(totalCorrect / totalPreds * 100) : 0;
+    overall.innerHTML = '<div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);">' +
+      '<div class="kpi-chip"><div class="kpi-label">Overall Acc.</div><div class="kpi-value" style="color:var(--accent);">' + overallPct + '%</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Total Correct</div><div class="kpi-value" style="color:var(--green);">' + totalCorrect + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Total Preds</div><div class="kpi-value">' + totalPreds + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Matches</div><div class="kpi-value">' + matchStats.length + '</div></div>' +
+      '</div>';
+    var teamStats = {};
+    var teamMap = {};
+    _teams.forEach(function(t) { teamMap[t.id] = t.team_name; });
+    preds.forEach(function(p) {
+      if (!teamStats[p.fantasy_team_id]) teamStats[p.fantasy_team_id] = { correct: 0, total: 0 };
+      var match = matches.find(function(m) { return String(m.id) === String(p.match_id); });
+      if (match) {
+        teamStats[p.fantasy_team_id].total++;
+        if (p.predicted_winner === match.winner) teamStats[p.fantasy_team_id].correct++;
+      }
     });
-    var rankList = Object.values(us).sort(function(a,b){ return (b.cor/Math.max(b.tot,1)) - (a.cor/Math.max(a.tot,1)); });
-    teamLeaderboard.innerHTML = rankList.slice(0,10).map(function(t,i){
-      var pct = t.tot?Math.round(t.cor/t.tot*100):0;
-      return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:12px;"><span>'+(i+1)+'. '+UI.tShort(t.name)+'</span><span style="font-weight:700;color:var(--accent);">'+pct+'%</span></div>';
-    }).join('');
-  } catch(e){}
+    var teamList = [];
+    for (var tid in teamStats) {
+      var teamName = teamMap[tid] || tid;
+      teamList.push({ id: tid, name: teamName, correct: teamStats[tid].correct, total: teamStats[tid].total, pct: teamStats[tid].total > 0 ? Math.round(teamStats[tid].correct/teamStats[tid].total*100) : 0 });
+    }
+    teamList.sort(function(a,b) { return b.pct - a.pct; });
+    if (teamLeaderboard) {
+      teamLeaderboard.innerHTML = teamList.length ? '<div style="display:flex;flex-direction:column;gap:10px;font-size:12px;">' + teamList.map(function(t, i) {
+        var color = t.pct >= 70 ? 'var(--green)' : t.pct >= 40 ? 'var(--gold)' : 'var(--red)';
+        return '<div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;font-weight:900;color:var(--text3);">' + (i+1) + '</span><span style="flex:1;font-weight:600;">' + UI.esc(UI.tShort(t.name)) + '</span><span style="color:' + color + ';font-weight:700;">' + t.pct + '% (' + t.correct + '/' + t.total + ')</span></div>';
+      }).join('') + '</div>' : '<div class="empty-state">No team data</div>';
+    }
+  } catch(e) { byMatch.innerHTML = '<div style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</div>'; }
 }
 
 async function loadMatchPredictionsPanel() {
@@ -605,74 +668,179 @@ async function loadMatchPredictionsPanel() {
 }
 
 async function loadTeamMatchPredictions() {
-  var list = document.getElementById('team-preds-list'), stats = document.getElementById('team-preds-stats');
-  var teamId = document.getElementById('mp-team-select').value;
-  if(!teamId){ list.innerHTML = '<div class="empty-state">Select a BFL Team</div>'; return; }
+  var list = $id('team-preds-list'), stats = $id('team-preds-stats');
+  var teamId = $id('mp-team-select').value;
+  if(!teamId){ list.innerHTML = '<div class="empty-state" style="padding:20px;">Select a BFL Team</div>'; return; }
+  list.innerHTML = '<div class="skel skel-row"></div>';
+  stats.innerHTML = '';
   try {
-    var preds = await API.fetchAllPredictionsAllMatches();
-    var tp = preds.filter(function(p){ return p.fantasy_team_id === teamId; });
-    var matches = _matches.filter(function(m){ return m.status==='completed'||m.status==='processed'||m.status==='abandoned'; });
-    list.innerHTML = tp.reverse().map(function(p){
-      var m = _matches.find(function(mx){ return String(mx.id) === String(p.match_id); }); if(!m) return '';
-      var isCor = m.winner && p.predicted_winner === m.winner, isAb = m.status==='abandoned';
-      var res = isAb?'Abandoned':(m.winner?(isCor?'✓ Correct':'✗ Wrong'):'Pending');
-      var col = isAb?'var(--orange)':(isCor?'var(--green)':(m.winner?'var(--red)':'var(--text3)'));
-      return '<div style="padding:12px;border-bottom:1px solid var(--border);"><div class="flex-between"><strong>M'+m.match_no+': '+UI.tShort(m.team1)+' vs '+UI.tShort(m.team2)+'</strong><span style="color:'+col+';font-weight:700;">'+res+'</span></div><div style="font-size:11px;color:var(--text2);">Pred: '+UI.esc(p.predicted_winner)+' | Target: '+p.target_score+' '+(m.actual_target?(' (Actual: '+m.actual_target+')'):'')+'</div></div>';
-    }).join('');
+    var preds = safeArr(await API.fetchAllPredictionsAllMatches());
+    var teamPreds = preds.filter(function(p){ return p.fantasy_team_id === teamId; });
+    var teamInfo = await API.fetchAllTeamPoints();
+    var tInfo = teamInfo.find(function(t) { return t.id === teamId; });
     
-    var cor=0, tot=0, diff=0, dcnt=0;
-    tp.forEach(function(p){
-      var m = matches.find(function(mx){ return String(mx.id)===String(p.match_id); });
-      if(m && m.winner){ tot++; if(p.predicted_winner===m.winner) cor++; }
-      if(m && m.actual_target){ diff+=Math.abs(p.target_score-m.actual_target); dcnt++; }
+    if(!teamPreds.length){ list.innerHTML = '<div class="empty-state" style="padding:20px;">No predictions by this team.</div>'; return; }
+    
+    teamPreds.sort(function(a,b) {
+      var ma = _matches.find(function(m) { return m.id === a.match_id; });
+      var mb = _matches.find(function(m) { return m.id === b.match_id; });
+      return (mb.match_no||0) - (ma.match_no||0);
     });
-    stats.innerHTML = '<div class="card"><div class="kpi-grid" style="grid-template-columns:1fr 1fr;"><div class="kpi-chip"><div class="kpi-label">Accuracy</div><div class="kpi-value">'+(tot?Math.round(cor/tot*100):0)+'%</div></div><div class="kpi-chip"><div class="kpi-label">Avg Diff</div><div class="kpi-value">±'+(dcnt?Math.round(diff/dcnt):0)+'</div></div></div></div>';
-  } catch(e){}
+
+    list.innerHTML = teamPreds.map(function(p,i) {
+      var match = _matches.find(function(m) { return m.id === p.match_id; });
+      if (!match) return '';
+      var isCorrect = match.winner && p.predicted_winner === match.winner;
+      var isAbandoned = match.status === 'abandoned';
+      var matchStatus = match.status === 'completed' || match.status === 'processed';
+      var targetBadge = '';
+      if (matchStatus && match.actual_target && p.target_score) {
+        var diff = Math.abs(p.target_score - match.actual_target);
+        if (diff === 0) { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--cyan);color:var(--bg1);border-radius:50%;font-size:9px;font-weight:700;">✓</span>'; }
+        else if (diff <= 10) { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;background:var(--green);color:var(--bg1);border-radius:12px;font-size:10px;font-weight:700;padding:0 4px;">±' + diff + '</span>'; }
+        else { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;background:var(--red);color:var(--bg1);border-radius:12px;font-size:10px;font-weight:700;padding:0 4px;">±' + diff + '</span>'; }
+      }
+      var predVsActual = matchStatus ? 
+        '<div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;">' + (match.actual_target ? '<span>Pred: ' + p.target_score + ' | Actual: ' + match.actual_target + '</span>' : '<span>Target: ' + (p.target_score || '-') + '</span>') + (targetBadge || '') + '</div>' :
+        '<div style="font-size:11px;color:var(--text2);">Target: ' + (p.target_score || '-') + '</div>';
+      var statusText = isAbandoned ? 'Abandoned' : (isCorrect ? '✓ Correct' : (matchStatus ? '✗ Wrong' : 'Pending'));
+      var statusColor = isAbandoned ? 'var(--orange);' : (isCorrect ? 'var(--green);' : (matchStatus ? 'var(--red);' : 'var(--text3);'));
+      return '<div style="padding:12px 16px;border-bottom:1px solid var(--border);animation:row-in .2s ease ' + (i*.02) + 's both;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<div><div style="font-weight:600;">M' + (match.match_no||'?') + ': ' + UI.tShort(match.team1) + ' vs ' + UI.tShort(match.team2) + '</div>' + predVsActual + '</div>' +
+          '<div style="text-align:right;"><span style="font-weight:700;color:' + statusColor + '">' + statusText + '</span></div>' +
+        '</div>' +
+        '<div style="font-size:10px;color:var(--text3);margin-top:4px;">' +
+          'Predicted: ' + UI.esc(p.predicted_winner || '-') + (match.winner ? ' | Winner: ' + UI.esc(match.winner) : (isAbandoned ? ' | Match Abandoned' : '')) +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    var correctCount = 0, incorrectCount = 0, abandonedCount = 0, totalDiff = 0, diffCount = 0;
+    var currentStreak = 0, maxStreak = 0, currentWrongStreak = 0, maxWrong = 0;
+    var sortedPreds = teamPreds.slice().sort(function(a,b) {
+      var ma = _matches.find(function(m) { return m.id === a.match_id; });
+      var mb = _matches.find(function(m) { return m.id === b.match_id; });
+      return (mb.match_no||0) - (ma.match_no||0);
+    });
+    sortedPreds.forEach(function(p) {
+      var match = _matches.find(function(m) { return String(m.id) === String(p.match_id) });
+      if (!match) return;
+      if (match.actual_target && p.target_score && (match.status === 'completed' || match.status === 'processed')) {
+        totalDiff += Math.abs((p.target_score||0) - (match.actual_target||0));
+        diffCount++;
+      }
+      if (match.status === 'abandoned') { abandonedCount++; }
+      else if (match.winner && p.predicted_winner === match.winner) { correctCount++; currentStreak++; maxStreak = Math.max(maxStreak, currentStreak); currentWrongStreak = 0; }
+      else if (match.status === 'completed' || match.status === 'processed') { incorrectCount++; currentWrongStreak++; maxWrong = Math.max(maxWrong, currentWrongStreak); currentStreak = 0; }
+      else { currentStreak = 0; currentWrongStreak = 0; }
+    });
+    var completedCount = correctCount + incorrectCount;
+    var accuracy = completedCount > 0 ? Math.round(correctCount / completedCount * 100) : 0;
+    var avgDiff = diffCount > 0 ? Math.round(totalDiff / diffCount) : 0;
+    var teamCode = tInfo ? UI.tCode(tInfo.team_name) : '';
+    var logoUrl = teamCode ? 'images/teams/' + teamCode + 'outline.png' : '';
+    
+    stats.innerHTML = '<div style="position:relative;padding:16px;border-radius:var(--radius-md);">' +
+      (logoUrl ? '<img src="' + logoUrl + '" style="position:absolute;right:-10px;bottom:-10px;width:120px;opacity:0.1;pointer-events:none;">' : '') +
+      '<div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);position:relative;z-index:1;">' +
+      '<div class="kpi-chip"><div class="kpi-label">Total Preds</div><div class="kpi-value">' + teamPreds.length + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Accuracy</div><div class="kpi-value" style="color:var(--cyan);">' + (completedCount > 0 ? accuracy + '%' : '-') + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Correct</div><div class="kpi-value" style="color:var(--green);">' + correctCount + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Incorrect</div><div class="kpi-value" style="color:var(--red);">' + incorrectCount + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Avg Target Diff</div><div class="kpi-value" style="color:var(--gold);">' + (diffCount > 0 ? '±' + avgDiff : '-') + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Best Streak</div><div class="kpi-value" style="color:var(--green);">' + maxStreak + '</div></div>' +
+      '</div></div>';
+  } catch(e) { list.innerHTML = '<div style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</div>'; }
 }
 
 async function loadFantasyLeaderboard() {
+  var tbody = $id('fantasy-leaderboard-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
   try {
-    var stats = await API.fetchAllPlayerStats();
-    var matches = _matches.filter(function(m){ return m.status==='completed' || m.status==='processed'; });
-    var mIds = matches.map(function(m){ return m.id; });
-    var pPts = {}, pMt = {};
-    stats.forEach(function(s){
-      if(mIds.includes(s.match_id)){
+    var stats = safeArr(await API.fetchAllPlayerStats());
+    var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var completedMatchIds = completedMatches.map(function(m) { return m.id; });
+    var playerPoints = {};
+    var playerMatches = {};
+    var playerIds = [];
+    stats.forEach(function(s) {
+      if (s.match_id && completedMatchIds.includes(s.match_id)) {
+        var pid = s.player_id;
+        if (!playerIds.includes(pid)) playerIds.push(pid);
         var pts = API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s);
-        pPts[s.player_id] = (pPts[s.player_id]||0)+pts; pMt[s.player_id] = (pMt[s.player_id]||0)+1;
+        playerPoints[pid] = (playerPoints[pid] || 0) + pts;
+        playerMatches[pid] = (playerMatches[pid] || 0) + 1;
       }
     });
-    var players = await API.fetchAllPlayers();
+    var playerMap = {};
+    if (playerIds.length > 0) {
+      var allPlayers = safeArr(await API.fetchAllPlayers());
+      allPlayers.forEach(function(p) { playerMap[p.id] = p; });
+    }
     _flData = [];
-    players.forEach(function(p){
-      if(pMt[p.id]){
-        var sq = _playerSquadMap[p.id];
-        _flData.push({ id:p.id, name:p.name, ipl_team:p.ipl_team, role:p.role, bfl_team:sq?sq.team_name:null, points:pPts[p.id]||0, matches:pMt[p.id]||0 });
+    for (var pid in playerPoints) {
+      var p = playerMap[pid];
+      if (p) {
+        var squad = _playerSquadMap[pid];
+        _flData.push({ id: pid, name: p.name, role: p.role, ipl_team: p.ipl_team, bfl_team: squad ? squad.team_name : null, points: playerPoints[pid], matches: playerMatches[pid] });
       }
-    });
-    var iplSel = document.getElementById('fl-ipl-team'), bflSel = document.getElementById('fl-bfl-team');
-    if(iplSel && iplSel.options.length<=1){
-      var teams = [...new Set(players.map(function(pt){return pt.ipl_team;}))].sort();
-      iplSel.innerHTML = '<option value="">All IPL</option>' + teams.map(function(t){return '<option value="'+t+'">'+UI.tCode(t)+'</option>';}).join('');
     }
-    if(bflSel && bflSel.options.length<=1){
-      var bt = [...new Set(_flData.map(function(d){return d.bfl_team;}))].filter(Boolean).sort();
-      bflSel.innerHTML = '<option value="">All BFL</option>' + bt.map(function(t){return '<option value="'+t+'">'+UI.tShort(t)+'</option>';}).join('');
+    for (var pid in playerMatches) {
+      if (!playerPoints[pid]) {
+        var p = playerMap[pid];
+        if (p) {
+          var squad = _playerSquadMap[pid];
+          _flData.push({ id: pid, name: p.name, role: p.role, ipl_team: p.ipl_team, bfl_team: squad ? squad.team_name : null, points: 0, matches: playerMatches[pid] });
+        }
+      }
     }
+    populateFlFilters();
     filterFantasyLeaderboard();
-  } catch(e){}
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
+}
+
+function populateFlFilters() {
+  var iplTeamSel = $id('fl-ipl-team');
+  var bflTeamSel = $id('fl-bfl-team');
+  var iplTeamOptions = ['CHENNAI SUPER KINGS','DELHI CAPITALS','GUJARAT TITANS','KOLKATA KNIGHT RIDERS','LUCKNOW SUPER GIANTS','MUMBAI INDIANS','PUNJAB KINGS','RAJASTHAN ROYALS','ROYAL CHALLENGERS BENGALURU','SUNRISERS HYDERABAD','SUPREME RAJAS'];
+  
+  if (iplTeamSel) {
+    var currentIplVal = iplTeamSel.value;
+    iplTeamSel.innerHTML = '<option value="">All IPL Teams</option>' + iplTeamOptions.map(function(t) { return '<option value="'+t+'">'+t+'</option>'; }).join('');
+    if (currentIplVal) iplTeamSel.value = currentIplVal;
+  }
+  
+  if (bflTeamSel) {
+    var bflTeamOptions = [...new Set(_flData.map(function(p) { return p.bfl_team; }).filter(Boolean))].sort();
+    var currentBflVal = bflTeamSel.value;
+    bflTeamSel.innerHTML = '<option value="">All BFL Teams</option>' + bflTeamOptions.map(function(t) { return '<option value="'+t+'">'+t+'</option>'; }).join('');
+    if (currentBflVal) bflTeamSel.value = currentBflVal;
+  }
 }
 
 function filterFantasyLeaderboard() {
-  var q = document.getElementById('fl-search').value.toLowerCase();
-  var ipl = document.getElementById('fl-ipl-team').value;
-  var role = document.getElementById('fl-role').value;
-  var bfl = document.getElementById('fl-bfl-team').value;
-  var filtered = _flData.filter(function(p){
-    if(q && !p.name.toLowerCase().includes(q)) return false;
-    if(ipl && p.ipl_team !== ipl) return false;
-    if(role && !p.role.includes(role)) return false;
-    if(bfl && p.bfl_team !== bfl) return false;
+  var q = ($id('fl-search')?.value || '').toLowerCase();
+  var iplTeam = $id('fl-ipl-team')?.value || '';
+  var role = $id('fl-role')?.value || '';
+  var bflTeam = $id('fl-bfl-team')?.value || '';
+  
+  var roleMap = { 'BAT': ['BAT','BATTER','BATTING'], 'BOW': ['BOW','BOWLER','BOWLING'], 'AR': ['AR','ALLROUNDER','ALL-ROUNDER'], 'WK': ['WK','WICKETKEEPER','WICKET-KEEPER','WICKET KEEPER'] };
+  var roleVals = roleMap[role] || [role];
+
+  var filtered = _flData.filter(function(p) {
+    if (q && !(p.name||'').toLowerCase().includes(q)) return false;
+    
+    // Normalize IPL teams using tCode for robust matching
+    if (iplTeam && UI.tCode(p.ipl_team) !== UI.tCode(iplTeam)) return false;
+
+    if (role && (p.role||'').toUpperCase() !== role.toUpperCase()) {
+       // Check mapping for role abbreviations
+       var pRole = (p.role||'').toUpperCase();
+       if (!roleVals.some(function(rv) { return pRole.includes(rv); })) return false;
+    }
+    if (bflTeam && (p.bfl_team||'').toUpperCase() !== bflTeam.toUpperCase()) return false;
     return true;
   });
   sortFlData(filtered);
@@ -680,34 +848,50 @@ function filterFantasyLeaderboard() {
 }
 
 function sortFantasyLeaderboard(col) {
-  if(_flSort.col === col) _flSort.asc = !_flSort.asc;
-  else { _flSort.col = col; _flSort.asc = false; }
+  if (_flSort.col === col) {
+    _flSort.asc = !_flSort.asc;
+  } else {
+    _flSort.col = col;
+    _flSort.asc = false; // Default to Descending for points/average
+  }
   filterFantasyLeaderboard();
 }
 
 function sortFlData(list) {
-  var c = _flSort.col, asc = _flSort.asc;
-  list.forEach(function(p){ p.average = p.matches?Math.round(p.points/p.matches*10)/10:0; });
-  list.sort(function(a,b){
-    var av = a[c], bv = b[c];
+  var asc = _flSort.asc, col = _flSort.col;
+  list.forEach(function(p) { p.average = p.matches > 0 ? Math.round(p.points/p.matches*10)/10 : 0; });
+  list.sort(function(a, b) {
+    var av = a[col], bv = b[col];
+    if (typeof av === 'string') av = (av || '').toLowerCase();
+    if (typeof bv === 'string') bv = (bv || '').toLowerCase();
     return asc ? (av > bv ? 1 : -1) : (bv > av ? 1 : -1);
   });
 }
 
 function renderFlTable(list) {
-  var tbody = document.getElementById('fantasy-leaderboard-tbody'); if(!tbody) return;
-  var total = list.length, pages = Math.ceil(total/_flPerPage), start = (_flPage-1)*_flPerPage;
+  var tbody = $id('fantasy-leaderboard-tbody'); if (!tbody) return;
+  var total = list.length, pages = Math.ceil(total / _flPerPage), start = (_flPage - 1) * _flPerPage;
   var pageData = list.slice(start, start + _flPerPage);
-  document.getElementById('fl-info').textContent = total?('Showing '+(start+1)+'-'+Math.min(start+_flPerPage, total)+' of '+total):'No players found';
-  tbody.innerHTML = pageData.map(function(p, i){
-    var rank = start+i+1;
-    return '<tr><td style="text-align:center;">'+rank+'</td><td style="text-align:center;"><img src="images/teams/'+UI.tCode(p.ipl_team)+'outline.png" style="width:20px;"></td><td>'+UI.esc(p.name)+' <span style="font-size:10px;opacity:.6;">'+p.role+'</span></td><td style="text-align:center;">'+UI.tShort(p.bfl_team||'—')+'</td><td style="text-align:center;font-weight:700;color:var(--accent);">'+p.points+'</td><td style="text-align:center;">'+p.matches+'</td><td style="text-align:center;">'+p.average+'</td></tr>';
+  if ($id('fl-info')) $id('fl-info').textContent = total > 0 ? 'Showing ' + (start + 1) + '-' + Math.min(start + _flPerPage, total) + ' of ' + total + ' players' : 'No players';
+  
+  tbody.innerHTML = pageData.map(function(p, i) {
+    var rank = start + i + 1;
+    var iplLogo = p.ipl_team ? '<img src="images/teams/'+UI.tCode(p.ipl_team)+'outline.png" style="width:24px;height:24px;object-fit:contain;">' : '-';
+    return '<tr>' +
+      '<td style="text-align:center;font-weight:700;' + (rank<=3?'color:var(--gold);':'') + '">' + rank + '</td>' +
+      '<td style="text-align:center;">' + iplLogo + '</td>' +
+      '<td style="font-weight:600;">' + UI.esc(p.name) + ' <span style="font-size:10px;opacity:.6;">' + p.role + '</span></td>' +
+      '<td style="text-align:center;">' + UI.tShort(p.bfl_team||'—') + '</td>' +
+      '<td style="text-align:center;font-weight:700;color:var(--accent);">' + p.points + '</td>' +
+      '<td style="text-align:center;">' + p.matches + '</td>' +
+      '<td style="text-align:center;">' + p.average + '</td>' +
+    '</tr>';
   }).join('');
   renderFlPagination(total, pages);
 }
 
 function renderFlPagination(total, pages) {
-  var el = document.getElementById('fl-pagination'); if(!el) return;
+  var el = $id('fl-pagination'); if(!el) return;
   if(pages<=1){ el.innerHTML=''; return; }
   var html = '<button class="btn btn-ghost btn-sm" onclick="setFlPage('+Math.max(1,_flPage-1)+')">‹</button>';
   for(var i=1; i<=pages; i++){
@@ -721,46 +905,80 @@ function renderFlPagination(total, pages) {
 function setFlPage(p){ _flPage=p; filterFantasyLeaderboard(); }
 
 async function loadUserTeams() {
+  var tbody = $id('user-teams-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
   try {
-    var teams = await API.fetchAllFantasyTeams();
-    var squadData = await API.fetchSquadPlayersAll();
-    var squadMap = {};
-    squadData.forEach(function(sp){
-      if(!squadMap[sp.fantasy_team_id]) squadMap[sp.fantasy_team_id] = [];
-      squadMap[sp.fantasy_team_id].push(sp);
+    var teams = safeArr(await API.fetchAllFantasyTeams());
+    if (!teams.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="padding:20px;">No fantasy teams found.</td></tr>'; return; }
+    var allPlayers = safeArr(await API.fetchAllPlayers());
+    var playerMap = {}; allPlayers.forEach(function(p) { playerMap[p.id] = p; });
+    var squadData = safeArr(await API.fetchSquadPlayersAll());
+    var squadByTeam = {};
+    squadData.forEach(function(sp) {
+      if (!squadByTeam[sp.fantasy_team_id]) squadByTeam[sp.fantasy_team_id] = [];
+      squadByTeam[sp.fantasy_team_id].push({ ...sp, player: playerMap[sp.player_id] });
     });
-    var tbody = document.getElementById('user-teams-tbody'); if(!tbody) return;
-    tbody.innerHTML = teams.map(function(t){
-      var sps = squadMap[t.id] || [];
-      var cap = sps.find(function(p){return p.is_captain;})?.player?.name || '—';
-      var vc = sps.find(function(p){return p.is_vc;})?.player?.name || '—';
-      var imp = sps.find(function(p){return p.is_impact;})?.player?.name || '—';
-      return '<tr><td>'+UI.esc(t.owner_name)+'</td><td><strong>'+UI.esc(t.team_name)+'</strong></td><td>'+UI.esc(cap)+'</td><td>'+UI.esc(vc)+'</td><td>'+UI.esc(imp)+'</td><td>'+sps.length+' players</td></tr>';
+    tbody.innerHTML = teams.map(function(t,i) {
+      var sps = squadByTeam[t.id] || [];
+      var captain = sps.find(function(p) { return p.is_captain === true; });
+      var vc = sps.find(function(p) { return p.is_vc === true; });
+      var impact = sps.find(function(p) { return p.is_impact === true; });
+      var playerCount = sps.filter(function(p) { return p.is_released !== true; }).length;
+      return '<tr style="animation:row-in .2s ease ' + (i*.02) + 's both;">' +
+        '<td style="font-size:12px;">' + UI.esc(t.owner_name || '-') + '</td>' +
+        '<td style="font-weight:600;">' + UI.esc(UI.tShort(t.team_name)) + '</td>' +
+        '<td>' + (captain ? UI.esc(captain.player?.name || '-') : '-') + '</td>' +
+        '<td>' + (vc ? UI.esc(vc.player?.name || '-') : '-') + '</td>' +
+        '<td>' + (impact ? UI.esc(impact.player?.name || '-') : '-') + '</td>' +
+        '<td>' + playerCount + '</td>' +
+      '</tr>';
     }).join('');
-  } catch(e){}
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
 }
 
 async function loadPowerRankings() {
+  var tbody = $id('power-rankings-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
   try {
-    var teams = await API.fetchAllTeamPoints();
-    var preds = await API.fetchAllPredictionsAllMatches();
-    var matches = _matches.filter(function(m){ return m.status==='completed'||m.status==='processed'; });
-    var stats = teams.map(function(t){
-      var tp = preds.filter(function(p){ return p.fantasy_team_id === t.id; });
-      var cor = 0, tot = 0;
-      tp.forEach(function(p){
-        var m = matches.find(function(mx){ return String(mx.id) === String(p.match_id); });
-        if(m){ tot++; if(p.predicted_winner === m.winner) cor++; }
-      });
-      var acc = tot ? Math.round(cor/tot*100) : 0;
-      var score = Math.round((acc * 0.5) + ((t.total_points/1000) * 0.5) * 100) / 100;
-      return { name: t.team_name, acc: acc + '%', pts: t.total_points, score };
-    }).sort(function(a,b){ return b.score - a.score; });
-    var tbody = document.getElementById('power-rankings-tbody'); if(!tbody) return;
-    tbody.innerHTML = stats.map(function(s, i){
-      return '<tr><td>'+(i+1)+'</td><td><strong>'+UI.esc(s.name)+'</strong></td><td>'+s.acc+'</td><td>'+s.pts+'</td><td style="color:var(--accent);font-weight:700;">'+s.score+'</td></tr>';
+    var teams = safeArr(await API.fetchAllTeamPoints());
+    var preds = safeArr(await API.fetchAllPredictionsAllMatches());
+    var matches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var completedMatchIds = matches.map(function(m) { return m.id; });
+    var userStats = {};
+    teams.forEach(function(t) {
+      var uid = t.id;
+      if (!userStats[uid]) { userStats[uid] = { teamName: UI.tShort(t.team_name), fantasyPoints: t.total_points || 0, correctPreds: 0, totalPreds: 0 }; }
+      else { userStats[uid].fantasyPoints = Math.max(userStats[uid].fantasyPoints, t.total_points || 0); }
+    });
+    preds.forEach(function(p) {
+      if (p.fantasy_team_id && userStats[p.fantasy_team_id] && p.match_id && completedMatchIds.includes(p.match_id)) {
+        var match = matches.find(function(m) { return m.id === p.match_id; });
+        userStats[p.fantasy_team_id].totalPreds++;
+        if (match && match.winner && p.predicted_winner === match.winner) {
+          userStats[p.fantasy_team_id].correctPreds++;
+        }
+      }
+    });
+    var rankings = Object.values(userStats).map(function(u) {
+      var predAcc = u.totalPreds > 0 ? u.correctPreds / u.totalPreds : 0;
+      var fantasyNorm = u.fantasyPoints / 1000;
+      var combined = Math.round((predAcc * 50 + fantasyNorm * 50) * 100) / 100;
+      return { teamName: u.teamName, predAcc: Math.round(predAcc * 100), fantasyPoints: u.fantasyPoints, combined: combined };
+    });
+    rankings.sort(function(a,b) { return b.combined - a.combined; });
+    if (!rankings.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="padding:20px;">No data yet.</td></tr>'; return; }
+    tbody.innerHTML = rankings.slice(0, 20).map(function(r,i) {
+      return '<tr style="animation:row-in .2s ease ' + (i*.02) + 's both;">' +
+        '<td style="font-weight:700;' + (i<3?'color:var(--gold);':'') + '">' + (i+1) + '</td>' +
+        '<td style="font-weight:600;">' + UI.esc(r.teamName || '-') + '</td>' +
+        '<td>' + r.predAcc + '%</td>' +
+        '<td style="font-weight:700;">' + r.fantasyPoints + '</td>' +
+        '<td style="font-weight:700;color:var(--accent);">' + r.combined + '</td>' +
+      '</tr>';
     }).join('');
-  } catch(e){}
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
 }
 
 function resetFantasyLeaderboard(){
