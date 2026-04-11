@@ -230,14 +230,6 @@ function setNavUser(name, initials, bg, logoUrl) {
   });
 }
 
-// Sidebar section label (not in styles.css so defined here)
-document.addEventListener('DOMContentLoaded', function() {
-  if (!document.querySelector('.sb-section-lbl-style')) {
-    var s = document.createElement('style');
-    s.className = 'sb-section-lbl-style';
-    s.textContent = '.sb-section-lbl{display:block;font-family:var(--f-ui);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1.8px;color:var(--text3);padding:14px 18px 4px;}';
-    document.head.appendChild(s);
-  }
-});
+/* .sb-section-lbl style is defined in css/styles.css — no JS injection needed */
 
 async function doLogout() { await Auth.signOut(); }

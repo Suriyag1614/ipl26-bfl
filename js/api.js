@@ -782,23 +782,23 @@ const API = {
     const existingIds = new Set((existing || []).map(b => b.id));
     const missing = this._badgeDefs.filter(b => !existingIds.has(b.id));
     if (missing.length) {
-      console.log(`[Badges] Seeding ${missing.length} missing badge definitions`);
+
       const { error } = await sb.from('badge_definitions').insert(missing);
-      if (error) console.error('[Badges] Seed error:', error.message);
+      if (error) { /* seed error silenced */ }
     }
   },
 
   async awardBadges(matchId) {
-    console.log('[Badges] === awardBadges START for match:', matchId, '===');
+
     try {
       try {
         await this.ensureBadgeDefinitions();
       } catch(e) {
-        console.error('[Badges] ensureBadgeDefinitions failed:', e);
+        /* badge definition seed failed silently */
       }
 
       // 1. Fetch data (match-specific + history for streaks/consistency)
-      console.log('[Badges] Fetching data...');
+
       const [matchRes, logsRes, predsRes, lb, allPredsRes, allLogsRes] = await Promise.all([
         this.fetchMatch(matchId),
         sb.from('points_log').select('*').eq('match_id', matchId),
@@ -810,9 +810,9 @@ const API = {
       const match = matchRes;
       const logs = logsRes.data || [];
       const preds = predsRes.data || [];
-      console.log('[Badges] Data fetched - match:', !!match, 'logs:', logs.length, 'preds:', preds.length, 'lb:', (lb||[]).length);
+
       if (!match || !logs.length) {
-        console.warn('[Badges] Early return: no match or no logs');
+
         return;
       }
 
@@ -949,19 +949,19 @@ const API = {
     }
 
     if (newBadges.length) {
-      console.log(`[Badges] Awarding ${newBadges.length} new badges:`, JSON.stringify(newBadges));
+
       const { error } = await sb.from('user_badges').insert(newBadges);
       if (error) {
-        console.error('[Badges] Insert error:', error.message, error.code, error.details);
+        /* badge insert error — silenced for production */
       } else {
-        console.log(`[Badges] Successfully awarded ${newBadges.length} badges`);
+
       }
     } else {
-      console.log('[Badges] No new badges to award for this match');
+
     }
-    console.log('[Badges] === awardBadges END ===');
+
     } catch(fatalErr) {
-      console.error('[Badges] FATAL ERROR in awardBadges:', fatalErr);
+      /* badge awarding failed silently */
     }
   },
 
@@ -1018,10 +1018,10 @@ const API = {
       if (preds.some(p => p.match?.winner && p.predicted_winner === p.match.winner && p.match?.actual_target && Math.abs(p.target_score - p.match.actual_target) <= 5)) give('prediction-pro');
 
       if (newBadges.length) {
-        console.log(`[Badges] Eligible for ${newBadges.length} new badges (awarded via admin):`, newBadges);
+
       }
     } catch (err) {
-      console.debug('[Badges] checkAndAwardBadges error:', err.message);
+      /* badge check error silenced */
     }
   },
 
@@ -1275,9 +1275,7 @@ const API = {
     const { error } = await sb.from('user_badges').insert({ fantasy_team_id: teamId, badge_id: badgeId });
     if (error) {
       if (error.code === '23505') return; // Duplicate (if constraint exists)
-      console.error('[awardBadge] Error:', error.message);
-    } else {
-      console.log(`[Badges] Awarded "${badgeId}" to team ${teamId}`);
+      /* badge award error silenced */
     }
   },
 
@@ -1564,8 +1562,8 @@ async fetchTeams() {
     onLog?.('Recalculating...');
     const result = await this.calculateMatchPoints(matchId, onLog);
     onLog?.('Awarding badges...');
-    console.log('[Badges] About to call awardBadges from recalculateMatch');
-    try { await this.awardBadges(matchId); } catch(e) { console.warn('[Badges]', e.message, e); onLog?.('Badge error: '+e.message, 'err'); }
+
+    try { await this.awardBadges(matchId); } catch(e) { onLog?.('Badge error: '+e.message, 'err'); }
     try { await sb.rpc('refresh_match_center', { p_match_id: matchId }); } catch(_) {}
     onLog?.('Done! Leaderboard refreshed.', 'good');
     return result;

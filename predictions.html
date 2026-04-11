@@ -452,7 +452,6 @@ async function renderMatchArea(matchId) {
     }
   } catch(e) {
     showArea('<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Error: ' + UI.esc(e.message) + '</div></div>');
-    console.error('[renderMatchArea]', e);
   }
 }
 

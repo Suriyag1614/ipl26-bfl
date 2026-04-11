@@ -212,7 +212,8 @@ async function init() {
     });
 
 // Load core data
-await Promise.all([loadAllMatches(), loadAllPlayers(), loadAllTeams(), loadPlayerSquadMap()]);
+  await Promise.all([loadAllMatches(), loadAllPlayers(), loadAllTeams()]);
+  await loadPlayerSquadMap();
 
     // Update notification badge for pending replacements
     updateRepBadge();
@@ -2124,7 +2125,12 @@ async function loadPredictionsSummary() {
 
 /* ══════════════════════════════════════════════════════════════
    FANTASY PLAYERS LEADERBOARD
-══════════════════════════════════════════════════════════════ */
+ ══════════════════════════════════════════════════════════════ */
+var _flData = [];
+var _flPage = 1;
+var _flSort = { col: 'points', asc: false };
+var _flPerPage = 12;
+
 async function loadFantasyLeaderboard() {
   var tbody = $id('fantasy-leaderboard-tbody');
   if (!tbody) return;
@@ -2150,31 +2156,181 @@ async function loadFantasyLeaderboard() {
       var allPlayers = safeArr(await API.fetchAllPlayers());
       allPlayers.forEach(function(p) { playerMap[p.id] = p; });
     }
-    var playerList = [];
+    _flData = [];
     for (var pid in playerPoints) {
       var p = playerMap[pid];
       if (p) {
         var squad = _playerSquadMap[pid];
-        playerList.push({ id: pid, name: p.name, role: p.role, ipl_team: p.ipl_team, bfl_team: squad ? squad.team_name : null, points: playerPoints[pid], matches: playerMatches[pid] });
+        _flData.push({ id: pid, name: p.name, role: p.role, ipl_team: p.ipl_team, bfl_team: squad ? squad.team_name : null, points: playerPoints[pid], matches: playerMatches[pid] });
       }
     }
-    playerList.sort(function(a,b) { return b.points - a.points; });
-    var top20 = playerList.slice(0, 20);
-    if (!top20.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:20px;">No player stats yet.</td></tr>'; return; }
-    tbody.innerHTML = top20.map(function(p,i) {
-      var iplLogo = p.ipl_team ? '<img src="images/teams/'+UI.tCode(p.ipl_team)+'outline.png" style="width:24px;height:24px;object-fit:contain;" alt="'+UI.esc(p.ipl_team)+'">' : '-';
-      var bflTeam = p.bfl_team ? UI.tShort(p.bfl_team) : '-';
-      return '<tr style="animation:row-in .2s ease ' + (i*.02) + 's both;">' +
-        '<td style="font-weight:700;' + (i<3?'color:var(--gold);':'') + '">' + (i+1) + '</td>' +
-        '<td>' + iplLogo + '</td>' +
-        '<td style="font-weight:600;">' + UI.esc(p.name) + ' ' + UI.roleBadge(p.role) + '</td>' +
-        '<td><span style="background:var(--bg3);padding:2px 8px;border-radius:3px;font-size:10px;">' + UI.esc(bflTeam) + '</span></td>' +
-        '<td style="font-weight:700;color:var(--accent);">' + p.points + '</td>' +
-        '<td>' + p.matches + '</td>' +
-        '<td>' + (p.matches > 0 ? Math.round(p.points/p.matches*10)/10 : 0) + '</td>' +
-      '</tr>';
-    }).join('');
-  } catch(e) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
+    for (var pid in playerMatches) {
+      if (!playerPoints[pid]) {
+        var p = playerMap[pid];
+        if (p) {
+          var squad = _playerSquadMap[pid];
+          _flData.push({ id: pid, name: p.name, role: p.role, ipl_team: p.ipl_team, bfl_team: squad ? squad.team_name : null, points: 0, matches: playerMatches[pid] });
+        }
+      }
+    }
+    populateFlFilters();
+    filterFantasyLeaderboard();
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
+}
+
+function populateFlFilters() {
+  var iplTeamSel = $id('fl-ipl-team');
+  var bflTeamSel = $id('fl-bfl-team');
+  if (iplTeamSel) {
+    var iplTeamOptions = ['CHENNAI SUPER KINGS','DELHI CAPITALS','GUJARAT TITANS','KOLKATA KNIGHT RIDERS','LUCKNOW SUPER GIANTS','MUMBAI INDIANS','PUNJAB KINGS','RAJASTHAN ROYALS','ROYAL CHALLENGERS BENGALURU','SUNRISERS HYDERABAD','SUPREME RAJAS'];
+    iplTeamSel.innerHTML = '<option value="">All IPL Teams</option>' + iplTeamOptions.map(function(t) { return '<option value="'+t+'">'+t+'</option>'; }).join('');
+  }
+  if (bflTeamSel) {
+    var bflTeamOptions = [];
+    if (_teams && _teams.length) {
+      bflTeamOptions = _teams.map(function(t) { return t.team && t.team.team_name; }).filter(Boolean).sort();
+    }
+    if (!bflTeamOptions.length && _flData.length) {
+      bflTeamOptions = [...new Set(_flData.map(function(p) { return p.bfl_team; }).filter(Boolean))].sort();
+    }
+    if (bflTeamOptions.length) {
+      bflTeamSel.innerHTML = '<option value="">All BFL Teams</option>' + bflTeamOptions.map(function(t) { return '<option value="'+t.toUpperCase()+'">'+UI.tShort(t)+'</option>'; }).join('');
+    } else {
+      bflTeamSel.innerHTML = '<option value="">All BFL Teams</option>';
+    }
+  }
+}
+
+function filterFantasyLeaderboard() {
+  var s = $id('fl-search');
+  var it = $id('fl-ipl-team');
+  var rl = $id('fl-role');
+  var bt = $id('fl-bfl-team');
+  var q = s ? s.value : '';
+  var iplTeam = it ? it.value.trim() : '';
+  var role = rl ? rl.value.trim() : '';
+  var bflTeam = bt ? bt.value : '';
+  var roleMap = { 'BAT': ['BAT','BATTER','BATTING'], 'BOW': ['BOW','BOWLER','BOWLING'], 'AR': ['AR','ALLROUNDER','ALL-ROUNDER'], 'WK': ['WK','WICKETKEEPER','WICKET-KEEPER','WICKET KEEPER'] };
+  var roleVals = roleMap[role] || [role];
+  /* debug log removed */
+  var filtered = _flData.filter(function(p) {
+    if (q && !(p.name||'').toLowerCase().includes(q.toLowerCase())) return false;
+    if (iplTeam && p.ipl_team !== iplTeam && UI.tCode(iplTeam) !== p.ipl_team) return false;
+    if (role && p.role && !roleVals.some(function(r) { return p.role.toUpperCase().indexOf(r) >= 0; })) return false;
+    if (bflTeam) {
+      var pb = p.bfl_team || '';
+      if (pb.toUpperCase() !== bflTeam.toUpperCase()) return false;
+    }
+    return true;
+  });
+  sortFlData(filtered);
+  _flPage = 1;
+  renderFlTable(filtered);
+}
+
+function resetFantasyLeaderboard() {
+  if ($id('fl-search')) $id('fl-search').value = '';
+  if ($id('fl-ipl-team')) $id('fl-ipl-team').value = '';
+  if ($id('fl-role')) $id('fl-role').value = '';
+  if ($id('fl-bfl-team')) $id('fl-bfl-team').value = '';
+  _flSort = { col: 'points', asc: false };
+  _flPage = 1;
+  filterFantasyLeaderboard();
+}
+
+function sortFantasyLeaderboard(col) {
+  if (_flSort.col === col) {
+    _flSort.asc = !_flSort.asc;
+  } else {
+    _flSort.col = col;
+    _flSort.asc = false;
+  }
+  filterFantasyLeaderboard();
+}
+
+function sortFlData(list) {
+  var asc = _flSort.asc;
+  var col = _flSort.col;
+  list.forEach(function(p) { p.average = p.matches > 0 ? Math.round(p.points/p.matches*10)/10 : 0; });
+  list.sort(function(a, b) {
+    var av = a[col], bv = b[col];
+    if (typeof av === 'string') av = av || '';
+    if (typeof bv === 'string') bv = bv || '';
+    if (col === 'name' || col === 'bfl_team' || col === 'ipl_team' || col === 'role') {
+      return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+    }
+    return asc ? av - bv : bv - av;
+  });
+}
+
+function renderFlTable(list) {
+  var tbody = $id('fantasy-leaderboard-tbody');
+  if (!tbody) return;
+  var total = list.length;
+  var totalPages = Math.ceil(total / _flPerPage);
+  var start = (_flPage - 1) * _flPerPage;
+  var pageData = list.slice(start, start + _flPerPage);
+  var info = $id('fl-info');
+  if (info) info.textContent = total > 0 ? 'Showing ' + (start + 1) + '-' + Math.min(start + _flPerPage, total) + ' of ' + total + ' players' : 'No players';
+  if (!pageData.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:20px;">No player stats yet.</td></tr>'; renderFlPagination(0, 0); return; }
+  tbody.innerHTML = pageData.map(function(p, i) {
+    var rank = start + i + 1;
+    var iplLogo = p.ipl_team ? '<img src="images/teams/'+UI.tCode(p.ipl_team)+'outline.png" style="width:24px;height:24px;object-fit:contain;" alt="'+UI.esc(p.ipl_team)+'">' : '-';
+    var bflTeam = p.bfl_team ? UI.tShort(p.bfl_team) : '-';
+    var avg = p.matches > 0 ? Math.round(p.points/p.matches*10)/10 : 0;
+    return '<tr>' +
+      '<td style="font-weight:700;text-align:center;' + (rank<=3?'color:var(--gold);':'') + '">' + rank + '</td>' +
+      '<td style="text-align:center;">' + iplLogo + '</td>' +
+      '<td style="font-weight:600;">' + UI.esc(p.name) + ' ' + UI.roleBadge(p.role) + '</td>' +
+      '<td style="text-align:center;"><span class="clickable-team" style="background:var(--bg3);padding:2px 8px;border-radius:3px;font-size:10px;cursor:pointer;color:var(--accent);" onclick="jumpToUserTeams(\'' + UI.esc(p.bfl_team || '') + '\')">' + UI.esc(bflTeam) + '</span></td>' +
+      '<td style="font-weight:700;color:var(--accent);text-align:center;">' + p.points + '</td>' +
+      '<td style="text-align:center;">' + p.matches + '</td>' +
+      '<td style="text-align:center;">' + avg + '</td>' +
+    '</tr>';
+  }).join('');
+  renderFlPagination(total, totalPages);
+}
+
+function renderFlPagination(total, totalPages) {
+  var container = $id('fl-pagination');
+  if (!container) return;
+  if (total === 0) { container.innerHTML = ''; return; }
+  var html = '<button class="btn btn-ghost btn-sm" ' + (_flPage <= 1 ? 'disabled' : 'onclick="setFlPage(1)"') + '>‹ Prev</button>';
+  var startPage = Math.max(1, _flPage - 2);
+  var endPage = Math.min(totalPages, _flPage + 2);
+  if (startPage > 1) { html += '<button class="btn btn-ghost btn-sm" onclick="setFlPage(1)">1</button>'; if (startPage > 2) html += '<span style="padding:0 4px;">…</span>'; }
+  for (var i = startPage; i <= endPage; i++) {
+    html += '<button class="btn ' + (i === _flPage ? 'btn-accent' : 'btn-ghost') + ' btn-sm" onclick="setFlPage(' + i + ')">' + i + '</button>';
+  }
+  if (endPage < totalPages) { if (endPage < totalPages - 1) html += '<span style="padding:0 4px;">…</span>'; html += '<button class="btn btn-ghost btn-sm" onclick="setFlPage(' + totalPages + ')">' + totalPages + '</button>'; }
+  html += '<button class="btn btn-ghost btn-sm" ' + (_flPage >= totalPages ? 'disabled' : 'onclick="setFlPage(' + (_flPage + 1) + ')"') + '>Next ›</button>';
+  container.innerHTML = html;
+}
+
+function setFlPage(page) {
+  _flPage = page;
+  var s = $id('fl-search');
+  var it = $id('fl-ipl-team');
+  var rl = $id('fl-role');
+  var bt = $id('fl-bfl-team');
+  var q = s ? s.value : '';
+  var iplTeam = it ? it.value.trim() : '';
+  var role = rl ? rl.value.trim() : '';
+  var bflTeam = bt ? bt.value : '';
+  var roleMap = { 'BAT': ['BAT','BATTER','BATTING'], 'BOW': ['BOW','BOWLER','BOWLING'], 'AR': ['AR','ALLROUNDER','ALL-ROUNDER'], 'WK': ['WK','WICKETKEEPER','WICKET-KEEPER','WICKET KEEPER'] };
+  var roleVals = roleMap[role] || [role];
+  var filtered = _flData.filter(function(p) {
+    if (q && !(p.name||'').toLowerCase().includes(q.toLowerCase())) return false;
+    if (iplTeam && p.ipl_team !== iplTeam && UI.tCode(iplTeam) !== p.ipl_team) return false;
+    if (role && p.role && !roleVals.some(function(r) { return p.role.toUpperCase().indexOf(r) >= 0; })) return false;
+    if (bflTeam) {
+      var pb = p.bfl_team || '';
+      if (pb.toUpperCase() !== bflTeam.toUpperCase()) return false;
+    }
+    return true;
+  });
+  sortFlData(filtered);
+  renderFlTable(filtered);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -2203,7 +2359,7 @@ async function loadUserTeams() {
       var playerCount = sps.filter(function(p) { return p.is_released !== true; }).length;
       return '<tr style="animation:row-in .2s ease ' + (i*.02) + 's both;">' +
         '<td style="font-size:12px;">' + UI.esc(t.owner_name || '-') + '</td>' +
-        '<td style="font-weight:600;">' + UI.esc(UI.tShort(t.team_name)) + '</td>' +
+        '<td style="font-weight:600;"><span class="clickable-team" style="cursor:pointer;color:var(--accent);" onclick="jumpToSquadManagement(\'' + t.id + '\')">' + UI.esc(UI.tShort(t.team_name)) + '</span></td>' +
         '<td>' + (captain ? UI.esc(captain.player?.name || '-') : '-') + '</td>' +
         '<td>' + (vc ? UI.esc(vc.player?.name || '-') : '-') + '</td>' +
         '<td>' + (impact ? UI.esc(impact.player?.name || '-') : '-') + '</td>' +
@@ -2375,4 +2531,23 @@ async function doLogout() { await Auth.signOut(); }
 /* ══════════════════════════════════════════════════════════════
    BOOT
 ══════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════
+   NAVIGATION HELPERS
+   ══════════════════════════════════════════════════════════════ */
+function jumpToUserTeams(teamName) {
+  if (!teamName) return;
+  showPanel('user-teams');
+}
+function jumpToSquadManagement(teamId) {
+  if (!teamId) return;
+  showPanel('squads');
+  var sel = $id('sq-team-select');
+  if (sel) {
+    sel.value = teamId;
+    var event = new Event('change');
+    sel.dispatchEvent(event);
+  }
+}
+
 init();

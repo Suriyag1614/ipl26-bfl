@@ -354,7 +354,7 @@ async function deletePendingRep(repId){
 }
 
 function renderSquad(){
-  var list=_filter?_squad.filter(function(s){return s.player&&s.player.role===_filter;}):_squad;
+  var list=_filter?_squad.filter(function(s){return s.player&&s.player.role&&(s.player.role.toUpperCase()===_filter.toUpperCase());}):_squad;
   var grid=document.getElementById('player-grid'); if(!grid)return;
   if(!list.length){
     grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">!</div><div class="empty-state-text">'+(_squad.length?'No players in this category':'Squad is empty')+'</div></div>';

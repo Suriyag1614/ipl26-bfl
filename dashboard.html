@@ -211,7 +211,6 @@ async function init() {
 
   await Promise.all([loadStats(), loadNextMatch(), loadImpact(), loadPerformers(), loadRecent(), loadMiniLB()]);
   await API.checkAndAwardBadges(_myTeamId);
-  fixGrid();
 }
 
 async function loadStats() {
@@ -273,7 +272,7 @@ async function loadStats() {
         '<div style="min-width:40px;text-align:right;font-family:var(--f-mono);font-size:12px;font-weight:700;">'+UI.fmtPts(r.val)+'</div>'+
       '</div>';
     }).join('');
-  } catch(e) { console.warn(e); }
+  } catch(e) { UI.toast('Could not load stats','error'); }
 }
 
 async function loadNextMatch() {
@@ -307,7 +306,7 @@ async function loadImpact() {
     var pips='';
     for(var i=0;i<8;i++) pips+='<div title="'+(i<(stats.used||0)?'Used':'Available')+'" style="width:16px;height:16px;border-radius:50%;background:'+(i<(stats.used||0)?'var(--accent)':'var(--bg3)')+';border:1px solid '+(i<(stats.used||0)?'var(--accent)':'var(--border)')+';transition:all var(--t);"></div>';
     $('#impact-pips').innerHTML = pips;
-  } catch(e) {}
+  } catch(e) { UI.toast('Could not load impact stats','error'); }
 }
 
 async function loadPerformers() {
@@ -340,7 +339,7 @@ async function loadPerformers() {
             '<div style="text-align:right;"><div class="performer-pts" style="color:'+r.color+'">'+UI.fmtPts(r.total)+'</div><div style="font-size:10px;color:var(--text3);">'+r.label+'</div></div>'+
           '</div>';
         }).join('');
-  } catch(e) {}
+  } catch(e) { UI.toast('Could not load player spotlight','error'); }
 }
 
 async function loadRecent() {
@@ -352,7 +351,7 @@ async function loadRecent() {
         var matchTitle = l.match ? (l.match.match_title || UI.fmtMatch(l.match.team1, l.match.team2)) : '—';
         return '<tr class="clickable-row" onclick="showBreakdown(\''+l.id+'\')"><td style="font-weight:400;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+matchTitle+'</td><td class="font-mono">'+UI.fmtPts(l.squad_points)+'</td><td class="font-mono">'+UI.fmtPts(l.prediction_points)+'</td><td class="pts">'+UI.fmtPts(l.total_points)+'</td></tr>';
       }).join('')+'</tbody></table></div>';
-  } catch(e) {}
+  } catch(e) { UI.toast('Could not load recent results','error'); }
 }
 
 function showBreakdown(logId) {
@@ -395,16 +394,10 @@ async function loadMiniLB() {
           '<td style="color:var(--text2);">'+r.matches_played+'</td>'+
           '<td class="pts">'+UI.fmtPts(r.total_points)+'</td></tr>';
       }).join('')+'</tbody></table></div>';
-  } catch(e) {}
+  } catch(e) { UI.toast('Could not load leaderboard','error'); }
 }
 
-function fixGrid() {
-  var g=$('#stat-widgets');
-  // handled via CSS auto-fill
-}
-
-function $(sel){ return document.getElementById(sel)||document.querySelector(sel); }
-window.addEventListener('resize',fixGrid);
+function $(sel){ var s=String(sel); if(s.charAt(0)==='#') return document.getElementById(s.substring(1)); return document.querySelector(s); }
 init();
 </script>
 </div>

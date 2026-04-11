@@ -488,7 +488,10 @@
       <!-- List -->
       <div class="card" style="padding:0;overflow:hidden;">
         <div style="padding:12px 16px;display:flex;gap:8px;border-bottom:1px solid var(--border);">
-          <input class="form-input" id="fx-search" placeholder="Search…" oninput="filterFixtures(this.value)" style="flex:1;">
+          <div style="position:relative;flex:1;">
+          <img src="images/ipl/new-search-icon.svg" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;opacity:0.5;">
+          <input class="form-input" id="fx-search" placeholder="Search…" oninput="filterFixtures(this.value)" style="padding-left:36px;">
+        </div>
           <select class="form-select" id="fx-status-filter" onchange="filterFixtures()" style="width:130px;">
             <option value="">All Status</option>
             <option value="upcoming">Upcoming</option>
@@ -925,13 +928,39 @@
       <div><div class="section-title">Fantasy Players Leaderboard</div><div class="section-sub">Top performing players across all matches</div></div>
       <button class="btn btn-ghost btn-sm" onclick="loadFantasyLeaderboard()">↻ Refresh</button>
     </div>
+    <div class="card mb-12">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+        <div style="position:relative;flex:1;min-width:150px;">
+          <img src="images/ipl/new-search-icon.svg" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;opacity:0.5;">
+          <input class="form-input" id="fl-search" placeholder="Search player..." oninput="filterFantasyLeaderboard()" style="padding-left:36px;">
+        </div>
+        <select class="form-select" id="fl-ipl-team" onchange="filterFantasyLeaderboard()" style="width:140px;">
+          <option value="">All IPL Teams</option>
+        </select>
+        <select class="form-select" id="fl-role" onchange="filterFantasyLeaderboard()" style="width:120px;">
+          <option value="">All Roles</option>
+          <option value="BAT">Batter</option>
+          <option value="BOW">Bowler</option>
+          <option value="AR">All-Rounder</option>
+          <option value="WK">Wicket-Keeper</option>
+        </select>
+        <select class="form-select" id="fl-bfl-team" onchange="filterFantasyLeaderboard()" style="width:140px;">
+          <option value="">All BFL Teams</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="resetFantasyLeaderboard()">✕ Reset</button>
+      </div>
+    </div>
     <div class="card" style="padding:0;overflow:hidden;">
       <div class="table-wrap table-scroller" style="max-height:100%;">
-        <table class="data-table" style="min-width:500px;">
-<thead><tr><th>#</th><th>IPL Team</th><th>Player</th><th>BFL Team</th><th>Fantasy Points</th><th>Matches Played</th><th>Average</th></tr></thead>
+        <table class="data-table" style="min-width:600px;">
+<thead><tr><th style="text-align:center;">#</th><th style="text-align:center;">IPL Team</th><th>Player</th><th style="text-align:center;">BFL Team</th><th style="cursor:pointer;text-align:center;" onclick="sortFantasyLeaderboard('points')">Fantasy Points ↕</th><th style="cursor:pointer;text-align:center;" onclick="sortFantasyLeaderboard('matches')">Matches ↕</th><th style="cursor:pointer;text-align:center;" onclick="sortFantasyLeaderboard('average')">Average ↕</th></tr></thead>
 <tbody id="fantasy-leaderboard-tbody"><tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
         </table>
       </div>
+    </div>
+    <div class="flex-between" style="padding:12px 0;">
+      <div id="fl-info" style="font-size:13px;color:var(--text2);">—</div>
+      <div style="display:flex;gap:6px;align-items:center;" id="fl-pagination"></div>
     </div>
   </div>
 
