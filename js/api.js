@@ -449,7 +449,7 @@ const API = {
     // Fetch squad players with their IPL teams and all matches for matches_played calc
     const [squadsRes, matchesRes] = await Promise.all([
       sb.from('squad_players').select('fantasy_team_id, player_id, players(ipl_team)'),
-      sb.from('matches').select('id,team1,team2').in('status', ['completed', 'processed', 'locked'])
+      sb.from('matches').select('id,team1,team2').in('status', ['completed', 'processed'])
     ]);
     const allSquads = squadsRes.data || [];
     const allMatches = matchesRes.data || [];

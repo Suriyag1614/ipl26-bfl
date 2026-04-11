@@ -150,12 +150,16 @@ async function loadLeaderboard() {
   try {
     _lb = await API.fetchLeaderboard();
     // Compute matches_played from points_log if leaderboard has 0
-    if (_lb.some(function(r){ return !r.matches_played; })) {
+    if (_lb.some(function(r){ return !r.matches_played && r.matches_played !== 0; })) {
       try {
-        var allLogs = await sb.from('points_log').select('fantasy_team_id');
+        var allLogs = await sb.from('points_log').select('fantasy_team_id, match:matches(status)');
         var counts = {};
-        (allLogs.data || []).forEach(function(l){ counts[l.fantasy_team_id] = (counts[l.fantasy_team_id] || 0) + 1; });
-        _lb.forEach(function(r){ if (!r.matches_played) r.matches_played = counts[r.fantasy_team_id] || 0; });
+        (allLogs.data || []).forEach(function(l){ 
+          if (l.match && (l.match.status === 'completed' || l.match.status === 'processed')) {
+            counts[l.fantasy_team_id] = (counts[l.fantasy_team_id] || 0) + 1; 
+          }
+        });
+        _lb.forEach(function(r){ if (!r.matches_played && r.matches_played !== 0) r.matches_played = counts[r.fantasy_team_id] || 0; });
       } catch(e) {}
     }
     renderPodium();

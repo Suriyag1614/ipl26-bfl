@@ -2074,7 +2074,13 @@ async function loadPredictionsSummary() {
     var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
     var teamCounts = {};
     var targetScores = [];
+    var validPredsCount = 0;
+
     preds.forEach(function(p) {
+      var match = completedMatches.find(function(m) { return String(m.id) === String(p.match_id); });
+      if (!match) return; // Only count predictions for resulted, non-abandoned matches
+
+      validPredsCount++;
       if (p.predicted_winner) {
         teamCounts[p.predicted_winner] = (teamCounts[p.predicted_winner] || 0) + 1;
       }
@@ -2088,7 +2094,7 @@ async function loadPredictionsSummary() {
     } else {
       teamWins.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;">' + teamList.map(function(t) {
         var cnt = teamCounts[t];
-        var pct = Math.round(cnt / preds.length * 100);
+        var pct = Math.round(cnt / validPredsCount * 100);
         var shortCode = UI.tShort(t) || t.substring(0,3).toUpperCase();
         return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:50px;font-weight:700;">' + shortCode + '</span><div style="flex:1;background:var(--bg3);height:24px;border-radius:4px;overflow:hidden;"><div style="width:' + pct + '%;background:var(--accent);height:100%;"></div></div><span style="width:60px;text-align:right;color:var(--text2);">' + cnt + ' (' + pct + '%)</span></div>';
       }).join('') + '</div>';
@@ -2412,9 +2418,11 @@ async function loadPredictionAccuracy() {
     _teams.forEach(function(t) { teamMap[t.fantasy_team_id] = t.team && t.team.team_name; });
     preds.forEach(function(p) {
       if (!teamStats[p.fantasy_team_id]) teamStats[p.fantasy_team_id] = { correct: 0, total: 0 };
-      teamStats[p.fantasy_team_id].total++;
       var match = matches.find(function(m) { return String(m.id) === String(p.match_id); });
-      if (match && p.predicted_winner === match.winner) teamStats[p.fantasy_team_id].correct++;
+      if (match) {
+        teamStats[p.fantasy_team_id].total++;
+        if (p.predicted_winner === match.winner) teamStats[p.fantasy_team_id].correct++;
+      }
     });
     var teamList = [];
     for (var tid in teamStats) {
@@ -2481,20 +2489,32 @@ async function loadTeamMatchPredictions() {
         '<div style="font-size:10px;color:var(--text3);margin-top:4px;">Predicted: ' + UI.esc(p.predicted_winner || '-') + (match.winner ? ' | Winner: ' + UI.esc(match.winner) : (isAbandoned ? ' | Match Abandoned' : '')) + '</div>' +
       '</div>';
     }).join('');
-    var correctCount = teamPreds.filter(function(p) {
-      var match = _matches.find(function(m) { return m.id === p.match_id });
-      return match && match.winner && p.predicted_winner === match.winner;
-    }).length;
-    var totalWithResult = teamPreds.filter(function(p) {
-      var match = _matches.find(function(m) { return m.id === p.match_id });
-      return match && (match.status === 'completed' || match.status === 'processed');
-    }).length;
-    var accuracy = totalWithResult > 0 ? Math.round(correctCount / totalWithResult * 100) : 0;
-    stats.innerHTML = '<div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);">' +
-      '<div class="kpi-chip"><div class="kpi-label">Total Preds</div><div class="kpi-value">' + teamPreds.length + '</div></div>' +
-      '<div class="kpi-chip"><div class="kpi-label">Accuracy</div><div class="kpi-value">' + (totalWithResult > 0 ? accuracy + '%' : '-') + '</div></div>' +
-      '<div class="kpi-chip"><div class="kpi-label">Correct</div><div class="kpi-value">' + correctCount + '</div></div>' +
-      '<div class="kpi-chip"><div class="kpi-label">Team</div><div class="kpi-value">' + UI.esc(UI.tShort(tInfo ? tInfo.team_name : '-')) + '</div></div>' +
+    var correctCount = 0, incorrectCount = 0, abandonedCount = 0;
+    var streak = 0, maxStreak = 0, maxWrong = 0, currentStreak = 0;
+    teamPreds.sort(function(a,b) { return (a.match_id||'').localeCompare(b.match_id||''); }).forEach(function(p) {
+      var match = _matches.find(function(m) { return String(m.id) === String(p.match_id) });
+      if (!match) return;
+      if (match.winner && p.predicted_winner === match.winner) { correctCount++; currentStreak++; maxStreak = Math.max(maxStreak, currentStreak); }
+      else if (match.status === 'abandoned') { abandonedCount++; currentStreak++; maxStreak = Math.max(maxStreak, currentStreak); }
+      else if (match.status === 'completed' || match.status === 'processed') { incorrectCount++; currentStreak = 0; maxWrong = Math.max(maxWrong, currentStreak); }
+      else { currentStreak = 0; }
+    });
+    var completedCount = correctCount + incorrectCount;
+    var accuracy = completedCount > 0 ? Math.round(correctCount / completedCount * 100) : 0;
+    var teamCode = tInfo ? UI.tCode(tInfo.team_name) : '';
+    var logoUrl = teamCode ? 'images/teams/' + teamCode + 'outline.png' : '';
+    stats.innerHTML = '<div style="position:relative;padding:16px;border-radius:var(--radius-md);">' +
+      (logoUrl ? '<img src="' + logoUrl + '" style="position:absolute;right:-10px;bottom:-10px;width:120px;opacity:0.15;pointer-events:none;">' : '') +
+      '<div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);position:relative;z-index:1;">' +
+      '<div class="kpi-chip"><div class="kpi-label">Total Preds</div><div class="kpi-value" style="font-size:18px;">' + teamPreds.length + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Accuracy</div><div class="kpi-value" style="font-size:18px;color:var(--cyan);">' + (completedCount > 0 ? accuracy + '%' : '-') + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Correct</div><div class="kpi-value" style="color:var(--green);">' + correctCount + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Incorrect</div><div class="kpi-value" style="color:var(--red);">' + incorrectCount + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Abandoned</div><div class="kpi-value" style="color:var(--text3);">' + abandonedCount + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Completed</div><div class="kpi-value">' + completedCount + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Best Streak</div><div class="kpi-value" style="color:var(--green);">' + maxStreak + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Wrong Streak</div><div class="kpi-value" style="color:var(--red);">' + maxWrong + '</div></div>' +
+      '</div>' +
     '</div>';
   } catch(e) { list.innerHTML = '<div style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</div>'; }
 }

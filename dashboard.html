@@ -376,12 +376,17 @@ function showBreakdown(logId) {
 async function loadMiniLB() {
   try {
     var lb = await API.fetchLeaderboard();
-    if (lb.some(function(r){ return !r.matches_played; })) {
+    if (lb.some(function(r){ return !r.matches_played && r.matches_played !== 0; })) {
       try {
-        var allLogs = await sb.from('points_log').select('fantasy_team_id');
+        // Only count points_log entries for non-abandoned matches
+        var allLogs = await sb.from('points_log').select('fantasy_team_id, match:matches(status)');
         var counts = {};
-        (allLogs.data || []).forEach(function(l){ counts[l.fantasy_team_id] = (counts[l.fantasy_team_id] || 0) + 1; });
-        lb.forEach(function(r){ if (!r.matches_played) r.matches_played = counts[r.fantasy_team_id] || 0; });
+        (allLogs.data || []).forEach(function(l){ 
+          if (l.match && (l.match.status === 'completed' || l.match.status === 'processed')) {
+            counts[l.fantasy_team_id] = (counts[l.fantasy_team_id] || 0) + 1; 
+          }
+        });
+        lb.forEach(function(r){ if (!r.matches_played && r.matches_played !== 0) r.matches_played = counts[r.fantasy_team_id] || 0; });
       } catch(e) {}
     }
     var medals={1:'🥇',2:'🥈',3:'🥉'};
