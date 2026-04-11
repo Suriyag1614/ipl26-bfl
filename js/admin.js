@@ -2469,38 +2469,61 @@ async function loadTeamMatchPredictions() {
     var teamInfo = await API.fetchAllTeamPoints();
     var tInfo = teamInfo.find(function(t) { return t.id === teamId; });
     if (!teamPreds.length) { list.innerHTML = '<div class="empty-state" style="padding:20px;">No predictions by this team.</div>'; return; }
-    teamPreds.sort(function(a,b) { return (a.match_id < b.match_id) ? -1 : 1; });
+    teamPreds.sort(function(a,b) {
+      var ma = _matches.find(function(m) { return m.id === a.match_id; });
+      var mb = _matches.find(function(m) { return m.id === b.match_id; });
+      return (mb.match_no||0) - (ma.match_no||0);
+    });
     list.innerHTML = teamPreds.map(function(p,i) {
       var match = _matches.find(function(m) { return m.id === p.match_id; });
       if (!match) return '';
       var isCorrect = match.winner && p.predicted_winner === match.winner;
       var isAbandoned = match.status === 'abandoned';
       var matchStatus = match.status === 'completed' || match.status === 'processed';
+      var targetBadge = '';
+      if (matchStatus && match.actual_target && p.target_score) {
+        var diff = Math.abs(p.target_score - match.actual_target);
+        if (diff === 0) { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--cyan);color:var(--bg1);border-radius:50%;font-size:9px;font-weight:700;">✓</span>'; }
+        else if (diff <= 10) { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;background:var(--green);color:var(--bg1);border-radius:12px;font-size:10px;font-weight:700;padding:0 4px;">±' + diff + '</span>'; }
+        else { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;background:var(--red);color:var(--bg1);border-radius:12px;font-size:10px;font-weight:700;padding:0 4px;">±' + diff + '</span>'; }
+      }
       var predVsActual = matchStatus ? 
-        '<div style="font-size:11px;color:var(--text2);">Pred: ' + p.target_score + (match.actual_target ? ' | Actual: ' + match.actual_target : '') + '</div>' :
+        '<div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;">' + (match.actual_target ? '<span>Pred: ' + p.target_score + ' | Actual: ' + match.actual_target + '</span>' : '<span>Target: ' + (p.target_score || '-') + '</span>') + (targetBadge || '') + '</div>' :
         '<div style="font-size:11px;color:var(--text2);">Target: ' + (p.target_score || '-') + '</div>';
       var statusText = isAbandoned ? 'Abandoned' : (isCorrect ? '✓ Correct' : (matchStatus ? '✗ Wrong' : 'Pending'));
       var statusColor = isAbandoned ? 'var(--orange);' : (isCorrect ? 'var(--green);' : (matchStatus ? 'var(--red);' : 'var(--text3);'));
       return '<div style="padding:10px 16px;border-bottom:1px solid var(--border);animation:row-in .2s ease ' + (i*.02) + 's both;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
           '<div><div style="font-weight:600;">M' + (match.match_no||'?') + ': ' + UI.tShort(match.team1) + ' vs ' + UI.tShort(match.team2) + '</div>' + predVsActual + '</div>' +
-          '<div style="text-align:right;font-weight:700;color:' + statusColor + '">' + statusText + '</div>' +
+          '<div style="text-align:right;"><span style="font-weight:700;color:' + statusColor + '">' + statusText + '</span></div>' +
         '</div>' +
-        '<div style="font-size:10px;color:var(--text3);margin-top:4px;">Predicted: ' + UI.esc(p.predicted_winner || '-') + (match.winner ? ' | Winner: ' + UI.esc(match.winner) : (isAbandoned ? ' | Match Abandoned' : '')) + '</div>' +
+        '<div style="font-size:10px;color:var(--text3);margin-top:4px;">' +
+          'Predicted: ' + UI.esc(p.predicted_winner || '-') + (match.winner ? ' | Winner: ' + UI.esc(match.winner) : (isAbandoned ? ' | Match Abandoned' : '')) +
+        '</div>' +
       '</div>';
     }).join('');
-    var correctCount = 0, incorrectCount = 0, abandonedCount = 0;
-    var streak = 0, maxStreak = 0, maxWrong = 0, currentStreak = 0;
-    teamPreds.sort(function(a,b) { return (a.match_id||'').localeCompare(b.match_id||''); }).forEach(function(p) {
+    var correctCount = 0, incorrectCount = 0, abandonedCount = 0, totalDiff = 0, diffCount = 0;
+    var currentStreak = 0, maxStreak = 0, currentWrongStreak = 0, maxWrong = 0;
+    var sortedPreds = teamPreds.slice().sort(function(a,b) {
+      var ma = _matches.find(function(m) { return m.id === a.match_id; });
+      var mb = _matches.find(function(m) { return m.id === b.match_id; });
+      return (mb.match_no||0) - (ma.match_no||0);
+    });
+    sortedPreds.forEach(function(p) {
       var match = _matches.find(function(m) { return String(m.id) === String(p.match_id) });
       if (!match) return;
-      if (match.winner && p.predicted_winner === match.winner) { correctCount++; currentStreak++; maxStreak = Math.max(maxStreak, currentStreak); }
-      else if (match.status === 'abandoned') { abandonedCount++; currentStreak++; maxStreak = Math.max(maxStreak, currentStreak); }
-      else if (match.status === 'completed' || match.status === 'processed') { incorrectCount++; currentStreak = 0; maxWrong = Math.max(maxWrong, currentStreak); }
-      else { currentStreak = 0; }
+      if (match.actual_target && p.target_score && (match.status === 'completed' || match.status === 'processed')) {
+        totalDiff += Math.abs((p.target_score||0) - (match.actual_target||0));
+        diffCount++;
+      }
+      if (match.status === 'abandoned') { abandonedCount++; }
+      else if (match.winner && p.predicted_winner === match.winner) { correctCount++; currentStreak++; maxStreak = Math.max(maxStreak, currentStreak); currentWrongStreak = 0; }
+      else if (match.status === 'completed' || match.status === 'processed') { incorrectCount++; currentWrongStreak++; maxWrong = Math.max(maxWrong, currentWrongStreak); currentStreak = 0; }
+      else { currentStreak = 0; currentWrongStreak = 0; }
     });
     var completedCount = correctCount + incorrectCount;
     var accuracy = completedCount > 0 ? Math.round(correctCount / completedCount * 100) : 0;
+    var avgDiff = diffCount > 0 ? Math.round(totalDiff / diffCount) : 0;
     var teamCode = tInfo ? UI.tCode(tInfo.team_name) : '';
     var logoUrl = teamCode ? 'images/teams/' + teamCode + 'outline.png' : '';
     stats.innerHTML = '<div style="position:relative;padding:16px;border-radius:var(--radius-md);">' +
@@ -2511,9 +2534,9 @@ async function loadTeamMatchPredictions() {
       '<div class="kpi-chip"><div class="kpi-label">Correct</div><div class="kpi-value" style="color:var(--green);">' + correctCount + '</div></div>' +
       '<div class="kpi-chip"><div class="kpi-label">Incorrect</div><div class="kpi-value" style="color:var(--red);">' + incorrectCount + '</div></div>' +
       '<div class="kpi-chip"><div class="kpi-label">Abandoned</div><div class="kpi-value" style="color:var(--text3);">' + abandonedCount + '</div></div>' +
-      '<div class="kpi-chip"><div class="kpi-label">Completed</div><div class="kpi-value">' + completedCount + '</div></div>' +
-      '<div class="kpi-chip"><div class="kpi-label">Best Streak</div><div class="kpi-value" style="color:var(--green);">' + maxStreak + '</div></div>' +
-      '<div class="kpi-chip"><div class="kpi-label">Wrong Streak</div><div class="kpi-value" style="color:var(--red);">' + maxWrong + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Avg Target Diff</div><div class="kpi-value" style="color:var(--gold);">' + (diffCount > 0 ? '±' + avgDiff : '-') + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Best WT Streak</div><div class="kpi-value" style="color:var(--green);">' + maxStreak + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Worst WT Streak</div><div class="kpi-value" style="color:var(--red);">' + maxWrong + '</div></div>' +
       '</div>' +
     '</div>';
   } catch(e) { list.innerHTML = '<div style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</div>'; }
