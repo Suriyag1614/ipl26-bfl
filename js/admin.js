@@ -935,10 +935,10 @@ async function selectStatPlayer(id, name, role, iplTeam) {
     try {
       var {data} = await sb.from('player_match_stats').select('*').eq('match_id',_statsMatchId).eq('player_id',id).maybeSingle();
       if (data) prefillStats(data); else clearStatsFields(false);
-    } catch(e) { clearStatsFields(false); }
+    } catch(e) { console.warn('[selectStatPlayer] load stats error:', e); clearStatsFields(false); }
   }
   $id('sf-player-name').textContent = name;
-  $id('sf-player-sub').textContent  = role + ' · ' + team;
+  $id('sf-player-sub').textContent  = role + ' · ' + iplTeam;
   $id('stats-form-card').style.display = '';
   recalcLive();
 }
