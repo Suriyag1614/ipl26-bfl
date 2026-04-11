@@ -668,7 +668,7 @@ async function loadResultForm() {
 
   preview.innerHTML =
     '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;">'+
-      '<div style="font-family:var(--f-display);font-size:18px;font-weight:900;margin-bottom:10px;">'+UI.esc(m.team1)+' vs '+UI.esc(m.team2)+'</div>'+
+      '<div style="font-family:var(--f-display);font-size:18px;font-weight:700;margin-bottom:10px;">'+UI.esc(m.team1)+' vs '+UI.esc(m.team2)+'</div>'+
       '<div style="font-size:13px;color:var(--text2);margin-bottom:6px;">'+UI.fmtDate(m.match_date)+(m.venue?' · '+UI.esc(m.venue):'')+'</div>'+
       (m.winner?'<div style="color:var(--gold);margin-bottom:4px;">🏆 Winner: <strong>'+UI.esc(m.winner)+'</strong></div>':'')+
       (m.actual_target?'<div style="color:var(--text2);">🎯 Target: <strong style="color:var(--accent);">'+m.actual_target+'</strong>'+(m.is_dls_applied?' <span class="dls-badge">DLS</span>':'')+'</div>':'')+
@@ -753,7 +753,7 @@ async function loadCtrlMatch() {
   var sCls = m.status==='abandoned'?'status-upcoming':m.is_locked?'status-locked':'status-open';
   $id('ctrl-match-info').innerHTML =
     '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;background:var(--bg2);border-radius:10px;border:1px solid var(--border);">'+
-      '<span style="font-family:var(--f-display);font-weight:900;font-size:17px;">'+UI.esc(m.team1)+' vs '+UI.esc(m.team2)+'</span>'+
+      '<span style="font-family:var(--f-display);font-weight:700;font-size:17px;">'+UI.esc(m.team1)+' vs '+UI.esc(m.team2)+'</span>'+
       '<span class="match-status '+sCls+'">'+UI.esc(m.status||'unknown')+'</span>'+
       (m.is_dls_applied?'<span class="dls-badge">🌧 DLS</span>':'')+
       '<span style="font-size:12px;color:var(--text2);margin-left:auto;">'+UI.fmtDate(m.match_date)+(m.venue?' · '+m.venue:'')+'</span>'+

@@ -25,6 +25,19 @@
     .impact-pick-row { display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border); }
     .impact-pick-row:last-child { border-bottom:none; }
     .impact-rank-num { font-family:var(--f-display);font-weight:900;font-size:20px;color:var(--accent);min-width:28px; }
+    
+    /* KPI & Analytics specific */
+    .kpi-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px; }
+    .kpi-chip { background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center; }
+    .kpi-label{ font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:800;letter-spacing:1px;margin-bottom:2px; }
+    .kpi-value{ font-family:var(--f-display);font-size:20px;font-weight:900;line-height:1.1; }
+    .clickable-team { transition:transform .2s; }
+    .clickable-team:hover { transform:scale(1.05); }
+
+    .tabs { overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab-btn { white-space: nowrap; }
+
     @media(max-width:700px){
       .metrics-row{grid-template-columns:repeat(2,1fr);}
       .analytics-chart-row { grid-template-columns:1fr !important; }
@@ -67,6 +80,13 @@
     <button class="tab-btn" onclick="switchTab('predictions')">Predictions</button>
     <button class="tab-btn" onclick="switchTab('impact')">Impact</button>
     <button class="tab-btn" onclick="switchTab('badges')">Badges</button>
+    <span style="width:2px;background:var(--border);margin:0 8px;display:inline-block;height:24px;vertical-align:middle;"></span>
+    <button class="tab-btn" onclick="switchTab('pred-summary')">Summary</button>
+    <button class="tab-btn" onclick="switchTab('accuracy')">Accuracy</button>
+    <button class="tab-btn" onclick="switchTab('match-preds')">Match Preds</button>
+    <button class="tab-btn" onclick="switchTab('fantasy-players')">Fantasy Players</button>
+    <button class="tab-btn" onclick="switchTab('user-teams')">User Teams</button>
+    <button class="tab-btn" onclick="switchTab('power-rankings')">Power Rankings</button>
   </div>
 
   <!-- OVERVIEW -->
@@ -171,6 +191,110 @@
     </div>
   </div>
 
+  <!-- PREDICTIONS SUMMARY -->
+  <div class="tab-panel" id="tab-pred-summary">
+    <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;">
+      <div class="card">
+        <div class="card-title">Team Win Predictions</div>
+        <div id="pred-team-wins"><div class="skel skel-row"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Target Score Distribution</div>
+        <div id="pred-target-dist"><div class="skel skel-row"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREDICTION ACCURACY -->
+  <div class="tab-panel" id="tab-accuracy">
+    <div class="analytics-chart-row" style="display:grid;grid-template-columns:1fr 280px;gap:16px;">
+      <div class="card">
+        <div class="card-title">Accuracy by Match</div>
+        <div id="accuracy-by-match" style="max-height:500px;overflow-y:auto;padding-right:8px;"><div class="skel skel-row"></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card" id="accuracy-overall"></div>
+        <div class="card">
+          <div class="card-title">Team Leaderboard</div>
+          <div id="accuracy-team-leaderboard"><div class="skel skel-row"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MATCH PREDICTIONS -->
+  <div class="tab-panel" id="tab-match-preds">
+    <div class="card mb-16">
+      <div class="form-group" style="max-width:400px;margin-bottom:0;">
+        <label class="form-label" style="font-size:11px;">View Analysis for BFL Team</label>
+        <select class="form-select" id="mp-team-select" onchange="loadTeamMatchPredictions()">
+          <option value="">— Select BFL Team —</option>
+        </select>
+      </div>
+    </div>
+    <div class="analytics-chart-row" style="display:grid;grid-template-columns:1fr 320px;gap:16px;">
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div id="team-preds-list" style="max-height:600px;overflow-y:auto;">
+          <div class="empty-state" style="padding:40px;">Select a BFL Team to view their prediction history</div>
+        </div>
+      </div>
+      <div id="team-preds-stats"></div>
+    </div>
+  </div>
+
+  <!-- FANTASY PLAYERS LEADERBOARD -->
+  <div class="tab-panel" id="tab-fantasy-players">
+    <div class="card mb-12">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <div style="position:relative;flex:1;min-width:180px;">
+          <input class="form-input" id="fl-search" placeholder="Search player..." oninput="filterFantasyLeaderboard()" style="padding-left:12px;">
+        </div>
+        <select class="form-select" id="fl-ipl-team" onchange="filterFantasyLeaderboard()" style="width:130px;font-size:12px;"><option value="">All IPL Teams</option></select>
+        <select class="form-select" id="fl-role" onchange="filterFantasyLeaderboard()" style="width:110px;font-size:12px;">
+          <option value="">Roles</option><option value="BAT">Batter</option><option value="BOW">Bowler</option><option value="AR">AR</option><option value="WK">WK</option>
+        </select>
+        <select class="form-select" id="fl-bfl-team" onchange="filterFantasyLeaderboard()" style="width:130px;font-size:12px;"><option value="">All BFL Teams</option></select>
+        <button class="btn btn-ghost btn-sm" onclick="resetFantasyLeaderboard()">✕</button>
+      </div>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="table-wrap table-scroller" style="max-height:600px;">
+        <table class="data-table" style="min-width:600px;">
+          <thead><tr><th style="text-align:center;">#</th><th style="text-align:center;">IPL</th><th>Player</th><th style="text-align:center;">BFL Team</th><th style="cursor:pointer;text-align:center;" onclick="sortFantasyLeaderboard('points')">Points ↕</th><th style="cursor:pointer;text-align:center;" onclick="sortFantasyLeaderboard('matches')">Mt ↕</th><th style="cursor:pointer;text-align:center;" onclick="sortFantasyLeaderboard('average')">Avg ↕</th></tr></thead>
+          <tbody id="fantasy-leaderboard-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="flex-between" style="padding:12px 0;">
+      <div id="fl-info" style="font-size:12px;color:var(--text3);"></div>
+      <div style="display:flex;gap:4px;align-items:center;" id="fl-pagination"></div>
+    </div>
+  </div>
+
+  <!-- USER TEAMS OVERVIEW -->
+  <div class="tab-panel" id="tab-user-teams">
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="table-wrap table-scroller" style="max-height:700px;">
+        <table class="data-table" style="min-width:600px;">
+          <thead><tr><th>User</th><th>Team Name</th><th>Captain</th><th>Vice-Captain</th><th>Impact</th><th>Roster</th></tr></thead>
+          <tbody id="user-teams-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- POWER RANKINGS -->
+  <div class="tab-panel" id="tab-power-rankings">
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="table-wrap table-scroller">
+        <table class="data-table">
+          <thead><tr><th>Rank</th><th>Team</th><th>Pred Accuracy</th><th>Fantasy Points</th><th>BFL Score</th></tr></thead>
+          <tbody id="power-rankings-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
 </div>
 </main>
 </div>
@@ -183,7 +307,11 @@
 <script src="js/navbar.js"></script>
 <script>
 'use strict';
-var _myTeamId = null, _analytics = null;
+var _myTeamId = null, _analytics = null, _matches = [], _teams = [], _playerSquadMap = {};
+
+// Fantasy Leaderboard State
+var _flData = [], _flPage = 1, _flSort = { col: 'points', asc: false }, _flPerPage = 15;
+
 var EMPTY_ANALYTICS = {
   breakdown:[], predictions:[], impactUsage:[], squad:[], rankHistory:[],
   predStats:{avg_diff:0,winner_pct:0,best_streak:0,total:0,correct:0,exact:0},
@@ -195,10 +323,30 @@ var EMPTY_ANALYTICS = {
 async function init() {
   var sess = await Auth.requireAuth(); if(!sess) return;
   if(Auth.isAdmin(sess.user)){window.location.href='admin.html';return;}
-  await initNavbar('analytics');
+  
+  // Identify active tab from URL param
+  var params = new URLSearchParams(window.location.search);
+  var activeTab = params.get('tab') || 'overview';
+  
+  await initNavbar('analytics'); // Keep sidebar highlighted on analytics
   var team = await Auth.fetchTeam(sess.user.id); if(!team) return;
   _myTeamId = team.id;
+
+  // Load prerequisites
+  try {
+    _matches = await API.fetchMatches();
+    _teams = await API.fetchAllTeamPoints();
+    
+    // Build player squad map for Fantasy Leaderboard
+    var squadData = await API.fetchSquadPlayersAll();
+    squadData.forEach(function(sp) {
+      if (!sp.is_released) _playerSquadMap[sp.player_id] = { team_name: sp.fantasy_team?.team_name };
+    });
+  } catch(e) {}
+
   await loadAnalytics();
+  switchTab(activeTab);
+  
   try { await API.checkAndAwardBadges(_myTeamId); } catch(e) {}
 }
 
@@ -213,6 +361,14 @@ async function loadAnalytics() {
     });
     renderMetrics(); renderCharts(); renderStreaks();
     renderPlayers(); renderPredictions(); renderImpact(); renderBadges();
+    
+    // Also trigger loading of new panels
+    loadPredictionsSummary();
+    loadPredictionAccuracy();
+    loadMatchPredictionsPanel();
+    loadFantasyLeaderboard();
+    loadUserTeams();
+    loadPowerRankings();
   } catch(e) {
     _analytics = Object.assign({}, EMPTY_ANALYTICS);
     UI.toast('Analytics error: '+e.message,'error');
@@ -338,15 +494,6 @@ function renderImpact() {
     return '<div class="impact-pick-row"><div style="flex:1;"><div style="font-weight:700;">'+UI.esc(u.player?u.player.name:'—')+'</div><div style="font-size:12px;color:var(--text2);">'+UI.esc(mTitle)+'</div></div>'+
       '<div style="font-family:var(--f-display);font-weight:900;font-size:17px;color:var(--accent);">+'+UI.fmtPts(u.points_earned)+'</div></div>';
   }).join('') : '<div style="padding:12px;color:var(--text3);font-size:13px;">No impact activations yet</div>';
-  var tbody=document.getElementById('impact-history-tbody'); if(!tbody) return;
-  var history = Array.isArray(is.history) ? is.history : [];
-  if(!history.length){tbody.innerHTML='<tr><td colspan="4" class="empty-state">No impact uses yet</td></tr>';return;}
-  tbody.innerHTML=history.map(function(h){
-    return '<tr><td>'+UI.esc(h.match||'—')+'</td>'+
-      '<td style="font-weight:700;">'+UI.esc(h.name||'—')+'</td>'+
-      '<td>'+UI.roleBadge(h.role)+'</td>'+
-      '<td class="pts">'+UI.fmtPts(h.pts)+'</td></tr>';
-  }).join('');
 }
 
 async function renderBadges() {
@@ -383,15 +530,266 @@ async function renderBadges() {
   }
 }
 
+async function loadPredictionsSummary() {
+  var teamWins = document.getElementById('pred-team-wins');
+  var targetDist = document.getElementById('pred-target-dist');
+  if (!teamWins || !targetDist) return;
+  try {
+    var preds = await API.fetchAllPredictionsAllMatches();
+    var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var teamCounts = {}, targetScores = [], validCount = 0;
+    preds.forEach(function(p) {
+      var m = completedMatches.find(function(mx){ return String(mx.id) === String(p.match_id); });
+      if (!m) return;
+      validCount++;
+      if (p.predicted_winner) teamCounts[p.predicted_winner] = (teamCounts[p.predicted_winner] || 0) + 1;
+      if (p.target_score) targetScores.push(p.target_score);
+    });
+    var teamList = Object.keys(teamCounts).sort(function(a,b){ return teamCounts[b] - teamCounts[a]; });
+    teamWins.innerHTML = teamList.length ? teamList.map(function(t){
+      var cnt = teamCounts[t], pct = Math.round(cnt/validCount*100);
+      return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span style="width:50px;font-weight:700;font-size:12px;">'+UI.tShort(t)+'</span><div style="flex:1;background:var(--bg3);height:18px;border-radius:4px;overflow:hidden;"><div style="width:'+pct+'%;background:var(--accent);height:100%;"></div></div><span style="width:60px;text-align:right;color:var(--text2);font-size:11px;">'+cnt+' ('+pct+'%)</span></div>';
+    }).join('') : '<div class="empty-state">No predictions data.</div>';
+    
+    var ranges = { '<100':0,'100-140':0,'141-170':0,'171-190':0,'191-210':0,'211-230':0,'230+':0 };
+    targetScores.forEach(function(s){
+      if(s<100) ranges['<100']++; else if(s<=140) ranges['100-140']++; else if(s<=170) ranges['141-170']++; else if(s<=190) ranges['171-190']++; else if(s<=210) ranges['191-210']++; else if(s<=230) ranges['211-230']++; else ranges['230+']++;
+    });
+    targetDist.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' + Object.keys(ranges).map(function(r){
+      var cnt=ranges[r], pct=Math.round(cnt/Math.max(targetScores.length,1)*100);
+      return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:70px;font-size:12px;">'+r+'</span><div style="flex:1;background:var(--bg3);height:14px;border-radius:3px;overflow:hidden;"><div style="width:'+pct+'%;background:var(--purple);height:100%;"></div></div><span style="width:40px;text-align:right;color:var(--text2);font-size:11px;">'+cnt+'</span></div>';
+    }).join('') + '</div>';
+  } catch(e){}
+}
+
+async function loadPredictionAccuracy() {
+  var byMatch = document.getElementById('accuracy-by-match');
+  var overall = document.getElementById('accuracy-overall');
+  var teamLeaderboard = document.getElementById('accuracy-team-leaderboard');
+  if(!byMatch) return;
+  try {
+    var preds = await API.fetchAllPredictionsAllMatches();
+    var matches = _matches.filter(function(m){ return m.status === 'completed' || m.status === 'processed'; });
+    var stats = [];
+    matches.forEach(function(m){
+      var mp = preds.filter(function(p){ return String(p.match_id) === String(m.id); });
+      var cor = mp.filter(function(p){ return p.predicted_winner === m.winner; }).length;
+      stats.push({ m, cor, tot:mp.length, pct: mp.length?Math.round(cor/mp.length*100):0 });
+    });
+    byMatch.innerHTML = stats.reverse().map(function(s){
+      var col = s.pct>=70?'var(--green)':s.pct>=40?'var(--gold)':'var(--red)';
+      return '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:12px;"><span style="width:80px;">Match '+s.m.match_no+'</span><div style="flex:1;background:var(--bg3);height:18px;border-radius:3px;overflow:hidden;"><div style="width:'+s.pct+'%;background:'+col+';height:100%;"></div></div><span style="width:50px;text-align:right;color:'+col+';">'+s.cor+'/'+s.tot+'</span></div>';
+    }).join('');
+    
+    var tCor = stats.reduce(function(a,b){return a+b.cor;},0), tTot = stats.reduce(function(a,b){return a+b.tot;},0);
+    overall.innerHTML = '<div class="kpi-grid" style="grid-template-columns:1fr 1fr;"><div class="kpi-chip"><div class="kpi-label">Overall Acc.</div><div class="kpi-value">'+(tTot?Math.round(tCor/tTot*100):0)+'%</div></div><div class="kpi-chip"><div class="kpi-label">Total Correct</div><div class="kpi-value">'+tCor+'</div></div></div>';
+
+    var us = {};
+    _teams.forEach(function(t){ us[t.id] = { name: t.team_name, cor:0, tot:0 }; });
+    preds.forEach(function(p){
+      if(!us[p.fantasy_team_id]) return;
+      var m = matches.find(function(mx){ return String(mx.id)===String(p.match_id); });
+      if(m){ us[p.fantasy_team_id].tot++; if(p.predicted_winner===m.winner) us[p.fantasy_team_id].cor++; }
+    });
+    var rankList = Object.values(us).sort(function(a,b){ return (b.cor/Math.max(b.tot,1)) - (a.cor/Math.max(a.tot,1)); });
+    teamLeaderboard.innerHTML = rankList.slice(0,10).map(function(t,i){
+      var pct = t.tot?Math.round(t.cor/t.tot*100):0;
+      return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:12px;"><span>'+(i+1)+'. '+UI.tShort(t.name)+'</span><span style="font-weight:700;color:var(--accent);">'+pct+'%</span></div>';
+    }).join('');
+  } catch(e){}
+}
+
+async function loadMatchPredictionsPanel() {
+  var sel = document.getElementById('mp-team-select'); if(!sel) return;
+  sel.innerHTML = '<option value="">— Select BFL Team —</option>' + _teams.map(function(t){ return '<option value="'+t.id+'">'+UI.tShort(t.team_name)+'</option>'; }).join('');
+}
+
+async function loadTeamMatchPredictions() {
+  var list = document.getElementById('team-preds-list'), stats = document.getElementById('team-preds-stats');
+  var teamId = document.getElementById('mp-team-select').value;
+  if(!teamId){ list.innerHTML = '<div class="empty-state">Select a BFL Team</div>'; return; }
+  try {
+    var preds = await API.fetchAllPredictionsAllMatches();
+    var tp = preds.filter(function(p){ return p.fantasy_team_id === teamId; });
+    var matches = _matches.filter(function(m){ return m.status==='completed'||m.status==='processed'||m.status==='abandoned'; });
+    list.innerHTML = tp.reverse().map(function(p){
+      var m = _matches.find(function(mx){ return String(mx.id) === String(p.match_id); }); if(!m) return '';
+      var isCor = m.winner && p.predicted_winner === m.winner, isAb = m.status==='abandoned';
+      var res = isAb?'Abandoned':(m.winner?(isCor?'✓ Correct':'✗ Wrong'):'Pending');
+      var col = isAb?'var(--orange)':(isCor?'var(--green)':(m.winner?'var(--red)':'var(--text3)'));
+      return '<div style="padding:12px;border-bottom:1px solid var(--border);"><div class="flex-between"><strong>M'+m.match_no+': '+UI.tShort(m.team1)+' vs '+UI.tShort(m.team2)+'</strong><span style="color:'+col+';font-weight:700;">'+res+'</span></div><div style="font-size:11px;color:var(--text2);">Pred: '+UI.esc(p.predicted_winner)+' | Target: '+p.target_score+' '+(m.actual_target?(' (Actual: '+m.actual_target+')'):'')+'</div></div>';
+    }).join('');
+    
+    var cor=0, tot=0, diff=0, dcnt=0;
+    tp.forEach(function(p){
+      var m = matches.find(function(mx){ return String(mx.id)===String(p.match_id); });
+      if(m && m.winner){ tot++; if(p.predicted_winner===m.winner) cor++; }
+      if(m && m.actual_target){ diff+=Math.abs(p.target_score-m.actual_target); dcnt++; }
+    });
+    stats.innerHTML = '<div class="card"><div class="kpi-grid" style="grid-template-columns:1fr 1fr;"><div class="kpi-chip"><div class="kpi-label">Accuracy</div><div class="kpi-value">'+(tot?Math.round(cor/tot*100):0)+'%</div></div><div class="kpi-chip"><div class="kpi-label">Avg Diff</div><div class="kpi-value">±'+(dcnt?Math.round(diff/dcnt):0)+'</div></div></div></div>';
+  } catch(e){}
+}
+
+async function loadFantasyLeaderboard() {
+  try {
+    var stats = await API.fetchAllPlayerStats();
+    var matches = _matches.filter(function(m){ return m.status==='completed' || m.status==='processed'; });
+    var mIds = matches.map(function(m){ return m.id; });
+    var pPts = {}, pMt = {};
+    stats.forEach(function(s){
+      if(mIds.includes(s.match_id)){
+        var pts = API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s);
+        pPts[s.player_id] = (pPts[s.player_id]||0)+pts; pMt[s.player_id] = (pMt[s.player_id]||0)+1;
+      }
+    });
+    var players = await API.fetchAllPlayers();
+    _flData = [];
+    players.forEach(function(p){
+      if(pMt[p.id]){
+        var sq = _playerSquadMap[p.id];
+        _flData.push({ id:p.id, name:p.name, ipl_team:p.ipl_team, role:p.role, bfl_team:sq?sq.team_name:null, points:pPts[p.id]||0, matches:pMt[p.id]||0 });
+      }
+    });
+    var iplSel = document.getElementById('fl-ipl-team'), bflSel = document.getElementById('fl-bfl-team');
+    if(iplSel && iplSel.options.length<=1){
+      var teams = [...new Set(players.map(function(pt){return pt.ipl_team;}))].sort();
+      iplSel.innerHTML = '<option value="">All IPL</option>' + teams.map(function(t){return '<option value="'+t+'">'+UI.tCode(t)+'</option>';}).join('');
+    }
+    if(bflSel && bflSel.options.length<=1){
+      var bt = [...new Set(_flData.map(function(d){return d.bfl_team;}))].filter(Boolean).sort();
+      bflSel.innerHTML = '<option value="">All BFL</option>' + bt.map(function(t){return '<option value="'+t+'">'+UI.tShort(t)+'</option>';}).join('');
+    }
+    filterFantasyLeaderboard();
+  } catch(e){}
+}
+
+function filterFantasyLeaderboard() {
+  var q = document.getElementById('fl-search').value.toLowerCase();
+  var ipl = document.getElementById('fl-ipl-team').value;
+  var role = document.getElementById('fl-role').value;
+  var bfl = document.getElementById('fl-bfl-team').value;
+  var filtered = _flData.filter(function(p){
+    if(q && !p.name.toLowerCase().includes(q)) return false;
+    if(ipl && p.ipl_team !== ipl) return false;
+    if(role && !p.role.includes(role)) return false;
+    if(bfl && p.bfl_team !== bfl) return false;
+    return true;
+  });
+  sortFlData(filtered);
+  renderFlTable(filtered);
+}
+
+function sortFantasyLeaderboard(col) {
+  if(_flSort.col === col) _flSort.asc = !_flSort.asc;
+  else { _flSort.col = col; _flSort.asc = false; }
+  filterFantasyLeaderboard();
+}
+
+function sortFlData(list) {
+  var c = _flSort.col, asc = _flSort.asc;
+  list.forEach(function(p){ p.average = p.matches?Math.round(p.points/p.matches*10)/10:0; });
+  list.sort(function(a,b){
+    var av = a[c], bv = b[c];
+    return asc ? (av > bv ? 1 : -1) : (bv > av ? 1 : -1);
+  });
+}
+
+function renderFlTable(list) {
+  var tbody = document.getElementById('fantasy-leaderboard-tbody'); if(!tbody) return;
+  var total = list.length, pages = Math.ceil(total/_flPerPage), start = (_flPage-1)*_flPerPage;
+  var pageData = list.slice(start, start + _flPerPage);
+  document.getElementById('fl-info').textContent = total?('Showing '+(start+1)+'-'+Math.min(start+_flPerPage, total)+' of '+total):'No players found';
+  tbody.innerHTML = pageData.map(function(p, i){
+    var rank = start+i+1;
+    return '<tr><td style="text-align:center;">'+rank+'</td><td style="text-align:center;"><img src="images/teams/'+UI.tCode(p.ipl_team)+'outline.png" style="width:20px;"></td><td>'+UI.esc(p.name)+' <span style="font-size:10px;opacity:.6;">'+p.role+'</span></td><td style="text-align:center;">'+UI.tShort(p.bfl_team||'—')+'</td><td style="text-align:center;font-weight:700;color:var(--accent);">'+p.points+'</td><td style="text-align:center;">'+p.matches+'</td><td style="text-align:center;">'+p.average+'</td></tr>';
+  }).join('');
+  renderFlPagination(total, pages);
+}
+
+function renderFlPagination(total, pages) {
+  var el = document.getElementById('fl-pagination'); if(!el) return;
+  if(pages<=1){ el.innerHTML=''; return; }
+  var html = '<button class="btn btn-ghost btn-sm" onclick="setFlPage('+Math.max(1,_flPage-1)+')">‹</button>';
+  for(var i=1; i<=pages; i++){
+    if(i===1 || i===pages || (i>=_flPage-1 && i<=_flPage+1))
+      html += '<button class="btn '+(i===_flPage?'btn-accent':'btn-ghost')+' btn-sm" onclick="setFlPage('+i+')">'+i+'</button>';
+    else if(i===2 || i===pages-1) html += '<span>…</span>';
+  }
+  html += '<button class="btn btn-ghost btn-sm" onclick="setFlPage('+Math.min(pages,_flPage+1)+')">›</button>';
+  el.innerHTML = html;
+}
+function setFlPage(p){ _flPage=p; filterFantasyLeaderboard(); }
+
+async function loadUserTeams() {
+  try {
+    var teams = await API.fetchAllFantasyTeams();
+    var squadData = await API.fetchSquadPlayersAll();
+    var squadMap = {};
+    squadData.forEach(function(sp){
+      if(!squadMap[sp.fantasy_team_id]) squadMap[sp.fantasy_team_id] = [];
+      squadMap[sp.fantasy_team_id].push(sp);
+    });
+    var tbody = document.getElementById('user-teams-tbody'); if(!tbody) return;
+    tbody.innerHTML = teams.map(function(t){
+      var sps = squadMap[t.id] || [];
+      var cap = sps.find(function(p){return p.is_captain;})?.player?.name || '—';
+      var vc = sps.find(function(p){return p.is_vc;})?.player?.name || '—';
+      var imp = sps.find(function(p){return p.is_impact;})?.player?.name || '—';
+      return '<tr><td>'+UI.esc(t.owner_name)+'</td><td><strong>'+UI.esc(t.team_name)+'</strong></td><td>'+UI.esc(cap)+'</td><td>'+UI.esc(vc)+'</td><td>'+UI.esc(imp)+'</td><td>'+sps.length+' players</td></tr>';
+    }).join('');
+  } catch(e){}
+}
+
+async function loadPowerRankings() {
+  try {
+    var teams = await API.fetchAllTeamPoints();
+    var preds = await API.fetchAllPredictionsAllMatches();
+    var matches = _matches.filter(function(m){ return m.status==='completed'||m.status==='processed'; });
+    var stats = teams.map(function(t){
+      var tp = preds.filter(function(p){ return p.fantasy_team_id === t.id; });
+      var cor = 0, tot = 0;
+      tp.forEach(function(p){
+        var m = matches.find(function(mx){ return String(mx.id) === String(p.match_id); });
+        if(m){ tot++; if(p.predicted_winner === m.winner) cor++; }
+      });
+      var acc = tot ? Math.round(cor/tot*100) : 0;
+      var score = Math.round((acc * 0.5) + ((t.total_points/1000) * 0.5) * 100) / 100;
+      return { name: t.team_name, acc: acc + '%', pts: t.total_points, score };
+    }).sort(function(a,b){ return b.score - a.score; });
+    var tbody = document.getElementById('power-rankings-tbody'); if(!tbody) return;
+    tbody.innerHTML = stats.map(function(s, i){
+      return '<tr><td>'+(i+1)+'</td><td><strong>'+UI.esc(s.name)+'</strong></td><td>'+s.acc+'</td><td>'+s.pts+'</td><td style="color:var(--accent);font-weight:700;">'+s.score+'</td></tr>';
+    }).join('');
+  } catch(e){}
+}
+
+function resetFantasyLeaderboard(){
+  document.getElementById('fl-search').value = '';
+  document.getElementById('fl-ipl-team').value = '';
+  document.getElementById('fl-role').value = '';
+  document.getElementById('fl-bfl-team').value = '';
+  _flPage = 1; filterFantasyLeaderboard();
+}
+
 function switchTab(tab) {
-  var tabs=['overview','players','predictions','impact','badges'];
-  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',tabs[i]===tab);});
-  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  var tabs=['overview','players','predictions','impact','badges','pred-summary','accuracy','match-preds','fantasy-players','user-teams','power-rankings'];
+  document.querySelectorAll('.tab-btn').forEach(function(b){
+    var id = b.getAttribute('onclick').match(/'([^']+)'/)[1];
+    b.classList.toggle('active', id === tab);
+  });
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
   var panel=document.getElementById('tab-'+tab); if(panel) panel.classList.add('active');
-  if(!_analytics) return;
+  
+  // Specific tab loads
   if(tab==='overview') setTimeout(renderCharts,60);
   if(tab==='players') setTimeout(renderPlayers,60);
   if(tab==='predictions') setTimeout(renderPredictions,60);
+  if(tab==='pred-summary') loadPredictionsSummary();
+  if(tab==='accuracy') loadPredictionAccuracy();
+  if(tab==='match-preds') loadMatchPredictionsPanel();
+  if(tab==='fantasy-players') loadFantasyLeaderboard();
+  if(tab==='user-teams') loadUserTeams();
+  if(tab==='power-rankings') loadPowerRankings();
 }
 init();
 </script>

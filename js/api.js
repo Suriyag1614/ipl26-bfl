@@ -611,7 +611,7 @@ const API = {
   },
 
   calcPredictionPoints(pred, match) {
-    if (!pred || !match) return 0;
+    if (!pred || !match || match.status === 'abandoned') return 0;
     let pts = 0;
     const diff = Math.abs(Number(pred.target_score || 0) - Number(match.actual_target || 0));
     if (diff === 0) pts += 250; else if (diff === 1) pts += 150;
@@ -637,6 +637,22 @@ const API = {
       this.fetchMatch(matchId), this.fetchPlayerStats(matchId), this.fetchAllPredictions(matchId),
     ]);
     if (!match) throw new Error('Match not found');
+
+    // Handle Abandoned Matches
+    if (match.status === 'abandoned') {
+      const { data: teams } = await sb.from('fantasy_teams').select('id,team_name');
+      const emptyLogs = (teams || []).map(team => ({
+        match_id: matchId, fantasy_team_id: team.id,
+        squad_points: 0, prediction_points: 0, total_points: 0,
+        batting_pts: 0, bowling_pts: 0, fielding_pts: 0, bonus_pts: 0,
+        breakdown: { players: [], impactActive: false, abandoned: true },
+        created_at: new Date().toISOString()
+      }));
+      await sb.from('points_log').upsert(emptyLogs, { onConflict: 'match_id,fantasy_team_id' });
+      await sb.from('matches').update({ status: 'abandoned', is_locked: true }).eq('id', matchId);
+      await this.refreshLeaderboard();
+      return emptyLogs;
+    }
 
     // Fetch PoT
     const { data: ts } = await sb.from('tournament_settings')
