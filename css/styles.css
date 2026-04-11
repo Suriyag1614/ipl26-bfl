@@ -990,7 +990,7 @@ body:has(.login-wrap) #toast-container {
   .my-rank-banner { flex-direction:column; align-items:stretch; text-align:center; gap:14px; }
   .my-rank-banner > div:last-child { margin-left:0 !important; text-align:center; }
   .fixture-row { flex-wrap:wrap; gap:8px; }
-  .fx-row { flex-direction:column; padding:10px 12px; gap:6px; }
+  .fx-row { flex-direction:row; padding:10px 12px; gap:6px; }
   .fx-label { min-width:auto; }
   .fx-actions { opacity:1; margin-top:2px; }
   .fx-row:hover { transform:none; }
