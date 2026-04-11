@@ -2117,7 +2117,7 @@ async function loadPredictionsSummary() {
       targetDist.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' + Object.keys(ranges).map(function(r) {
         var cnt = ranges[r];
         var pct = Math.round(cnt / targetScores.length * 100);
-        return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:70px;font-size:11px;">' + r + '</span><div style="flex:1;background:var(--bg3);height:18px;border-radius:3px;overflow:hidden;"><div style="width:' + pct + '%;background:var(--purple);height:100%;"></div></div><span style="width:40px;text-align:right;font-size:11px;color:var(--text2);">' + cnt + '</span></div>';
+        return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:70px;">' + r + '</span><div style="flex:1;background:var(--bg3);height:18px;border-radius:3px;overflow:hidden;"><div style="width:' + pct + '%;background:var(--purple);height:100%;"></div></div><span style="width:40px;text-align:right;color:var(--text2);">' + cnt + '</span></div>';
       }).join('') + '</div>';
     }
   } catch(e) { teamWins.innerHTML = '<div style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</div>'; }
