@@ -2375,15 +2375,17 @@ async function loadUserTeams() {
 async function loadPredictionAccuracy() {
   var byMatch = $id('accuracy-by-match');
   var overall = $id('accuracy-overall');
+  var teamLeaderboard = $id('accuracy-team-leaderboard');
   if (!byMatch || !overall) return;
   byMatch.innerHTML = '<div class="skel skel-row"></div>';
   overall.innerHTML = '';
+  if (teamLeaderboard) teamLeaderboard.innerHTML = '<div class="skel skel-row"></div>';
   try {
     var preds = safeArr(await API.fetchAllPredictionsAllMatches());
     var matches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
     var matchStats = [];
     matches.forEach(function(m) {
-      var matchPreds = preds.filter(function(p) { return p.match_id === m.id; });
+      var matchPreds = preds.filter(function(p) { return String(p.match_id) === String(m.id); });
       var correct = matchPreds.filter(function(p) { return p.predicted_winner === m.winner; }).length;
       var total = matchPreds.length;
       matchStats.push({ match: m, correct: correct, total: total, pct: total > 0 ? Math.round(correct/total*100) : 0 });
@@ -2393,8 +2395,8 @@ async function loadPredictionAccuracy() {
       overall.innerHTML = '<div class="empty-state">No data</div>';
       return;
     }
-    matchStats.sort(function(a,b) { return b.pct - a.pct; });
-    byMatch.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;">' + matchStats.map(function(m) {
+    var sortedStats = matchStats.slice().sort(function(a,b) { return (b.match.match_no||0) - (a.match.match_no||0); });
+    byMatch.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;">' + sortedStats.map(function(m) {
       var color = m.pct >= 70 ? 'var(--green)' : m.pct >= 40 ? 'var(--gold)' : 'var(--red)';
       return '<div style="display:flex;align-items:center;gap:10px;font-size:12px;"><span style="width:80px;">Match ' + m.match.match_no + '</span><div style="flex:1;background:var(--bg3);height:20px;border-radius:3px;overflow:hidden;"><div style="width:' + m.pct + '%;background:' + color + ';height:100%;"></div></div><span style="width:50px;text-align:right;color:' + color + ';">' + m.correct + '/' + m.total + '</span></div>';
     }).join('') + '</div>';
@@ -2405,6 +2407,27 @@ async function loadPredictionAccuracy() {
       '<div class="kpi-chip"><div class="kpi-label">Correct Predictions</div><div class="kpi-value">' + totalCorrect + '</div></div>' +
       '<div class="kpi-chip"><div class="kpi-label">Total Predictions</div><div class="kpi-value">' + totalPreds + '</div></div>' +
       '<div class="kpi-chip"><div class="kpi-label">Matches Analyzed</div><div class="kpi-value">' + matchStats.length + '</div></div>';
+    var teamStats = {};
+    var teamMap = {};
+    _teams.forEach(function(t) { teamMap[t.fantasy_team_id] = t.team && t.team.team_name; });
+    preds.forEach(function(p) {
+      if (!teamStats[p.fantasy_team_id]) teamStats[p.fantasy_team_id] = { correct: 0, total: 0 };
+      teamStats[p.fantasy_team_id].total++;
+      var match = matches.find(function(m) { return String(m.id) === String(p.match_id); });
+      if (match && p.predicted_winner === match.winner) teamStats[p.fantasy_team_id].correct++;
+    });
+    var teamList = [];
+    for (var tid in teamStats) {
+      var teamName = teamMap[tid] || tid;
+      teamList.push({ id: tid, name: teamName, correct: teamStats[tid].correct, total: teamStats[tid].total, pct: teamStats[tid].total > 0 ? Math.round(teamStats[tid].correct/teamStats[tid].total*100) : 0 });
+    }
+    teamList.sort(function(a,b) { return b.pct - a.pct; });
+    if (teamLeaderboard) {
+      teamLeaderboard.innerHTML = teamList.length ? '<div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">' + teamList.map(function(t, i) {
+        var color = t.pct >= 70 ? 'var(--green)' : t.pct >= 40 ? 'var(--gold)' : 'var(--red)';
+        return '<div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;font-weight:700;color:var(--text2);">' + (i+1) + '</span><span style="flex:1;">' + UI.esc(UI.tShort(t.name)) + '</span><span style="color:' + color + ';">' + t.correct + '/' + t.total + ' (' + t.pct + '%)</span></div>';
+      }).join('') + '</div>' : '<div class="empty-state">No team data</div>';
+    }
   } catch(e) { byMatch.innerHTML = '<div style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</div>'; }
 }
 

@@ -989,11 +989,17 @@
     <div class="col-2">
       <div class="card">
         <div class="card-title">Accuracy by Match</div>
-        <div id="accuracy-by-match"><div class="skel skel-row"></div></div>
+        <div id="accuracy-by-match" class="table-scroller"><div class="skel skel-row"></div></div>
       </div>
-      <div class="card">
-        <div class="card-title">Overall Stats</div>
-        <div id="accuracy-overall" class="kpi-grid" style="grid-template-columns:repeat(2,1fr);"></div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div class="card-title">Overall Stats</div>
+          <div id="accuracy-overall" class="kpi-grid" style="grid-template-columns:repeat(2,1fr);"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Team Leaderboard</div>
+          <div id="accuracy-team-leaderboard"><div class="skel skel-row"></div></div>
+        </div>
       </div>
     </div>
   </div>
