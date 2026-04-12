@@ -2404,7 +2404,7 @@ async function loadPredictionAccuracy() {
     var sortedStats = matchStats.slice().sort(function(a,b) { return (b.match.match_no||0) - (a.match.match_no||0); });
     byMatch.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;">' + sortedStats.map(function(m) {
       var color = m.pct >= 70 ? 'var(--green)' : m.pct >= 40 ? 'var(--gold)' : 'var(--red)';
-      return '<div style="display:flex;align-items:center;gap:10px;font-size:12px;"><span style="width:80px;">Match ' + m.match.match_no + '</span><div style="flex:1;background:var(--bg3);height:20px;border-radius:3px;overflow:hidden;"><div style="width:' + m.pct + '%;background:' + color + ';height:100%;"></div></div><span style="width:50px;text-align:right;color:' + color + ';">' + m.correct + '/' + m.total + '</span></div>';
+      return '<div style="display:flex;align-items:center;gap:10px;font-size:12px;"><span style="width:80px;">Match ' + m.match.match_no + '</span><div style="flex:1;background:var(--bg3);height:20px;border-radius:3px;overflow:hidden;"><div style="width:' + m.pct + '%;background:' + color + ';height:100%;"></div></div><span style="width:50px;text-align:center;color:' + color + ';">' + m.correct + '/' + m.total + '</span></div>';
     }).join('') + '</div>';
     var totalCorrect = matchStats.reduce(function(s,m) { return s + m.correct; }, 0);
     var totalPreds = matchStats.reduce(function(s,m) { return s + m.total; }, 0);
