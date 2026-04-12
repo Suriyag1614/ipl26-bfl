@@ -149,8 +149,8 @@ async function init() {
 async function loadLeaderboard() {
   try {
     _lb = await API.fetchLeaderboard();
-    // Compute matches_played from points_log if leaderboard has 0
-    if (_lb.some(function(r){ return !r.matches_played && r.matches_played !== 0; })) {
+    // Compute matches_played from points_log if leaderboard has 0 but team has points
+    if (_lb.some(function(r){ return (!r.matches_played && r.matches_played !== 0) || (r.total_points > 0 && r.matches_played === 0); })) {
       try {
         var allLogs = await sb.from('points_log').select('fantasy_team_id, match:matches(status)');
         var counts = {};

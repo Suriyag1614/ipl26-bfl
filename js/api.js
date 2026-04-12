@@ -454,20 +454,26 @@ const API = {
     const allSquads = squadsRes.data || [];
     const allMatches = matchesRes.data || [];
 
-    // Build map: fantasy_team_id → Set of IPL teams their squad players belong to
+    // Normalization helper (safe fallback if UI.tCode not available)
+    const tNorm = (name) => {
+      if (window.UI && typeof UI.tCode === 'function') return UI.tCode(name) || (name||'').toUpperCase().trim();
+      return (name||'').toUpperCase().trim();
+    };
+
+    // Build map: fantasy_team_id → Set of normalized IPL teams their squad players belong to
     const teamIplMap = {};
     allSquads.forEach(sp => {
       const iplTeam = sp.players?.ipl_team;
       if (!iplTeam) return;
       if (!teamIplMap[sp.fantasy_team_id]) teamIplMap[sp.fantasy_team_id] = new Set();
-      teamIplMap[sp.fantasy_team_id].add(iplTeam.toUpperCase().trim());
+      teamIplMap[sp.fantasy_team_id].add(tNorm(iplTeam));
     });
 
     // Build matches_played: count matches where at least one squad player's team is playing
     const matchesPlayedMap = {};
     Object.keys(teamIplMap).forEach(ftId => {
       const iplTeams = teamIplMap[ftId];
-      matchesPlayedMap[ftId] = allMatches.filter(m => iplTeams.has((m.team1||'').toUpperCase()) || iplTeams.has((m.team2||'').toUpperCase())).length;
+      matchesPlayedMap[ftId] = allMatches.filter(m => iplTeams.has(tNorm(m.team1)) || iplTeams.has(tNorm(m.team2))).length;
     });
 
     const agg = {};
