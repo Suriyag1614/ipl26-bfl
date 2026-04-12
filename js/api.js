@@ -582,20 +582,30 @@ const API = {
     return pts;
   },
 
+  getTrueOvers(val) {
+    const overs = Number(val || 0);
+    const whole = Math.floor(overs);
+    const balls = Math.round((overs - whole) * 10); // Capture the .Y part correctly
+    return whole + (balls / 6);
+  },
+
   calcBowlingPoints(s) {
     if (!s) return 0;
     let pts = 0;
-    const wickets = Number(s.wickets || 0), overs = Number(s.overs_bowled || 0), runs = Number(s.runs_conceded || 0);
+    const wickets = Number(s.wickets || 0), runs = Number(s.runs_conceded || 0);
+    const trueOvers = this.getTrueOvers(s.overs_bowled);
+    
     pts += wickets * 50;
     if      (wickets >= 9) pts += 400; else if (wickets >= 7) pts += 300;
     else if (wickets >= 5) pts += 200; else if (wickets >= 3) pts += 100;
     pts += Number(s.maidens || 0) * 50;
-    if (overs >= 2) { 
-      const eco = runs / overs; 
+    
+    if (trueOvers >= 2) { 
+      const eco = runs / trueOvers; 
       if (eco <= 6) pts += 100; 
       if (eco >= 12) pts -= 50; 
     }
-    if (overs >= 1 && wickets === 0) pts -= 25;
+    if (trueOvers > 0 && wickets === 0) pts -= 25;
     return pts;
   },
 
