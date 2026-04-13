@@ -49,7 +49,7 @@
     .fl-icc-row { display: grid; grid-template-columns: 60px 80px 1fr 100px 180px; align-items: center; padding: 14px 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); transition: all 0.2s; }
     .fl-icc-row:hover { border-color: var(--accent-dim); transform: translateX(4px); background: var(--bg3); }
     
-    .fl-featured-card { position: relative; display: flex; align-items: flex-end; gap: 30px; padding: 30px 40px; background: linear-gradient(135deg, var(--bg2), var(--bg3)); border: 2px solid var(--accent-dim); border-radius: var(--radius-lg); margin-bottom: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .fl-featured-card { position: relative; display: flex; align-items: anchor-center; gap: 30px; padding: 30px 40px; background: linear-gradient(135deg, var(--bg2), var(--bg3)); border: 2px solid var(--accent-dim); border-radius: var(--radius-lg); margin-bottom: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
     .fl-featured-card::before { content: "01"; position: absolute; left: -10px; top: -20px; font-family: var(--f-display); font-size: 160px; font-weight: 900; color: var(--accent); opacity: 0.05; pointer-events: none; }
     .fl-featured-img-wrap { position: relative; width: 180px; height: 180px; flex-shrink: 0; z-index: 2; }
     .fl-featured-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.4)); }
@@ -58,7 +58,7 @@
     .fl-featured-name { font-family: var(--f-display); font-size: 32px; line-height: 1.1; margin-bottom: 12px; }
     .fl-featured-name span { display: block; font-size: 14px; font-weight: 400; opacity: 0.8; font-family: var(--f-ui); text-transform: uppercase; letter-spacing: 1px; }
     .fl-featured-name strong { display: block; font-weight: 900; text-transform: uppercase; color: var(--accent); }
-    .fl-featured-stats { display: flex; gap: 30px; margin-top: 20px; }
+    .fl-featured-stats { display: flex; flex-wrap: wrap; gap: 30px; margin-top: 20px; }
     .fl-featured-stat { display: flex; flex-direction: column; }
     .fl-featured-stat-val { font-family: var(--f-display); font-size: 36px; font-weight: 900; color: var(--accent); }
     .fl-featured-stat-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text3); }
