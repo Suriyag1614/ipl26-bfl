@@ -147,6 +147,22 @@
   <!-- OVERVIEW -->
   <div class="tab-panel active" id="tab-overview">
     <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin-bottom:18px;">
+        <div class="card" style="padding:0; overflow:hidden;">
+          <div class="card-title" style="padding:16px 20px 0;">Performance Benchmark</div>
+          <div id="league-comparison-card" style="padding:24px;">
+            <div class="skel skel-row" style="margin-bottom:12px;"></div>
+            <div class="skel skel-row"></div>
+          </div>
+          <div style="background:var(--bg3); padding:12px 20px; font-size:11px; border-top:1px solid var(--border); color:var(--text3);">
+            Comparison based on <strong>League Wide</strong> data from processed matches.
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Match Point Progression</div>
+          <canvas id="chart-progression" style="width:100%;height:180px;"></canvas>
+        </div>
+      </div>
+    <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin-bottom:18px;">
       <div class="card">
         <div class="card-title">Points Per Match</div>
         <div class="chart-wrap"><canvas id="chart-pts-per-match" style="height:170px;"></canvas></div>
@@ -430,23 +446,71 @@ async function loadAnalytics() {
   }
 }
 
-function renderMetrics() {
-  var a=_analytics;
-  var bd=Array.isArray(a.breakdown)?a.breakdown:[];
-  var total=bd.reduce(function(s,l){return s+(l.total_points||0);},0);
-  var avg=bd.length?UI.fmtPts(total/bd.length):0;
-  var ps=a.predStats||EMPTY_ANALYTICS.predStats;
-  var is=a.impactStats||EMPTY_ANALYTICS.impactStats;
-  var el=document.getElementById('analytics-metrics'); if(!el) return;
-  el.innerHTML=[
-    {val:total,lbl:'Season Pts',sub:'Total',c:'var(--accent)',anim:true},
-    {val:avg,lbl:'Avg/Match',sub:'Per game',c:'var(--gold)'},
-    {val:ps.winner_pct+'%',lbl:'Winner Acc.',sub:ps.correct+'/'+ps.total+' correct',c:'var(--cyan)'},
-    {val:is.uses+'/8',lbl:'Impact Used',sub:is.remaining+' remaining',c:'var(--purple)'},
-  ].map(function(m,i){
-    return '<div class="metric-card" style="animation-delay:'+(i*.08)+'s"><div class="metric-val" id="am-'+i+'" style="color:'+m.c+';">'+(m.anim?0:m.val)+'</div><div class="metric-lbl">'+m.lbl+'</div>'+(m.sub?'<div class="metric-sub">'+UI.esc(m.sub)+'</div>':'')+' </div>';
-  }).join('');
-  if(total) UI.countUp(document.getElementById('am-0'),total,1000, Number(total)%1!==0, Number(total)%1!==0 ? 1 : 0);
+async function renderMetrics() {
+  var a = _analytics;
+  var bd = Array.isArray(a.breakdown) ? a.breakdown : [];
+  var total = bd.reduce(function(s, l) { return s + (l.total_points || 0); }, 0);
+  var avg = bd.length ? (total / bd.length) : 0;
+  var ps = a.predStats || EMPTY_ANALYTICS.predStats;
+  var is = a.impactStats || EMPTY_ANALYTICS.impactStats;
+
+  // Render top metrics chips
+  var metEl = document.getElementById('analytics-metrics');
+  if (metEl) {
+    var chips = [
+      { val: total, lbl: 'Total Points', sub: bd.length + ' matches', c: 'var(--accent)' },
+      { val: UI.fmtPts(avg), lbl: 'Average/Match', sub: 'Season Avg', c: 'var(--gold)' },
+      { val: (ps.accuracy || 0) + '%', lbl: 'Predictions', sub: (ps.correct || 0) + ' correct', c: 'var(--cyan)' },
+      { val: (is.used || 0) + '/8', lbl: 'Impact Usage', sub: (is.remaining || 0) + ' left', c: 'var(--purple)' }
+    ];
+    metEl.innerHTML = chips.map(function(c, i) {
+      return '<div class="metric-card" style="animation-delay:' + (i * 0.08) + 's"><div class="metric-val" style="color:' + c.c + ';">' + c.val + '</div><div class="metric-lbl">' + c.lbl + '</div><div class="metric-sub">' + c.sub + '</div></div>';
+    }).join('');
+  }
+
+  // Fetch League Benchmarks
+  try {
+    const lStats = await API.fetchLeagueStats();
+    const consistency = await API.fetchMyMatchConsistency(_myTeamId);
+    renderBenchmarkCard(lStats, avg, consistency);
+  } catch (e) { console.warn('Benchmark fetch failed', e); }
+}
+
+function renderBenchmarkCard(l, myAvg, consistency) {
+  var el = document.getElementById('league-comparison-card');
+  if (!el) return;
+
+  var diff = myAvg - l.leagueAvgPerTeamMatch;
+  var diffCls = diff >= 0 ? 'text-accent' : 'text-danger';
+  var diffSym = diff >= 0 ? '+' : '';
+
+  el.innerHTML = '<div style="display:flex; flex-direction:column; gap:22px;">' +
+    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">' +
+    '<div class="stat-item">' +
+    '<div style="font-size:11px; color:var(--text3); font-weight:800; text-transform:uppercase; margin-bottom:4px;">My Average</div>' +
+    '<div style="font-family:var(--f-display); font-size:28px; font-weight:900;">' + UI.fmtPts(myAvg) + '</div>' +
+    '<div style="font-size:12px; font-weight:700;" class="' + diffCls + '">' + diffSym + UI.fmtPts(diff) + ' vs League</div>' +
+    '</div>' +
+    '<div class="stat-item">' +
+    '<div style="font-size:11px; color:var(--text3); font-weight:800; text-transform:uppercase; margin-bottom:4px;">League Average</div>' +
+    '<div style="font-family:var(--f-display); font-size:28px; font-weight:900;">' + UI.fmtPts(l.leagueAvgPerTeamMatch) + '</div>' +
+    '<div style="font-size:12px; color:var(--text2);">' + (l.totalEntries || 0) + ' total entries</div>' +
+    '</div>' +
+    '</div>' +
+
+    '<div style="background:var(--bg2); border-radius:12px; padding:16px; border:1px solid var(--border);">' +
+    '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">' +
+    '<div style="font-size:12px; font-weight:800; font-family:var(--f-ui); text-transform:uppercase;">Consistency Score</div>' +
+    '<div style="font-family:var(--f-display); font-size:22px; font-weight:900; color:var(--accent);">' + consistency + '%</div>' +
+    '</div>' +
+    '<div style="height:6px; background:var(--bg3); border-radius:3px; overflow:hidden;">' +
+    '<div style="width:' + consistency + '%; height:100%; background:linear-gradient(90deg, var(--accent), var(--cyan)); border-radius:3px;"></div>' +
+    '</div>' +
+    '<div style="font-size:11px; color:var(--text3); margin-top:8px;">' +
+    'A higher score indicates more stable performances match-to-match.' +
+    '</div>' +
+    '</div>' +
+    '</div>';
 }
 
 function renderCharts() {
@@ -1137,14 +1201,30 @@ function resetFantasyLeaderboard(){
   _flPage = 1; filterFantasyLeaderboard();
 }
 
-function switchTab(tab) {
+async function switchTab(tab) {
+  var prevPanel = document.querySelector('.tab-panel.active');
+  if (prevPanel && prevPanel.id !== 'tab-' + tab) {
+    prevPanel.classList.add('leaving');
+    await new Promise(r => setTimeout(r, 180));
+    prevPanel.classList.remove('active', 'leaving');
+  }
+
   var tabs=['overview','players','predictions','impact','badges','pred-summary','accuracy','match-preds','fantasy-players','user-teams','power-rankings'];
   document.querySelectorAll('.tab-btn').forEach(function(b){
     var id = b.getAttribute('onclick').match(/'([^']+)'/)[1];
     b.classList.toggle('active', id === tab);
   });
-  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
-  var panel=document.getElementById('tab-'+tab); if(panel) panel.classList.add('active');
+  
+  var panel=document.getElementById('tab-'+tab); 
+  if(panel) {
+    panel.classList.add('active');
+    // Trigger staggering if container exists
+    var staggerCont = panel.querySelector('.stagger-load');
+    if (staggerCont) {
+        staggerCont.classList.remove('loaded');
+        setTimeout(() => staggerCont.classList.add('loaded'), 50);
+    }
+  }
   
   // Specific tab loads
   if(tab==='overview') setTimeout(renderCharts,60);

@@ -121,14 +121,25 @@ function applySidebarState() {
 /* ══════════════════════════════════════════════════════════════
    PANEL ROUTER
 ══════════════════════════════════════════════════════════════ */
-function showPanel(id) {
-  // Persist current panel to URL hash and sessionStorage for refresh restore
+async function showPanel(id) {
+  var prevPanel = document.querySelector('.admin-panel.active');
+  if (prevPanel && prevPanel.id !== 'panel-' + id) {
+    prevPanel.classList.add('leaving');
+    await new Promise(r => setTimeout(r, 180));
+    prevPanel.classList.remove('active', 'leaving');
+  }
+
+  // Draft Recovery Check
+  if (id === 'stats') {
+    setTimeout(recoverDraft, 100);
+  }
+
+  // Persist current panel
   if (id) {
     location.hash = id;
     try { sessionStorage.setItem('admin-panel', id); } catch(_){}
   }
-  // Hide all panels
-  document.querySelectorAll('.admin-panel').forEach(function(p) { p.classList.remove('active'); });
+
   // Deactivate all sidebar links
   document.querySelectorAll('.sb-link').forEach(function(l) { l.classList.remove('active'); });
 
@@ -846,9 +857,13 @@ async function onStatsMatchChange() {
   _statsPlayerId = null;
   $id('stats-form-card').style.display='none';
   $id('stats-saved-card').style.display='none';
-  var sel = $id('stats-player-select');
-  if (sel) sel.value='';
+  
+  // Reset search
+  var searchInput = $id('stats-player-search');
+  if (searchInput) searchInput.value = '';
+  $id('stats-player-results').classList.remove('active');
   $id('stats-player-id').value='';
+  
   var chip = $id('stats-player-chip');
   if (chip) chip.style.display='none';
   if (!_statsMatchId) return;
@@ -870,12 +885,57 @@ async function onStatsMatchChange() {
     return pt===m.team1 || pt===m.team2 || pt===tCode(m.team1) || pt===tCode(m.team2) || pt===tShort(m.team1) || pt===tShort(m.team2);
   });
   
-  // Populate the native select dropdown
-  populateStatsPlayerSelect();
-
   $id('stats-saved-label').textContent = tShort(m.team1)+' vs '+tShort(m.team2);
   await loadSavedStats();
 }
+
+function onPlayerSearchInput(q) {
+  var resCont = $id('stats-player-results');
+  if (!q || q.length < 1) {
+    resCont.classList.remove('active');
+    return;
+  }
+  
+  var query = q.toLowerCase();
+  var filtered = _statPlayers.filter(function(p) {
+    var name = (p.name || '').toLowerCase();
+    var role = (p.role || '').toLowerCase();
+    var team = (p.ipl_team || '').toLowerCase();
+    var squad = _playerSquadMap[p.id];
+    var bfl = squad ? squad.team_name.toLowerCase() : '';
+    return name.includes(query) || role.includes(query) || team.includes(query) || bfl.includes(query);
+  }).slice(0, 10);
+  
+  if (!filtered.length) {
+    resCont.innerHTML = '<div style="padding:12px;color:var(--text3);font-size:12px;">No players found in this match</div>';
+    resCont.classList.add('active');
+    return;
+  }
+  
+  resCont.innerHTML = filtered.map(function(p) {
+    var squad = _playerSquadMap[p.id];
+    var bflLabel = squad ? '<span style="color:var(--accent);font-size:10px;">' + UI.esc(UI.tShort(squad.team_name)) + '</span>' : '';
+    var initials = (p.name||'').split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
+    
+    return '<div class="search-item" onclick="selectStatPlayer(\''+p.id+'\', \''+UI.esc(p.name)+'\', \''+UI.esc(p.role)+'\', \''+UI.esc(p.ipl_team)+'\')">'+
+      '<div class="search-item-img" style="display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;">'+initials+'</div>'+
+      '<div class="search-item-info">'+
+        '<div class="search-item-name">'+UI.esc(p.name)+'</div>'+
+        '<div class="search-item-meta">'+UI.esc(p.role)+' · '+UI.esc(p.ipl_team)+'</div>'+
+      '</div>'+
+      bflLabel +
+    '</div>';
+  }).join('');
+  resCont.classList.add('active');
+}
+
+// Close search results when clicking outside
+document.addEventListener('click', function(e) {
+  if (e.target.id !== 'stats-player-search') {
+    var results = $id('stats-player-results');
+    if (results) results.classList.remove('active');
+  }
+});
 
 function filterStatPlayers() {
   var team = $id('stats-team-filter').value;
@@ -885,41 +945,17 @@ function filterStatPlayers() {
     if (!team) return m ? (pt===m.team1 || pt===m.team2 || pt===tCode(m.team1) || pt===tCode(m.team2) || pt===tShort(m.team1) || pt===tShort(m.team2)) : true;
     return pt===team || pt===tCode(team) || pt===tShort(team);
   });
-  populateStatsPlayerSelect();
-}
-
-function populateStatsPlayerSelect() {
-  var sel = $id('stats-player-select');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">— Select player to enter stats —</option>' + 
-    _statPlayers.map(function(p){
-      var squad = _playerSquadMap[p.id];
-      var teamLabel = squad ? UI.tShort(squad.team_name) : null;
-      var optionText = teamLabel ? UI.esc(p.name)+' ('+teamLabel+')' : UI.esc(p.name);
-      return '<option value="'+p.id+'">'+optionText+'</option>';
-    }).join('');
-}
-
-async function onStatPlayerSelectChange() {
-  var id = $id('stats-player-select').value;
-  if (!id) {
-    clearStatsFields(false);
-    $id('stats-form-card').style.display='none';
-    var chip = $id('stats-player-chip');
-    if (chip) chip.style.display='none';
-    return;
-  }
-  var p = _statPlayers.find(function(x){return x.id===id;});
-  if (p) selectStatPlayer(id, p.name, p.role, p.ipl_team);
-}
-
-function closePlayerSearch() {
-  // deprecated, kept for safety
 }
 
 async function selectStatPlayer(id, name, role, iplTeam) {
   _statsPlayerId = id;
   $id('stats-player-id').value = id;
+
+  // UI Cleanup
+  var searchInput = $id('stats-player-search');
+  if (searchInput) searchInput.value = name;
+  var results = $id('stats-player-results');
+  if (results) results.classList.remove('active');
 
   var squad = _playerSquadMap[id];
   var bflTeam = squad ? UI.tShort(squad.team_name) : '';
@@ -1000,14 +1036,57 @@ function getStatsObj() {
   };
 }
 
-function recalcLive() {
-  var s   = getStatsObj();
-  var pts = (API.calcBattingPoints(s)||0) + (API.calcBowlingPoints(s)||0) + (API.calcFieldingPoints(s)||0);
-  var ring = $id('pts-ring'); if (!ring) return;
-  ring.textContent = Math.round(pts);
-  ring.style.borderColor = pts>150?'var(--gold)':pts>75?'var(--accent)':'var(--border)';
-  ring.style.color       = pts>150?'var(--gold)':pts>75?'var(--accent)':'var(--text2)';
-  ring.style.background  = pts>150?'rgba(245,200,66,.12)':pts>75?'var(--accent-dim)':'var(--bg3)';
+function onStatInput() {
+  recalcLive();
+  saveDraft();
+}
+
+function saveDraft() {
+  if (!_statsMatchId || !_statsPlayerId) return;
+  var s = getStatsObj();
+  var draft = {
+    match_id: _statsMatchId,
+    player_id: _statsPlayerId,
+    stats: s,
+    ts: Date.now()
+  };
+  localStorage.setItem('bfl_stats_draft', JSON.stringify(draft));
+  
+  var status = $id('draft-status');
+  if (status) {
+    status.style.opacity = '1';
+    setTimeout(() => { status.style.opacity = '0'; }, 1500);
+  }
+}
+
+function recoverDraft() {
+  var raw = localStorage.getItem('bfl_stats_draft');
+  if (!raw) return;
+  try {
+    var draft = JSON.parse(raw);
+    // Only recover if within 2 hours
+    if (Date.now() - draft.ts > 7200000) return;
+    
+    UI.toast('Draft recovered for ' + (draft.player_id ? 'selected player' : 'stats entry'), 'info');
+    
+    // If same match, set it
+    if (draft.match_id) {
+      var matchSel = $id('stats-match');
+      if (matchSel) {
+        matchSel.value = draft.match_id;
+        onStatsMatchChange();
+      }
+    }
+    
+    // If same player, select it
+    if (draft.player_id) {
+      var p = _players.find(x => x.id === draft.player_id);
+      if (p) {
+        selectStatPlayer(p.id, p.name, p.role, p.ipl_team);
+        if (draft.stats) prefillStats(draft.stats);
+      }
+    }
+  } catch(e) { console.warn('Draft recovery failed', e); }
 }
 
 async function saveStats() {
@@ -1019,7 +1098,12 @@ async function saveStats() {
   UI.showConfirm({ icon:'📊', title:'Save Player Stats?', msg:'Est. points: '+est,
     consequence:'Overwrites any existing stats for this player+match.', okLabel:'Save', okClass:'btn-accent',
     onOk: async function(){
-      try { await API.upsertPlayerStats(s); UI.toast('Stats saved!','success'); await loadSavedStats(); }
+      try { 
+        await API.upsertPlayerStats(s); 
+        UI.toast('Stats saved!','success'); 
+        localStorage.removeItem('bfl_stats_draft'); // Clear draft on success
+        await loadSavedStats(); 
+      }
       catch(e){ UI.toast('Save failed: '+e.message,'error'); }
     }
   });

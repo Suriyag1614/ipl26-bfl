@@ -107,6 +107,19 @@ button { cursor:pointer; font-family:inherit; }
 @keyframes shine     { 0%{transform:translateX(-130%)skewX(-15deg)} 100%{transform:translateX(230%)skewX(-15deg)} }
 @keyframes row-in    { from{opacity:0;transform:translateX(-12px)} to{opacity:1;transform:none} }
 @keyframes pulse-acc { 0%,100%{box-shadow:0 0 0 0 var(--accent-glow)} 50%{box-shadow:0 0 0 8px transparent} }
+@keyframes fade-slide-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fade-slide-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
+
+/* Autocomplete search results */
+.search-results { position:absolute; top:100%; left:0; right:0; background:var(--bg2); border:1px solid var(--border-h); border-radius:var(--radius); margin-top:5px; z-index:1000; box-shadow:var(--shadow-lg); max-height:300px; overflow-y:auto; display:none; }
+.search-results.active { display:block; }
+.search-item { display:flex; align-items:center; gap:12px; padding:10px 14px; cursor:pointer; border-bottom:1px solid var(--border); transition:background var(--t); }
+.search-item:last-child { border-bottom:none; }
+.search-item:hover, .search-item.focused { background:var(--bg3); }
+.search-item-img { width:32px; height:32px; border-radius:50%; object-fit:cover; background:var(--bg3); border:1px solid var(--border); }
+.search-item-info { flex:1; min-width:0; }
+.search-item-name { font-weight:700; font-family:var(--f-ui); font-size:14px; line-height:1.2; }
+.search-item-meta { font-size:11px; color:var(--text3); }
 
 /* ═══════════════════════════════════════════════
    LAYOUT
@@ -635,15 +648,35 @@ body { display:flex; flex-direction:column; }
 .podium-3 .podium-block { height:62px; background:linear-gradient(180deg,rgba(180,120,60,.14),transparent); }
 
 /* ═══════════════════════════════════════════════
-   TABS
+   TABS & PANELS (Transitions)
 ═══════════════════════════════════════════════ */
 .tabs { display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:22px;overflow-x:auto;scrollbar-width:none; }
 .tabs::-webkit-scrollbar { display:none; }
 .tab-btn { padding:10px 16px;background:transparent;border:none;border-bottom:2px solid transparent; font-family:var(--f-ui);font-size:13px;font-weight:800;letter-spacing:.5px;color:var(--text3); transition:all var(--t);white-space:nowrap;margin-bottom:-1px; }
 .tab-btn:hover  { color:var(--text2); }
 .tab-btn.active { color:var(--accent);border-bottom-color:var(--accent); }
-.tab-panel       { display:none; animation:fade-up .28s ease both; }
-.tab-panel.active{ display:block; }
+
+.tab-panel, .admin-panel { 
+    display: none; 
+    opacity: 0; 
+}
+.tab-panel.active, .admin-panel.active { 
+    display: block; 
+    animation: fade-slide-in 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.tab-panel.leaving, .admin-panel.leaving {
+    display: block;
+    animation: fade-slide-out 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Staggered load class utility */
+.stagger-load > * {
+    opacity: 0;
+    transform: translateY(10px);
+}
+.stagger-load.loaded > * {
+    animation: fade-slide-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
 
 /* ═══════════════════════════════════════════════
     PAGE HEADER
@@ -729,6 +762,10 @@ body:has(.login-wrap) #toast-container {
 .skel-avatar { width: 40px; height: 40px; border-radius: 50%; }
 .skel-btn { height: 36px; width: 80px; border-radius: 6px; }
 .skel-pill { height: 32px; width: 100px; border-radius: 16px; }
+
+/* Pulse animation for skeletons */
+.skel-pulse { animation: skel-pulse 1.5s infinite ease-in-out; }
+@keyframes skel-pulse { 0% { opacity: 0.6; } 50% { opacity: 0.8; } 100% { opacity: 0.6; } }
 
 /* ═══════════════════════════════════════════════
    CALC LOG

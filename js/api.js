@@ -1687,6 +1687,56 @@ async fetchTeams() {
       };
     });
   },
+
+  /**
+   * LEAGUE INTELLIGENCE: Benchmarking analytics
+   */
+  async fetchLeagueStats() {
+    // 1. Fetch points log for all completed matches
+    const { data: logs, error } = await sb.from('points_log')
+      .select('match_id,total_points,fantasy_team_id');
+    if (error) throw error;
+    if (!logs || !logs.length) return { leagueAvg: 0, lastMatchAvg: 0, matchCount: 0 };
+
+    const matchIds = [...new Set(logs.map(l => l.match_id))];
+    const avgPerMatch = logs.reduce((sum, l) => sum + (l.total_points || 0), 0) / matchIds.length;
+    
+    // Sort matches to find the last one (approximate by ID or log count)
+    // For more accuracy, we could fetch match dates, but this is a good heuristic
+    const lastMatchId = matchIds[matchIds.length - 1];
+    const lastMatchLogs = logs.filter(l => l.match_id === lastMatchId);
+    const lastMatchAvg = lastMatchLogs.length 
+      ? lastMatchLogs.reduce((s, l) => s + (l.total_points || 0), 0) / lastMatchLogs.length 
+      : 0;
+    const lastMatchMax = lastMatchLogs.length 
+      ? Math.max(...lastMatchLogs.map(l => l.total_points || 0)) 
+      : 0;
+
+    return {
+      leagueAvg: Math.round(avgPerMatch * 10) / 10,
+      leagueAvgPerTeamMatch: Math.round((logs.reduce((s,l) => s+(l.total_points||0), 0) / logs.length) * 10) / 10,
+      lastMatchAvg: Math.round(lastMatchAvg * 10) / 10,
+      lastMatchMax: Math.round(lastMatchMax * 10) / 10,
+      matchCount: matchIds.length,
+      totalEntries: logs.length
+    };
+  },
+
+  async fetchMyMatchConsistency(teamId) {
+    const { data, error } = await sb.from('points_log')
+      .select('total_points')
+      .eq('fantasy_team_id', teamId);
+    if (error) throw error;
+    if (!data || data.length < 2) return 0;
+    
+    const pts = data.map(d => d.total_points || 0);
+    const mean = pts.reduce((s,v) => s+v, 0) / pts.length;
+    const variance = pts.reduce((s,v) => s + Math.pow(v - mean, 2), 0) / pts.length;
+    const stdDev = Math.sqrt(variance);
+    // Lower is "more consistent", but we'll return a score out of 100
+    // 0 stdDev = 100 consistency, 200 stdDev = 0 consistency (capped)
+    return Math.max(0, Math.min(100, Math.round(100 - (stdDev / 1.5))));
+  }
 };
 
 // Expose for inline usage and cross-file access.

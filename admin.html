@@ -645,25 +645,22 @@
 
   <!-- ════ PLAYER STATS ════ -->
   <div class="admin-panel" id="panel-stats">
-    <div class="section-hdr">
-      <div><div class="section-title">Player Stats Entry</div><div class="section-sub">Enter per-match stats — live points preview</div></div>
-      <button class="btn btn-ghost btn-sm" onclick="openCSVModal()">📤 Bulk CSV Upload</button>
-    </div>
-    <div class="card mb-16">
+    <d    <div class="card mb-16">
       <div class="form-row">
-        <div class="form-group">
+        <div class="form-group" style="flex:1;">
           <label class="form-label">Match</label>
           <select class="form-select" id="stats-match" onchange="onStatsMatchChange()"><option value="">— Select match —</option></select>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="flex:1;">
           <label class="form-label">Filter by Team</label>
           <select class="form-select" id="stats-team-filter" onchange="filterStatPlayers()"><option value="">Both Teams</option></select>
         </div>
-        <div class="form-group" style="flex:2;">
-          <label class="form-label">Select Player</label>
-          <select class="form-select" id="stats-player-select" onchange="onStatPlayerSelectChange()">
-            <option value="">— Select player to enter stats —</option>
-          </select>
+        <div class="form-group" style="flex:2; position:relative;">
+          <label class="form-label">Smart Search Player</label>
+          <div style="position:relative;">
+            <input type="text" class="form-input" id="stats-player-search" placeholder="Search by name, team or role..." oninput="onPlayerSearchInput(this.value)" onfocus="onPlayerSearchInput(this.value)" autocomplete="off">
+            <div id="stats-player-results" class="search-results"></div>
+          </div>
           <input type="hidden" id="stats-player-id">
         </div>
       </div>
@@ -680,38 +677,52 @@
           </div>
         </div>
         <div style="display:flex;gap:8px;">
+          <div id="draft-status" style="font-size:10px; color:var(--text3); display:flex; align-items:center; gap:4px; opacity:0; transition:opacity 0.3s;">
+             <span class="nav-logo-dot" style="width:6px; height:6px; background:var(--cyan);"></span> Autosaved
+          </div>
           <button class="btn btn-ghost btn-sm" onclick="clearStatsForm()">Clear</button>
           <button class="btn btn-accent" onclick="saveStats()">💾 Save Stats</button>
         </div>
       </div>
       <div style="margin-bottom:16px;">
-        <div style="font-family:var(--f-ui);font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#f87171;margin-bottom:8px;">🏏 Batting</div>
+        <div style="font-family:var(--f-ui);font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#f87171;margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          🏏 Batting <span style="font-size:10px; font-weight:400; color:var(--text3);">(Runs, Balls, Fours, Sixes, NO)</span>
+        </div>
         <div class="stats-form-grid">
-          <div class="stat-group"><label>Runs</label><input class="form-input font-mono" type="number" id="s-runs" min="0" oninput="recalcLive()"></div>
-          <div class="stat-group"><label>Balls Faced</label><input class="form-input font-mono" type="number" id="s-balls" min="0" oninput="recalcLive()"></div>
-          <div class="stat-group"><label>Fours</label><input class="form-input font-mono" type="number" id="s-fours" min="0" oninput="recalcLive()"></div>
-          <div class="stat-group"><label>Sixes</label><input class="form-input font-mono" type="number" id="s-sixes" min="0" oninput="recalcLive()"></div>
+          <div class="stat-group"><label>Runs</label><input class="form-input font-mono" type="number" id="s-runs" min="0" oninput="onStatInput()"></div>
+          <div class="stat-group"><label>Balls</label><input class="form-input font-mono" type="number" id="s-balls" min="0" oninput="onStatInput()"></div>
+          <div class="stat-group"><label>4s</label><input class="form-input font-mono" type="number" id="s-fours" min="0" oninput="onStatInput()"></div>
+          <div class="stat-group"><label>6s</label><input class="form-input font-mono" type="number" id="s-sixes" min="0" oninput="onStatInput()"></div>
           <div class="stat-group"><label>Not Out?</label>
-            <select class="form-select" id="s-notout" onchange="recalcLive()">
+            <select class="form-select" id="s-notout" onchange="onStatInput()">
               <option value="">No</option><option value="true">Yes ✓</option>
             </select>
           </div>
         </div>
       </div>
       <div style="margin-bottom:16px;">
-        <div style="font-family:var(--f-ui);font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#60a5fa;margin-bottom:8px;">🎳 Bowling</div>
+        <div style="font-family:var(--f-ui);font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#60a5fa;margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          Bowling <span style="font-size:10px; font-weight:400; color:var(--text3);">(Overs, Maidens, Runs C., Wickets)</span>
+        </div>
         <div class="stats-form-grid">
-          <div class="stat-group"><label>Overs</label><input class="form-input font-mono" type="number" id="s-overs" min="0" step="0.1" oninput="recalcLive()"></div>
-          <div class="stat-group"><label>Maidens</label><input class="form-input font-mono" type="number" id="s-maidens" min="0" oninput="recalcLive()"></div>
-          <div class="stat-group"><label>Runs Conceded</label><input class="form-input font-mono" type="number" id="s-runsc" min="0" oninput="recalcLive()"></div>
-          <div class="stat-group"><label>Wickets</label><input class="form-input font-mono" type="number" id="s-wickets" min="0" oninput="recalcLive()"></div>
+          <div class="stat-group"><label>Overs</label><input class="form-input font-mono" type="number" id="s-overs" min="0" step="0.1" oninput="onStatInput()"></div>
+          <div class="stat-group"><label>Maidens</label><input class="form-input font-mono" type="number" id="s-maidens" min="0" oninput="onStatInput()"></div>
+          <div class="stat-group"><label>Runs C.</label><input class="form-input font-mono" type="number" id="s-runsc" min="0" oninput="onStatInput()"></div>
+          <div class="stat-group"><label>Wickets</label><input class="form-input font-mono" type="number" id="s-wickets" min="0" oninput="onStatInput()"></div>
         </div>
       </div>
       <div>
-        <div style="font-family:var(--f-ui);font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#34d399;margin-bottom:8px;">🧤 Fielding</div>
+        <div style="font-family:var(--f-ui);font-weight:800;text-transform:uppercase;letter-spacing:1px;color:#34d399;margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+          Fielding <span style="font-size:10px; font-weight:400; color:var(--text3);">(Catches, RO, Stump.)</span>
+        </div>
         <div class="stats-form-grid">
-          <div class="stat-group"><label>Catches</label><input class="form-input font-mono" type="number" id="s-catches" min="0" oninput="recalcLive()"></div>
-          <div class="stat-group"><label>Run Outs</label><input class="form-input font-mono" type="number" id="s-runouts" min="0" oninput="recalcLive()"></div>
+          <div class="stat-group"><label>Catches</label><input class="form-input font-mono" type="number" id="s-catches" min="0" oninput="onStatInput()"></div>
+          <div class="stat-group"><label>Run Outs</label><input class="form-input font-mono" type="number" id="s-runouts" min="0" oninput="onStatInput()"></div>
+          <div class="stat-group"><label>Stumpings</label><input class="form-input font-mono" type="number" id="s-stumpings" min="0" oninput="onStatInput()"></div>
+        </div>
+      </div>
+    </div>
+nput class="form-input font-mono" type="number" id="s-runouts" min="0" oninput="recalcLive()"></div>
           <div class="stat-group"><label>Stumpings</label><input class="form-input font-mono" type="number" id="s-stumpings" min="0" oninput="recalcLive()"></div>
         </div>
       </div>
