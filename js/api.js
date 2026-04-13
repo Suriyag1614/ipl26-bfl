@@ -1174,7 +1174,7 @@ const API = {
     picks.sort((a, b) => b.pts - a.pts);
     return {
       total_pts: totalPts,
-      uses: impactStats.used,
+      uses: impactStats.uses,
       remaining: impactStats.remaining,
       best_picks: picks.slice(0, 3),
       history: history.reverse()
@@ -1320,22 +1320,38 @@ const API = {
     return !!data?.is_active;
   },
 
-  /* Impact Stats (Merged & Robust) */
+/* Impact Stats (Merged & Robust) */
   async fetchImpactStats(teamId) {
-    // Join with matches to exclude abandoned
-    const { data, error } = await sb.from('impact_activations')
-      .select('id, is_active, match:matches(status)')
-      .eq('fantasy_team_id', teamId)
-      .eq('is_active', true);
-    if (error) throw error;
+    try {
+      const { data, error } = await sb.from('impact_activations')
+        .select('id, match_id')
+        .eq('fantasy_team_id', teamId)
+        .eq('is_active', true);
+      if (error) throw error;
 
-    const rows = data || [];
-    // Only count non-abandoned matches
-    const used = rows.filter(function(r) {
-      return r.match && r.match.status !== 'abandoned';
-    }).length;
+      const rows = data || [];
+      if (!rows.length) return { uses: 0, total: 8, remaining: 8 };
 
-    return { used, total: 8, remaining: Math.max(0, 8 - used) };
+      const matchIds = rows.map(r => r.match_id).filter(Boolean);
+      if (!matchIds.length) return { uses: rows.length, total: 8, remaining: Math.max(0, 8 - rows.length) };
+
+      const { data: matches } = await sb.from('matches')
+        .select('id, status')
+        .in('id', matchIds);
+
+      const matchStatusMap = {};
+      (matches || []).forEach(m => { matchStatusMap[m.id] = m.status; });
+
+      const used = rows.filter(r => {
+        const s = matchStatusMap[r.match_id];
+        return s && s !== 'abandoned';
+      }).length;
+
+      return { uses: used, total: 8, remaining: Math.max(0, 8 - used) };
+    } catch (e) {
+      console.warn('[fetchImpactStats] error:', e);
+      return { uses: 0, total: 8, remaining: 8 };
+    }
   },
 
   async submitImpactActivation(teamId, matchId, isActive) {
@@ -1729,13 +1745,16 @@ async fetchTeams() {
     if (error) throw error;
     if (!data || data.length < 2) return 0;
     
-    const pts = data.map(d => d.total_points || 0);
-    const mean = pts.reduce((s,v) => s+v, 0) / pts.length;
-    const variance = pts.reduce((s,v) => s + Math.pow(v - mean, 2), 0) / pts.length;
-    const stdDev = Math.sqrt(variance);
-    // Lower is "more consistent", but we'll return a score out of 100
-    // 0 stdDev = 100 consistency, 200 stdDev = 0 consistency (capped)
-    return Math.max(0, Math.min(100, Math.round(100 - (stdDev / 1.5))));
+    // Filter to only positive points (processed matches)
+    const pts = data.map(d => d.total_points || 0).filter(p => p > 0);
+    if (pts.length < 2) return 0;
+    
+    const max = Math.max(...pts);
+    const min = Math.min(...pts);
+    const range = max - min;
+    // Simple linear scale: 0 range = 100, 1000 range = 0
+    const score = Math.max(0, Math.min(100, 100 - Math.round(range / 10)));
+    return score;
   }
 };
 
