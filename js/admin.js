@@ -2281,8 +2281,8 @@ function renderFlTable(list) {
   if (!pageData.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:20px;">No player stats yet.</td></tr>'; renderFlPagination(0, 0); return; }
   tbody.innerHTML = pageData.map(function(p, i) {
     var rank = start + i + 1;
-    var iplLogo = p.ipl_team ? '<img src="images/teams/'+UI.tCode(p.ipl_team)+'outline.png" style="width:24px;height:24px;object-fit:contain;" alt="'+UI.esc(p.ipl_team)+'">' : '-';
-    var bflTeam = p.bfl_team ? UI.tShort(p.bfl_team) : '-';
+    var iplLogo = p.bfl_team ? '<img src="images/teams/'+UI.tShort(p.bfl_team)+'outline.png" style="width:24px;height:24px;object-fit:contain;" alt="'+UI.esc(p.bfl_team)+'">' : '-';
+    var bflTeam = p.ipl_team ? UI.tShort(p.ipl_team) : '-';
     var avg = p.matches > 0 ? Math.round(p.points/p.matches*10)/10 : 0;
     return '<tr>' +
       '<td style="font-weight:700;text-align:center;' + (rank<=3?'color:var(--gold);':'') + '">' + rank + '</td>' +
