@@ -423,12 +423,6 @@
     <button class="btn btn-danger btn-sm btn-full" onclick="doLogout()">Sign Out</button>
   </div>
 </aside>
-  </div>
-
-  <div class="sb-footer">
-    <button class="btn btn-danger btn-sm btn-full" onclick="doLogout()">Sign Out</button>
-  </div>
-</aside>
 
 <!-- Sidebar overlay (mobile) -->
 <div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>
@@ -645,7 +639,7 @@
 
   <!-- ════ PLAYER STATS ════ -->
   <div class="admin-panel" id="panel-stats">
-    <d    <div class="card mb-16">
+    <div class="card mb-16">
       <div class="form-row">
         <div class="form-group" style="flex:1;">
           <label class="form-label">Match</label>
@@ -678,7 +672,7 @@
         </div>
         <div style="display:flex;gap:8px;">
           <div id="draft-status" style="font-size:10px; color:var(--text3); display:flex; align-items:center; gap:4px; opacity:0; transition:opacity 0.3s;">
-             <span class="nav-logo-dot" style="width:6px; height:6px; background:var(--cyan);"></span> Autosaved
+             <span style="width:6px; height:6px; background:var(--cyan); border-radius:50%; display:inline-block;"></span> Autosaved
           </div>
           <button class="btn btn-ghost btn-sm" onclick="clearStatsForm()">Clear</button>
           <button class="btn btn-accent" onclick="saveStats()">💾 Save Stats</button>
@@ -719,11 +713,6 @@
           <div class="stat-group"><label>Catches</label><input class="form-input font-mono" type="number" id="s-catches" min="0" oninput="onStatInput()"></div>
           <div class="stat-group"><label>Run Outs</label><input class="form-input font-mono" type="number" id="s-runouts" min="0" oninput="onStatInput()"></div>
           <div class="stat-group"><label>Stumpings</label><input class="form-input font-mono" type="number" id="s-stumpings" min="0" oninput="onStatInput()"></div>
-        </div>
-      </div>
-    </div>
-nput class="form-input font-mono" type="number" id="s-runouts" min="0" oninput="recalcLive()"></div>
-          <div class="stat-group"><label>Stumpings</label><input class="form-input font-mono" type="number" id="s-stumpings" min="0" oninput="recalcLive()"></div>
         </div>
       </div>
     </div>

@@ -1015,7 +1015,13 @@ function clearStatsFields(hide) {
   recalcLive();
 }
 
-function clearStatsForm() { clearStatsFields(true); $id('stats-player-input').value=''; $id('stats-player-chip').style.display='none'; }
+function clearStatsForm() { 
+  clearStatsFields(true); 
+  var search = $id('stats-player-search');
+  if (search) search.value = ''; 
+  var chip = $id('stats-player-chip');
+  if (chip) chip.style.display = 'none'; 
+}
 
 function getStatsObj() {
   const getNum = function(id) { var v = $id(id).value; return v === '' ? null : parseInt(v, 10); };
@@ -1140,8 +1146,8 @@ async function editSavedStat(playerId, playerName) {
     if (!data) return;
     _statsPlayerId = playerId;
     $id('stats-player-id').value = playerId;
-    var sel = $id('stats-player-select');
-    if (sel) sel.value = playerId;
+    var search = $id('stats-player-search');
+    if (search) search.value = playerName;
     $id('sf-player-name').textContent = playerName;
     var p = data.player||{};
     $id('sf-player-sub').textContent = (p.role||'')+(p.ipl_team?' · '+p.ipl_team:'');
