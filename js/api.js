@@ -1093,12 +1093,13 @@ const API = {
       if (ip && (ip.final || 0) > 0) {
         impactUsage.push({
           match: log.match,
-          player: { name: ip.name },
+          player: { name: ip.name, effective_name: ip.effective_name, role: ip.role },
           points_earned: ip.final || 0,
         });
       }
     });
-    impactUsage.sort((a, b) => b.points_earned - a.points_earned);
+    // Sort by most recent match first (by match_no descending)
+    impactUsage.sort((a, b) => (b.match?.match_no || 0) - (a.match?.match_no || 0));
 
     return {
       breakdown, predictions, impactUsage, squad,
