@@ -355,7 +355,7 @@ async function loadMatches() {
 ══════════════════════════════════════════════════════════════ */
 function renderUsageMeter() {
   var MAX  = _impactStats.total || 8;
-  var used = _impactStats.used  || 0;
+  var used = _impactStats.uses !== undefined ? _impactStats.uses : (_impactStats.used || 0);
   var left = Math.max(0, MAX - used);
 
   var numEl   = document.getElementById('usage-left-num');
@@ -531,7 +531,7 @@ function renderSubmitted(m, pred, ia) {
       (still ?
         '<div class="pred-section">' +
           '<div class="pred-section-title"><span class="step-badge" style="background:var(--gold);">⚡</span> Impact Activation' +
-            '<span style="margin-left:auto;font-size:11px;color:var(--text3);">' + _impactStats.used + ' / 8 used</span>' +
+            '<span style="margin-left:auto;font-size:11px;color:var(--text3);">' + (_impactStats.uses !== undefined ? _impactStats.uses : (_impactStats.used || 0)) + ' / 8 used</span>' +
           '</div>' +
           buildImpactBanner(m) +
           '<button class="btn btn-gold" style="margin-top:14px;width:100%;" onclick="submitImpactOnly()">Update Impact Status</button>' +

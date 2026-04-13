@@ -300,11 +300,12 @@ async function loadNextMatch() {
 async function loadImpact() {
   try {
     var stats = await API.fetchImpactStats(_myTeamId);
-    var left = Math.max(0,8-(stats.used||0));
+    var used = stats.uses !== undefined ? stats.uses : (stats.used || 0);
+    var left = Math.max(0, 8 - used);
     var el = $('#impact-remaining');
     if(el){ el.textContent=left; el.style.color=left===0?'var(--red)':left<=2?'var(--gold)':'var(--accent)'; }
     var pips='';
-    for(var i=0;i<8;i++) pips+='<div title="'+(i<(stats.used||0)?'Used':'Available')+'" style="width:16px;height:16px;border-radius:50%;background:'+(i<(stats.used||0)?'var(--accent)':'var(--bg3)')+';border:1px solid '+(i<(stats.used||0)?'var(--accent)':'var(--border)')+';transition:all var(--t);"></div>';
+    for(var i=0;i<8;i++) pips+='<div title="'+(i<used?'Used':'Available')+'" style="width:16px;height:16px;border-radius:50%;background:'+(i<used?'var(--accent)':'var(--bg3)')+';border:1px solid '+(i<used?'var(--accent)':'var(--border)')+';transition:all var(--t);"></div>';
     $('#impact-pips').innerHTML = pips;
   } catch(e) { UI.toast('Could not load impact stats','error'); }
 }
