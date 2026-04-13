@@ -513,7 +513,7 @@ body { display:flex; flex-direction:column; }
 .table-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width: thin; 
       scrollbar-color: var(--border) transparent;
       border-radius: var(--radius-md);}
-.table-scroller { max-height: 440px; overflow-y: auto; }
+.table-scroller { overflow-y: auto; }
 .table-scroller::-webkit-scrollbar { width: 6px; }
 .table-scroller::-webkit-scrollbar-track { background: transparent; }
 .table-scroller::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
