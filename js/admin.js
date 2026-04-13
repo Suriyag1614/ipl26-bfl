@@ -2361,6 +2361,11 @@ function sortFlData(list) {
   list.forEach(function(p) { p.average = p.matches > 0 ? Math.round(p.points/p.matches*10)/10 : 0; });
   list.sort(function(a, b) {
     var av = a[col], bv = b[col];
+    if (col === 'season_best') {
+      av = av && av.pts ? av.pts : 0;
+      bv = bv && bv.pts ? bv.pts : 0;
+      return asc ? av - bv : bv - av;
+    }
     if (typeof av === 'string') av = av || '';
     if (typeof bv === 'string') bv = bv || '';
     if (col === 'name' || col === 'bfl_team' || col === 'ipl_team' || col === 'role') {
@@ -2382,7 +2387,7 @@ function renderFlTable(list) {
   if (!pageData.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state" style="padding:20px;">No player stats yet.</td></tr>'; renderFlPagination(0, 0); return; }
   tbody.innerHTML = pageData.map(function(p, i) {
     var rank = start + i + 1;
-    var iplLogo = p.bfl_team ? '<img src="images/teams/'+UI.tShort(p.bfl_team)+'outline.png" style="width:24px;height:24px;object-fit:contain;" alt="'+UI.esc(p.bfl_team)+'">' : '-';
+    var iplLogo = p.bfl_team ? '<img src="images/teams/'+UI.tShort(p.bfl_team)+'outline.png" style="width:40px;height:40px;object-fit:contain;" alt="'+UI.esc(p.bfl_team)+'">' : '-';
     var bflTeam = p.ipl_team ? UI.tShort(p.ipl_team) : '-';
     var avg = p.matches > 0 ? Math.round(p.points/p.matches*10)/10 : 0;
     var sb = p.season_best;
