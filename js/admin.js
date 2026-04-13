@@ -2230,21 +2230,32 @@ var _flPerPage = 12;
 async function loadFantasyLeaderboard() {
   var tbody = $id('fantasy-leaderboard-tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
   try {
     var stats = safeArr(await API.fetchAllPlayerStats());
     var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
-    var completedMatchIds = completedMatches.map(function(m) { return m.id; });
+    var completedMatchIds = completedMatches.map(function(m) { return String(m.id); });
     var playerPoints = {};
     var playerMatches = {};
+    var playerBestMatch = {};
     var playerIds = [];
     stats.forEach(function(s) {
-      if (s.match_id && completedMatchIds.includes(s.match_id)) {
+      if (s.match_id && completedMatchIds.includes(String(s.match_id))) {
         var pid = s.player_id;
         if (!playerIds.includes(pid)) playerIds.push(pid);
         var pts = API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s);
         playerPoints[pid] = (playerPoints[pid] || 0) + pts;
         playerMatches[pid] = (playerMatches[pid] || 0) + 1;
+        if (!playerBestMatch[pid] || pts > playerBestMatch[pid].pts) {
+          var match = _matches.find(function(m) { return String(m.id) === String(s.match_id); });
+          playerBestMatch[pid] = {
+            pts: pts,
+            match_id: s.match_id,
+            match_no: match ? match.match_no : null,
+            t1: match ? match.team1 : null,
+            t2: match ? match.team2 : null
+          };
+        }
       }
     });
     var playerMap = {};
@@ -2257,7 +2268,7 @@ async function loadFantasyLeaderboard() {
       var p = playerMap[pid];
       if (p) {
         var squad = _playerSquadMap[pid];
-        _flData.push({ id: pid, name: p.name, role: p.role, ipl_team: p.ipl_team, bfl_team: squad ? squad.team_name : null, points: playerPoints[pid], matches: playerMatches[pid] });
+        _flData.push({ id: pid, name: p.name, role: p.role, ipl_team: p.ipl_team, bfl_team: squad ? squad.team_name : null, points: playerPoints[pid], matches: playerMatches[pid], season_best: playerBestMatch[pid] || null });
       }
     }
     for (var pid in playerMatches) {
@@ -2265,13 +2276,13 @@ async function loadFantasyLeaderboard() {
         var p = playerMap[pid];
         if (p) {
           var squad = _playerSquadMap[pid];
-          _flData.push({ id: pid, name: p.name, role: p.role, ipl_team: p.ipl_team, bfl_team: squad ? squad.team_name : null, points: 0, matches: playerMatches[pid] });
+          _flData.push({ id: pid, name: p.name, role: p.role, ipl_team: p.ipl_team, bfl_team: squad ? squad.team_name : null, points: 0, matches: playerMatches[pid], season_best: playerBestMatch[pid] || null });
         }
       }
     }
     populateFlFilters();
     filterFantasyLeaderboard();
-  } catch(e) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
+  } catch(e) { tbody.innerHTML = '<tr><td colspan="8" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
 }
 
 function populateFlFilters() {
@@ -2368,12 +2379,14 @@ function renderFlTable(list) {
   var pageData = list.slice(start, start + _flPerPage);
   var info = $id('fl-info');
   if (info) info.textContent = total > 0 ? 'Showing ' + (start + 1) + '-' + Math.min(start + _flPerPage, total) + ' of ' + total + ' players' : 'No players';
-  if (!pageData.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:20px;">No player stats yet.</td></tr>'; renderFlPagination(0, 0); return; }
+  if (!pageData.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state" style="padding:20px;">No player stats yet.</td></tr>'; renderFlPagination(0, 0); return; }
   tbody.innerHTML = pageData.map(function(p, i) {
     var rank = start + i + 1;
     var iplLogo = p.bfl_team ? '<img src="images/teams/'+UI.tShort(p.bfl_team)+'outline.png" style="width:24px;height:24px;object-fit:contain;" alt="'+UI.esc(p.bfl_team)+'">' : '-';
     var bflTeam = p.ipl_team ? UI.tShort(p.ipl_team) : '-';
     var avg = p.matches > 0 ? Math.round(p.points/p.matches*10)/10 : 0;
+    var sb = p.season_best;
+    var sbHtml = sb ? '<div style="font-weight:700;color:var(--accent);">' + sb.pts + ' pts</div><div style="font-size:10px;color:var(--text3);">M' + (sb.match_no || '?') + ': ' + UI.tShort(sb.t1) + ' v ' + UI.tShort(sb.t2) + '</div>' : '—';
     return '<tr>' +
       '<td style="font-weight:700;text-align:center;' + (rank<=3?'color:var(--gold);':'') + '">' + rank + '</td>' +
       '<td style="text-align:center;">' + iplLogo + '</td>' +
@@ -2382,6 +2395,7 @@ function renderFlTable(list) {
       '<td style="font-weight:700;color:var(--accent);text-align:center;">' + p.points + '</td>' +
       '<td style="text-align:center;">' + p.matches + '</td>' +
       '<td style="text-align:center;">' + avg + '</td>' +
+      '<td style="text-align:center;">' + sbHtml + '</td>' +
     '</tr>';
   }).join('');
   renderFlPagination(total, totalPages);
