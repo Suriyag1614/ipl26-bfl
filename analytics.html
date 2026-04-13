@@ -42,6 +42,61 @@
       .metrics-row{grid-template-columns:repeat(2,1fr);}
       .analytics-chart-row { grid-template-columns:1fr !important; }
     }
+
+    /* ICC Style Leaderboard */
+    .fl-icc-container { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; }
+    .fl-icc-header { display: grid; grid-template-columns: 60px 80px 1fr 100px 180px; align-items: center; padding: 12px 20px; border-bottom: 2px solid var(--border); font-family: var(--f-ui); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); opacity: 0.8; }
+    .fl-icc-row { display: grid; grid-template-columns: 60px 80px 1fr 100px 180px; align-items: center; padding: 14px 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); transition: all 0.2s; }
+    .fl-icc-row:hover { border-color: var(--accent-dim); transform: translateX(4px); background: var(--bg3); }
+    
+    .fl-featured-card { position: relative; display: flex; align-items: flex-end; gap: 30px; padding: 30px 40px; background: linear-gradient(135deg, var(--bg2), var(--bg3)); border: 2px solid var(--accent-dim); border-radius: var(--radius-lg); margin-bottom: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    .fl-featured-card::before { content: "01"; position: absolute; left: -10px; top: -20px; font-family: var(--f-display); font-size: 160px; font-weight: 900; color: var(--accent); opacity: 0.05; pointer-events: none; }
+    .fl-featured-img-wrap { position: relative; width: 180px; height: 180px; flex-shrink: 0; z-index: 2; }
+    .fl-featured-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.4)); }
+    .fl-featured-info { flex: 1; z-index: 2; padding-bottom: 10px; }
+    .fl-featured-rank { font-family: var(--f-display); font-size: 48px; font-weight: 900; line-height: 1; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+    .fl-featured-name { font-family: var(--f-display); font-size: 32px; line-height: 1.1; margin-bottom: 12px; }
+    .fl-featured-name span { display: block; font-size: 14px; font-weight: 400; opacity: 0.8; font-family: var(--f-ui); text-transform: uppercase; letter-spacing: 1px; }
+    .fl-featured-name strong { display: block; font-weight: 900; text-transform: uppercase; color: var(--accent); }
+    .fl-featured-stats { display: flex; gap: 30px; margin-top: 20px; }
+    .fl-featured-stat { display: flex; flex-direction: column; }
+    .fl-featured-stat-val { font-family: var(--f-display); font-size: 36px; font-weight: 900; color: var(--accent); }
+    .fl-featured-stat-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text3); }
+
+    .fl-pos { font-family: var(--f-display); font-size: 20px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+    .fl-trend { font-size: 10px; font-weight: 700; width: 14px; text-align: center; }
+    .fl-team-logo { width: 36px; height: 36px; object-fit: contain; }
+    .fl-player-cell { display: flex; align-items: center; gap: 14px; }
+    .fl-name { line-height: 1.2; }
+    .fl-name span { display: block; font-size: 12px; font-weight: 500; opacity: 0.7; }
+    .fl-name strong { display: block; font-family: var(--f-display); font-size: 18px; font-weight: 800; text-transform: uppercase; color: var(--text-main); }
+    .fl-rating { font-family: var(--f-display); font-size: 22px; font-weight: 900; color: var(--accent); }
+    .fl-best-pts { font-family: var(--f-display); font-size: 16px; font-weight: 900; display: block; }
+    .fl-best-meta { font-size: 10px; color: var(--text3); display: block; margin-top: 2px; }
+
+    @media(max-width: 850px) {
+      .fl-icc-header, .fl-icc-row { grid-template-columns: 50px 70px 1fr 90px; }
+      .fl-icc-header .fl-best, .fl-icc-row .fl-best { display: none; }
+      .fl-featured-card { padding: 24px; gap: 24px; align-items: center; }
+      .fl-featured-img-wrap { width: 140px; height: 140px; }
+      .fl-featured-name { font-size: 26px; }
+      .fl-featured-stats { gap: 20px; }
+      .fl-featured-stat-val { font-size: 30px; }
+    }
+    @media(max-width: 650px) {
+      .fl-featured-card { flex-direction: column; align-items: center; text-align: center; padding: 30px 20px; text-align: center; }
+      .fl-featured-info { width: 100%; display: flex; flex-direction: column; align-items: center; }
+      .fl-featured-rank { justify-content: center; }
+      .fl-featured-stats { width: 100%; justify-content: center; border-top: 1px solid var(--border); padding-top: 20px; }
+    }
+    @media(max-width: 500px) {
+      .fl-icc-header { display: none; }
+      .fl-icc-row { grid-template-columns: 45px 1fr 80px; gap: 12px; padding: 12px 16px; }
+      .fl-icc-row .fl-team { display: none; }
+      .fl-pos { font-size: 18px; }
+      .fl-name strong { font-size: 16px; }
+      .fl-rating { font-size: 20px; }
+    }
   </style>
 </head>
 <body>
@@ -257,12 +312,9 @@
         <button class="btn btn-ghost btn-sm" onclick="resetFantasyLeaderboard()">✕</button>
       </div>
     </div>
-    <div class="card" style="padding:0;overflow:hidden;">
-      <div class="table-wrap table-scroller" style="max-height:600px;">
-        <table class="data-table" style="min-width:600px;">
-          <thead><tr><th style="text-align:center;">#</th><th style="text-align:center;">IPL</th><th>Player</th><th style="text-align:center;">BFL Team</th><th style="cursor:pointer;text-align:center;" onclick="sortFantasyLeaderboard('points')">Points ↕</th><th style="cursor:pointer;text-align:center;" onclick="sortFantasyLeaderboard('matches')">Mt ↕</th><th style="cursor:pointer;text-align:center;" onclick="sortFantasyLeaderboard('average')">Avg ↕</th></tr></thead>
-          <tbody id="fantasy-leaderboard-tbody"></tbody>
-        </table>
+    <div id="fl-icc-wrap" class="fl-icc-container">
+      <div id="fantasy-leaderboard-container">
+        <!-- Rendered via JS -->
       </div>
     </div>
     <div class="flex-between" style="padding:12px 0;">
@@ -755,9 +807,9 @@ async function loadTeamMatchPredictions() {
 }
 
 async function loadFantasyLeaderboard() {
-  var tbody = $id('fantasy-leaderboard-tbody');
-  if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
+  var container = $id('fantasy-leaderboard-container');
+  if (!container) return;
+  container.innerHTML = '<div class="skel skel-card" style="height:200px;margin-bottom:20px;"></div><div class="skel skel-row" style="margin:12px;"></div><div class="skel skel-row" style="margin:12px;"></div>';
   try {
     var stats = safeArr(await API.fetchAllPlayerStats());
     var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
@@ -784,7 +836,37 @@ async function loadFantasyLeaderboard() {
       var p = playerMap[pid];
       if (p) {
         var squad = _playerSquadMap[pid];
-        _flData.push({ id: pid, name: p.name, role: p.role, ipl_team: p.ipl_team, bfl_team: squad ? squad.team_name : null, points: playerPoints[pid], matches: playerMatches[pid] });
+        
+        // Calculate season best for this player
+        var pStats = stats.filter(function(s){ return s.player_id === pid && completedMatchIds.includes(s.match_id); });
+        var bestMatch = null;
+        var maxMatchPts = -1;
+        pStats.forEach(function(s) {
+          var mpts = API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s);
+          if (mpts > maxMatchPts) {
+            maxMatchPts = mpts;
+            bestMatch = s;
+          }
+        });
+
+        _flData.push({ 
+          id: pid, 
+          name: p.name, 
+          role: p.role, 
+          ipl_team: p.ipl_team, 
+          bfl_team: squad ? squad.team_name : null, 
+          points: playerPoints[pid], 
+          matches: playerMatches[pid],
+          image_url: p.image_url,
+          season_best: bestMatch ? {
+            pts: maxMatchPts,
+            match_id: bestMatch.match_id,
+            match_no: _matches.find(m => m.id === bestMatch.match_id)?.match_no,
+            m_title: _matches.find(m => m.id === bestMatch.match_id)?.match_title,
+            t1: _matches.find(m => m.id === bestMatch.match_id)?.team1,
+            t2: _matches.find(m => m.id === bestMatch.match_id)?.team2
+          } : null
+        });
       }
     }
     for (var pid in playerMatches) {
@@ -798,7 +880,10 @@ async function loadFantasyLeaderboard() {
     }
     populateFlFilters();
     filterFantasyLeaderboard();
-  } catch(e) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
+  } catch(e) { 
+    var container = $id('fantasy-leaderboard-container');
+    if (container) container.innerHTML = '<div style="color:var(--red);padding:24px;text-align:center;">' + UI.esc(e.message) + '</div>'; 
+  }
 }
 
 function populateFlFilters() {
@@ -869,24 +954,78 @@ function sortFlData(list) {
 }
 
 function renderFlTable(list) {
-  var tbody = $id('fantasy-leaderboard-tbody'); if (!tbody) return;
+  var container = $id('fantasy-leaderboard-container'); if (!container) return;
   var total = list.length, pages = Math.ceil(total / _flPerPage), start = (_flPage - 1) * _flPerPage;
   var pageData = list.slice(start, start + _flPerPage);
   if ($id('fl-info')) $id('fl-info').textContent = total > 0 ? 'Showing ' + (start + 1) + '-' + Math.min(start + _flPerPage, total) + ' of ' + total + ' players' : 'No players';
   
-  tbody.innerHTML = pageData.map(function(p, i) {
+  var html = '';
+  
+  // Rank 1 Featured Card (only on page 1)
+  if (_flPage === 1 && pageData.length > 0 && start === 0) {
+    var p0 = pageData[0];
+    var p0NameParts = p0.name.split(' ');
+    var p0First = p0NameParts[0], p0Last = p0NameParts.slice(1).join(' ');
+    var bflCode = p0.bfl_team ? (UI.tCode(p0.bfl_team) || 'BFL') : 'BFL';
+    var bflLogo = UI.getTeamLogo(p0.bfl_team) || 'images/bfl/bfl-logo.png';
+    var avg = p0.matches > 0 ? (p0.points / p0.matches).toFixed(1) : '0';
+    
+    html += '<div class="fl-featured-card">' +
+      '<div class="fl-featured-img-wrap"><img src="' + (p0.image_url || 'images/players/placeholder.png') + '" class="fl-featured-img" onerror="this.src=\'images/bfl/bfl-logo.png\'"></div>' +
+      '<div class="fl-featured-info">' +
+        '<div class="fl-featured-rank">01 <span>Leader</span></div>' +
+        '<div class="fl-featured-name"><span>' + UI.esc(p0First) + '</span><strong>' + UI.esc(p0Last) + '</strong></div>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:15px;">' +
+          '<img src="' + bflLogo + '" style="width:32px;height:32px;object-fit:contain;">' +
+          '<span style="font-weight:800;font-size:14px;color:var(--accent);">' + UI.esc(p0.bfl_team || 'Free Agent') + '</span>' +
+        '</div>' +
+        '<div class="fl-featured-stats">' +
+          '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + p0.points + '</div><div class="fl-featured-stat-lbl">Total FP</div></div>' +
+          '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + avg + '</div><div class="fl-featured-stat-lbl">Avg Pts</div></div>' +
+          '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + p0.matches + '</div><div class="fl-featured-stat-lbl">Matches</div></div>' +
+          (p0.season_best ? '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + p0.season_best.pts + ' pts</div><div class="fl-featured-stat-lbl">Season Best</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">M' + (p0.season_best.match_no || '?') + ': ' + UI.tShort(p0.season_best.t1) + ' v ' + UI.tShort(p0.season_best.t2) + '</div></div>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+    
+    // Remove Rank 1 from the list for the rows below
+    pageData = pageData.slice(1);
+    start++;
+  }
+
+  // ICC Header (appears after featured card if on page 1, or at the top if on subsequent pages)
+  html += '<div class="fl-icc-header">' +
+    '<div class="fl-pos">Pos</div>' +
+    '<div class="fl-team">BFL Team</div>' +
+    '<div class="fl-player">Player</div>' +
+    '<div class="fl-rating">Total FP</div>' +
+    '<div class="fl-best">Season Best</div>' +
+  '</div>';
+
+  html += pageData.map(function(p, i) {
     var rank = start + i + 1;
-    var iplLogo = p.ipl_team ? '<img src="images/teams/'+UI.tCode(p.ipl_team)+'outline.png" style="width:24px;height:24px;object-fit:contain;">' : '-';
-    return '<tr>' +
-      '<td style="text-align:center;font-weight:700;' + (rank<=3?'color:var(--gold);':'') + '">' + rank + '</td>' +
-      '<td style="text-align:center;">' + iplLogo + '</td>' +
-      '<td style="font-weight:600;">' + UI.esc(p.name) + ' <span style="font-size:10px;opacity:.6;">' + p.role + '</span></td>' +
-      '<td style="text-align:center;">' + UI.tShort(p.bfl_team||'—') + '</td>' +
-      '<td style="text-align:center;font-weight:700;color:var(--accent);">' + p.points + '</td>' +
-      '<td style="text-align:center;">' + p.matches + '</td>' +
-      '<td style="text-align:center;">' + p.average + '</td>' +
-    '</tr>';
+    var nameParts = p.name.split(' ');
+    var fName = nameParts[0], lName = nameParts.slice(1).join(' ');
+    var bflLogo = UI.getTeamLogo(p.bfl_team) || 'images/bfl/bfl-logo.png';
+    var sb = p.season_best;
+    var sbHtml = sb ? '<strong>' + sb.pts + 'pts</strong>' +
+      '<span>M' + (sb.match_no || '?') + ': ' + UI.tShort(sb.t1) + ' v ' + UI.tShort(sb.t2) + '</span>' : '—';
+    
+    return '<div class="fl-icc-row" style="animation: fade-up .3s ease ' + (i * 0.05) + 's both;">' +
+      '<div class="fl-pos">' + (rank < 10 ? '0' + rank : rank) + ' <span class="fl-trend">•</span></div>' +
+      '<div class="fl-team"><img src="' + bflLogo + '" class="fl-team-logo" title="' + UI.esc(p.bfl_team || 'BFL') + '"></div>' +
+      '<div class="fl-player fl-player-cell">' +
+        '<div class="fl-name"><span>' + UI.esc(fName) + '</span><strong>' + UI.esc(lName) + '</strong></div>' +
+      '</div>' +
+      '<div class="fl-rating">' + p.points + '</div>' +
+      '<div class="fl-best">' +
+        '<span class="fl-best-pts">' + (sb ? sb.pts + ' pts' : '—') + '</span>' +
+        '<span class="fl-best-meta">' + (sb ? 'M' + (sb.match_no || '?') + ': ' + UI.tShort(sb.t1) + ' v ' + UI.tShort(sb.t2) : '') + '</span>' +
+      '</div>' +
+    '</div>';
   }).join('');
+  
+  container.innerHTML = html;
   renderFlPagination(total, pages);
 }
 
