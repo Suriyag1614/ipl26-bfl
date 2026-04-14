@@ -321,7 +321,7 @@ async function loadSquad() {
 
 async function loadImpactStats() {
   try { _impactStats = await API.fetchImpactStats(_myTeamId); }
-  catch(e) { _impactStats = { used: 0, total: 8 }; }
+  catch(e) { _impactStats = { uses: 0, total: 8 }; }
 }
 
 async function loadMatches() {
@@ -378,7 +378,7 @@ function renderUsageMeter() {
 
 /* ══════════════════════════════════════════════════════════════
    MATCH TABS
-══════════════════════════════════════════════════════════════ */
+═════════════════════════════════════════════════════════════ */
 function renderMatchTabs() {
   var strip = document.getElementById('match-tabs');
   if (!strip) return;
@@ -493,7 +493,7 @@ function renderForm(m) {
         '<div class="pred-section-title">' +
           '<span class="step-badge" style="background:var(--gold);">3</span> Impact Player' +
           '<span style="color:var(--gold);font-weight:700;margin-left:6px;">3×</span>' +
-          '<span style="margin-left:auto;font-size:11px;color:var(--text3);">' + _impactStats.used + ' / 8 used</span>' +
+          '<span style="margin-left:auto;font-size:11px;color:var(--text3);">' + (_impactStats.uses !== undefined ? _impactStats.uses : (_impactStats.used || 0)) + ' / 8 used</span>' +
         '</div>' +
         buildImpactBanner(m) +
       '</div>' +
@@ -729,7 +729,8 @@ function buildImpactBanner(m) {
   function toCode(n) { var u = (n || '').toUpperCase(); return UI.TEAM_CODES[u] || u; }
   var pCode = toCode(p.ipl_team);
   var teamPlaying = pCode && (pCode === toCode(m.team1) || pCode === toCode(m.team2));
-  var exhausted = (_impactStats.used >= 8) && !_impactActive;
+  var used = _impactStats.uses !== undefined ? _impactStats.uses : (_impactStats.used || 0);
+  var exhausted = (used >= 8) && !_impactActive;
   var disabled = exhausted || !teamPlaying;
   var cls = 'impact-banner' + (_impactActive ? ' active-state' : '') + (exhausted ? ' exhausted' : '') + (!teamPlaying && !exhausted ? ' exhausted' : '');
 
@@ -820,7 +821,8 @@ function selectWinner(which) {
 }
 
 function toggleImpactActivation(isActive) {
-  if (isActive && _impactStats.used >= 8) {
+  var used = _impactStats.uses !== undefined ? _impactStats.uses : (_impactStats.used || 0);
+  if (isActive && used >= 8) {
     UI.toast('Maximum 8 activations reached for the season', 'error');
     var chk = document.getElementById('impact-chk');
     if (chk) chk.checked = false;
@@ -881,7 +883,8 @@ async function submitPrediction() {
   }
 
   // Validate impact (if activating)
-  if (_impactActive && _impactStats.used >= 8) {
+  var used = _impactStats.uses !== undefined ? _impactStats.uses : (_impactStats.used || 0);
+  if (_impactActive && used >= 8) {
     if (errEl) errEl.textContent = 'Impact Player limit (8/8) already reached.';
     return;
   }
@@ -948,7 +951,8 @@ async function submitImpactOnly() {
   var impact = _squad.find(function(s) { return s.is_impact; });
   var pName  = (impact && impact.player) ? impact.player.name : 'your Impact Player';
 
-  if (_impactActive && _impactStats.used >= 8) {
+  var used = _impactStats.uses !== undefined ? _impactStats.uses : (_impactStats.used || 0);
+  if (_impactActive && used >= 8) {
     UI.toast('Impact Player limit (8/8) already reached.', 'error');
     return;
   }
