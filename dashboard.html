@@ -203,6 +203,12 @@ async function init() {
   if(!_myTeam) { UI.toast('Team not linked. Contact admin.','error'); return; }
   _myTeamId = _myTeam.id;
 
+  // Update last_active on login and start polling
+  try {
+    await API.updateTeamLastActive(_myTeamId);
+  } catch(e) { console.warn('[last_active]', e); }
+  API.startActivePolling(_myTeamId, 60000);
+
   var now = new Date();
   var hr = now.getHours();
   var greet = hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';

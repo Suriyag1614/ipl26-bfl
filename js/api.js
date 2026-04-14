@@ -556,6 +556,205 @@ const API = {
     return this.applyAdjustment({ teamId, matchId, points: adjustment, remarks: reason });
   },
 
+  // ══════════════════════════════════════════════════════════════
+  //  TEAM ACTIVITY TRACKING
+  // ══════════════════════════════════════════════════════════════
+  async updateTeamLastActive(teamId) {
+    if (!teamId) return;
+    const { error } = await sb.from('fantasy_teams')
+      .update({ last_active: new Date().toISOString() })
+      .eq('id', teamId);
+    if (error) console.warn('[updateTeamLastActive]', error);
+  },
+
+  async fetchAllTeamsWithActivity() {
+    const { data, error } = await sb.from('fantasy_teams')
+      .select('id,team_name,owner_name,last_active,created_at')
+      .order('team_name');
+    if (error) throw error;
+    return data || [];
+  },
+
+  // Poll to keep team active while page is open
+  async startActivePolling(teamId, intervalMs) {
+    if (!teamId) return;
+    var ms = intervalMs || 60000; // default 1 min
+    this._activeTimer = setInterval(function() {
+      API.updateTeamLastActive(teamId);
+    }, ms);
+  },
+
+  stopActivePolling() {
+    if (this._activeTimer) {
+      clearInterval(this._activeTimer);
+      this._activeTimer = null;
+    }
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  //  TEAM ACTIVITY LOGGING
+  // ══════════════════════════════════════════════════════════════
+  async logTeamAction(teamId, action, details) {
+    const { error } = await sb.from('team_activity_log').insert({
+      fantasy_team_id: teamId,
+      action: action,
+      details: details || null,
+      created_at: new Date().toISOString()
+    });
+    if (error) console.warn('[logTeamAction]', error);
+  },
+
+  async fetchTeamActivityLog(teamId, limit = 50) {
+    const { data, error } = await sb.from('team_activity_log')
+      .select('*')
+      .eq('fantasy_team_id', teamId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return data || [];
+  },
+
+  async fetchAllActivityLogs(limit = 100) {
+    const { data, error } = await sb.from('team_activity_log')
+      .select('*,team:fantasy_teams(team_name,owner_name)')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return data || [];
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  //  ONLINE USERS (recently active)
+  // ══════════════════════════════════════════════════════════════
+  async fetchOnlineUsers(minutes = 15) {
+    const threshold = new Date(Date.now() - minutes * 60000).toISOString();
+    const today = new Date().toISOString().slice(0, 10);
+    const { data, error } = await sb.from('fantasy_teams')
+      .select('id,team_name,owner_name,last_active')
+      .or(`last_active.gt.${threshold},last_active.gte.${today}`)
+      .order('last_active', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  //  ACTIVITY SUMMARY
+  // ══════════════════════════════════════════════════════════════
+  async fetchActivitySummary(teamId) {
+    const team = await sb.from('fantasy_teams').select('*').eq('id', teamId).maybeSingle();
+    if (!team?.id) return null;
+
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 86400000).toISOString();
+    const monthAgo = new Date(now.getTime() - 30 * 86400000).toISOString();
+
+    // Get predictions this week
+    const predsWeek = await sb.from('predictions')
+      .select('id').eq('fantasy_team_id', teamId).gte('submitted_at', weekAgo);
+
+    // Get predictions this month
+    const predsMonth = await sb.from('predictions')
+      .select('id').eq('fantasy_team_id', teamId).gte('submitted_at', monthAgo);
+
+    // Get squad changes this month
+    const squadChanges = await sb.from('team_activity_log')
+      .select('id').eq('fantasy_team_id', teamId)
+      .in('action', ['squad_change', 'player_swap', 'role_change'])
+      .gte('created_at', monthAgo);
+
+    // Get last action
+    const lastAction = await sb.from('team_activity_log')
+      .select('*').eq('fantasy_team_id', teamId)
+      .order('created_at', { ascending: false }).limit(1).maybeSingle();
+
+    return {
+      team: team,
+      predictions_this_week: predsWeek.data?.length || 0,
+      predictions_this_month: predsMonth.data?.length || 0,
+      squad_changes_this_month: squadChanges.data?.length || 0,
+      last_action: lastAction,
+      last_active: team.last_active
+    };
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  //  IDLE TEAMS
+  // ══════════════════════════════════════════════════════════════
+  async fetchIdleTeams(days = 7) {
+    const threshold = new Date(Date.now() - days * 86400000).toISOString();
+    const { data, error } = await sb.from('fantasy_teams')
+      .select('id,team_name,owner_name,last_active,created_at')
+      .or('last_active.lt.' + threshold + ',last_active.is.null')
+      .order('last_active', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  //  PREDICTIONS - AVERAGES
+  // ══════════════════════════════════════════════════════════════
+  async fetchSeasonAvgTarget() {
+    const { data, error } = await sb.from('matches')
+      .select('actual_target')
+      .not('actual_target', 'is', null)
+      .in('status', ['completed', 'processed']);
+    if (error) return null;
+    const targets = (data || []).map(m => m.actual_target).filter(t => t);
+    if (!targets.length) return null;
+    const avg = targets.reduce((a, b) => a + b, 0) / targets.length;
+    return Math.round(avg);
+  },
+
+  async fetchGroundStats(venue) {
+    if (!venue) return null;
+    const { data, error } = await sb.from('ground_stats')
+      .select('*').eq('venue', venue).maybeSingle();
+    if (error || !data) return null;
+    return { avg_first_innings: data.avg_first_innings, match_count: data.match_count };
+  },
+
+  async upsertGroundStats(venue, firstInningsScore) {
+    if (!venue) return;
+    const existing = await sb.from('ground_stats').select('*').eq('venue', venue).maybeSingle();
+    const currentAvg = existing?.data?.avg_first_innings || 0;
+    const matchCount = existing?.data?.match_count || 0;
+    const newCount = matchCount + 1;
+    const newAvg = ((currentAvg * matchCount) + firstInningsScore) / newCount;
+
+    await sb.from('ground_stats').upsert({
+      venue: venue,
+      avg_first_innings: Math.round(newAvg * 10) / 10,
+      match_count: newCount,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'venue' });
+  },
+
+  // ══════════════════════════════════════════════════════════════
+  //  EXPORT ACTIVITY REPORT
+  // ══════════════════════════════════════════════════════════════
+  async exportActivityReport() {
+    const { data: teams, error: te } = await sb.from('fantasy_teams')
+      .select('id,team_name,owner_name,last_active,created_at');
+    if (te) throw te;
+
+    const rows = [];
+    for (const team of (teams || [])) {
+      const summary = await this.fetchActivitySummary(team.id);
+      rows.push({
+        team_name: team.team_name,
+        owner: team.owner_name,
+        last_active: team.last_active || 'Never',
+        created: team.created_at,
+        preds_week: summary?.predictions_this_week || 0,
+        preds_month: summary?.predictions_this_month || 0,
+        squad_changes: summary?.squad_changes_this_month || 0,
+        last_action: summary?.last_action?.action || 'None',
+        last_action_at: summary?.last_action?.created_at || ''
+      });
+    }
+    return rows;
+  },
+
   // ══════════════════════════════════════════════════════════════════
   //  POINTS ENGINE  — replacement-aware · PoM/PoT bonus not multiplied
   // ══════════════════════════════════════════════════════════════════

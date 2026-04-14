@@ -385,6 +385,10 @@
       Injuries & Replacements
       <span class="sb-badge" id="rep-badge" style="display:none">0</span>
     </button>
+    <button class="sb-link" data-panel="team-activity" onclick="showPanel('team-activity')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Team Activity
+    </button>
 
     <span class="sb-section-label">Analytics</span>
     <button class="sb-link" data-panel="pred-summary" onclick="showPanel('pred-summary')">
@@ -872,6 +876,48 @@
           </table>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ════ TEAM ACTIVITY ════ -->
+  <div class="admin-panel" id="panel-team-activity">
+    <div class="section-hdr">
+      <div><div class="section-title">Team Activity</div><div class="section-sub">All activity in one view</div></div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="loadTeamActivityDashboard()">↻ Refresh</button>
+        <button class="btn btn-accent btn-sm" onclick="exportActivityReport()">↓ Export</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="activity-kpis">
+      <div class="skel skel-chip"></div><div class="skel skel-chip"></div>
+      <div class="skel skel-chip"></div><div class="skel skel-chip"></div>
+    </div>
+
+    <div class="col-2">
+      <!-- Online Now -->
+      <div class="card">
+        <div class="card-title">Online Now</div>
+        <div id="online-users-list"><div class="skel skel-row"></div></div>
+      </div>
+      <!-- Idle Teams -->
+      <div class="card">
+        <div class="card-title">Idle Teams (7+ days)</div>
+        <div id="idle-teams-list"><div class="skel skel-row"></div></div>
+      </div>
+    </div>
+
+    <!-- Team Activity List -->
+    <div class="card mt-16">
+      <div class="card-title">All Teams - Last Active</div>
+      <div id="team-activity-list"><div class="skel skel-row"></div></div>
+    </div>
+
+    <!-- Recent Activity Log -->
+    <div class="card mt-16">
+      <div class="card-title">Recent Activity</div>
+      <div id="activity-log-list" style="max-height:300px;overflow-y:auto;"><div class="skel skel-row"></div></div>
     </div>
   </div>
 

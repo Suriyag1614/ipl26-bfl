@@ -147,7 +147,7 @@ function showPanel(id) {
   // Lazy-load panel
   var loaders = {
     dashboard:      loadDashboard,
-    fixtures:       renderFixtureList,
+    fixtures:       function() { filterFixtures(''); },
     results:        loadResultsPanel,
     matchctrl:      loadMatchCtrlPanel,
     stats:          function() {},
@@ -162,6 +162,7 @@ function showPanel(id) {
     'pred-accuracy': loadPredictionAccuracy,
     'match-preds':  loadMatchPredictionsPanel,
     'power-rankings': loadPowerRankings,
+    'team-activity': loadTeamActivityDashboard,
   };
   if (loaders[id]) loaders[id]();
 
@@ -474,12 +475,124 @@ async function loadDashboard() {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   FIXTURES
-══════════════════════════════════════════════════════════════ */
-async function renderFixtureList() {
-  buildTeamOpts();
-  filterFixtures('');
+   TEAM ACTIVITY DASHBOARD (ALL IN ONE)
+   ══════════════════════════════════════════════════════════════ */
+async function loadTeamActivityDashboard() {
+  var kpis = $id('activity-kpis');
+  var teamList = $id('team-activity-list');
+  var onlineList = $id('online-users-list');
+  var idleList = $id('idle-teams-list');
+  var logList = $id('activity-log-list');
+
+  if (kpis) kpis.innerHTML = '<div class="skel skel-chip"></div><div class="skel skel-chip"></div><div class="skel skel-chip"></div><div class="skel skel-chip"></div>';
+  if (teamList) teamList.innerHTML = '<div class="skel skel-row"></div>';
+  if (onlineList) onlineList.innerHTML = '<div class="skel skel-row"></div>';
+  if (idleList) idleList.innerHTML = '<div class="skel skel-row"></div>';
+  if (logList) logList.innerHTML = '<div class="skel skel-row"></div>';
+
+  try {
+    var [teams, online, idle, logs] = await Promise.all([
+      API.fetchAllTeamsWithActivity(),
+      API.fetchOnlineUsers(15),
+      API.fetchIdleTeams(7),
+      API.fetchAllActivityLogs(30)
+    ]);
+
+    var totalTeams = teams?.length || 0;
+    var onlineCount = online?.length || 0;
+    var idleCount = idle?.length || 0;
+    var activeCount = totalTeams - idleCount;
+
+    // KPIs
+    if (kpis) {
+      kpis.innerHTML =
+        '<div class="kpi-card" style="--kc:var(--accent);">'+
+          '<div class="kpi-val">'+totalTeams+'</div>'+
+          '<div class="kpi-lbl">Total Teams</div>'+
+        '</div>'+
+        '<div class="kpi-card" style="--kc:var(--green);">'+
+          '<div class="kpi-val">'+onlineCount+'</div>'+
+          '<div class="kpi-lbl">Online Now</div>'+
+        '</div>'+
+        '<div class="kpi-card" style="--kc:var(--gold);">'+
+          '<div class="kpi-val">'+activeCount+'</div>'+
+          '<div class="kpi-lbl">Active</div>'+
+        '</div>'+
+        '<div class="kpi-card" style="--kc:var(--red);">'+
+          '<div class="kpi-val">'+idleCount+'</div>'+
+          '<div class="kpi-lbl">Idle (7d)</div>'+
+        '</div>';
+    }
+
+    // Online users
+    if (onlineList) {
+      if (!onlineCount) {
+        onlineList.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px;">None online</div>';
+      } else {
+        onlineList.innerHTML = online.map(function(u) {
+          return '<div class="user-row">'+
+            '<div style="flex:1;font-weight:600;">'+UI.esc(u.team_name||'—')+'</div>'+
+            '<span class="status-active" style="padding:2px 8px;border-radius:10px;font-size:10px;">Active</span>'+
+          '</div>';
+        }).join('');
+      }
+    }
+
+    // Idle teams
+    if (idleList) {
+      if (!idleCount) {
+        idleList.innerHTML = '<div style="color:var(--green);font-size:13px;padding:12px;">All teams active!</div>';
+      } else {
+        idleList.innerHTML = idle.map(function(t) {
+          var daysAgo = t.last_active ? Math.floor((new Date() - new Date(t.last_active)) / 86400000) : null;
+          return '<div class="user-row">'+
+            '<div style="flex:1;font-weight:600;">'+UI.esc(t.team_name||'—')+'</div>'+
+            '<span style="color:var(--red);font-size:11px;">'+(daysAgo ? daysAgo + 'd ago' : 'Never')+'</span>'+
+          '</div>';
+        }).join('');
+      }
+    }
+
+    // Team list
+    if (teamList) {
+      var now = new Date().getTime();
+      var activeThreshold = 5 * 60 * 1000;
+      teamList.innerHTML = teams.map(function(t) {
+        var lastActive = t.last_active ? new Date(t.last_active).getTime() : null;
+        var isActive = lastActive && (now - lastActive) < activeThreshold;
+        var relTime = UI.relativeTime(t.last_active);
+        var statusText = relTime || 'Never';
+        var statusClass = isActive ? 'status-active' : relTime ? 'status-inactive' : 'status-never';
+
+        return '<div class="user-row" style="padding:6px 10px;">'+
+          '<div style="flex:1;font-weight:600;font-size:12px;">'+UI.esc(t.team_name||'—')+'</div>'+
+          '<span class="match-status '+statusClass+'" style="font-size:9px;">'+statusText+'</span>'+
+        '</div>';
+      }).join('');
+    }
+
+    // Activity log
+    if (logList) {
+      if (!logs || !logs.length) {
+        logList.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px;">No recent activity</div>';
+      } else {
+        logList.innerHTML = logs.slice(0,20).map(function(l) {
+          var timeAgo = UI.relativeTime(l.created_at) || UI.shortDate(l.created_at);
+          return '<div class="user-row" style="padding:6px 10px;font-size:11px;">'+
+            '<span style="color:var(--text3);min-width:50px;">'+timeAgo+'</span>'+
+            '<span style="flex:1;color:var(--text2);">'+UI.esc(l.team?.team_name || '—')+'</span>'+
+            '<span style="background:var(--accent-dim);color:var(--accent);padding:1px 6px;border-radius:3px;font-size:9px;">'+(l.action||'—')+'</span>'+
+          '</div>';
+        }).join('');
+      }
+    }
+
+  } catch(e) {
+    if (teamList) teamList.innerHTML = '<div style="color:var(--red);">Error: '+UI.esc(e.message)+'</div>';
+  }
 }
+
+function loadTeamActivity() { loadTeamActivityDashboard(); }
 
 function buildTeamOpts() {
   var opts = '<option value="">— Select team —</option>' +
@@ -694,10 +807,19 @@ async function saveResult() {
     okLabel:'Save Result', okClass:'btn-accent',
     onOk: async function() {
       try {
+        var match = _matches.find(function(x){return x.id===matchId;});
         var upd = { winner, actual_target:target, is_locked:true, status:'completed', is_dls_applied:dls };
         if (pom) upd.player_of_match = pom;
         var {error} = await sb.from('matches').update(upd).eq('id',matchId);
         if (error) throw error;
+
+        // Update ground stats if venue exists and target is set
+        if (match && match.venue && target) {
+          try {
+            await API.upsertGroundStats(match.venue, target);
+          } catch(e) { console.warn('[ground_stats]', e); }
+        }
+
         await API._log('match_edit','match',matchId,null,upd);
         UI.toast('Result saved!','success');
         await loadAllMatches(); populateMatchOpts();
@@ -2632,6 +2754,193 @@ function jumpToSquadManagement(teamId) {
     sel.value = teamId;
     var event = new Event('change');
     sel.dispatchEvent(event);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TEAM ACTIVITY
+   ══════════════════════════════════════════════════════════════ */
+async function loadTeamActivity() {
+  var list = $id('team-activity-list');
+  if (!list) return;
+  list.innerHTML = '<div class="skel skel-row"></div>';
+  try {
+    var teams = await API.fetchAllTeamsWithActivity();
+    if (!teams || !teams.length) {
+      list.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px;">No teams found.</div>';
+      return;
+    }
+    var now = new Date().getTime();
+    var activeThreshold = 5 * 60 * 1000; // 5 minutes for "Active Now"
+    list.innerHTML = teams.map(function(t) {
+      var lastActive = t.last_active ? new Date(t.last_active).getTime() : null;
+      var isActive = lastActive && (now - lastActive) < activeThreshold;
+      var relTime = UI.relativeTime(t.last_active);
+      var statusText = relTime || 'Never';
+      var statusClass = isActive ? 'status-active' : relTime ? 'status-inactive' : 'status-never';
+
+      return '<div class="user-row">'+
+        '<div style="flex:1;">'+
+          '<div style="font-family:var(--f-ui);font-weight:700;font-size:13px;">'+UI.esc(t.team_name||'—')+'</div>'+
+          '<div style="font-size:11px;color:var(--text2);">'+(t.owner_name||'—')+'</div>'+
+        '</div>'+
+        '<span class="match-status '+statusClass+'">'+statusText+'</span>'+
+      '</div>';
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="color:var(--red);font-size:13px;padding:12px;">Error: '+UI.esc(e.message)+'</div>';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ONLINE USERS
+   ══════════════════════════════════════════════════════════════ */
+async function loadOnlineUsers() {
+  var list = $id('online-users-list');
+  var countEl = $id('online-count');
+  if (!list) return;
+
+  var mins = parseInt($id('online-time-filter')?.value || 5);
+  list.innerHTML = '<div class="skel skel-row"></div>';
+
+  try {
+    var users = await API.fetchOnlineUsers(mins);
+    var count = users?.length || 0;
+    if (countEl) countEl.textContent = count;
+
+    if (!count) {
+      list.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:12px;">No users online right now.</div>';
+      return;
+    }
+
+    list.innerHTML = users.map(function(u) {
+      return '<div class="user-row">'+
+        '<div style="flex:1;">'+
+          '<div style="font-family:var(--f-ui);font-weight:700;font-size:13px;">'+UI.esc(u.team_name||'—')+'</div>'+
+          '<div style="font-size:11px;color:var(--text2);">'+(u.owner_name||'—')+'</div>'+
+        '</div>'+
+        '<span class="match-status status-active">Active</span>'+
+      '</div>';
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="color:var(--red);font-size:13px;padding:12px;">Error: '+UI.esc(e.message)+'</div>';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   IDLE TEAMS
+   ══════════════════════════════════════════════════════════════ */
+async function loadIdleTeams() {
+  var list = $id('idle-teams-list');
+  var countEl = $id('idle-count');
+  if (!list) return;
+
+  var days = parseInt($id('idle-days-filter')?.value || 7);
+  list.innerHTML = '<div class="skel skel-row"></div>';
+
+  try {
+    var teams = await API.fetchIdleTeams(days);
+    var count = teams?.length || 0;
+    if (countEl) countEl.textContent = count;
+
+    if (!count) {
+      list.innerHTML = '<div style="color:var(--green);font-size:13px;padding:12px;">All teams are active!</div>';
+      return;
+    }
+
+    list.innerHTML = teams.map(function(t) {
+      var relTime = UI.relativeTime(t.last_active);
+      var daysAgo = t.last_active ? Math.floor((new Date() - new Date(t.last_active)) / 86400000) : 'Never';
+
+      return '<div class="user-row">'+
+        '<div style="flex:1;">'+
+          '<div style="font-family:var(--f-ui);font-weight:700;font-size:13px;">'+UI.esc(t.team_name||'—')+'</div>'+
+          '<div style="font-size:11px;color:var(--text2);">'+(t.owner_name||'—')+'</div>'+
+        '</div>'+
+        '<span class="match-status status-never">'+(daysAgo === 'Never' ? 'Never' : daysAgo + 'd ago')+'</span>'+
+      '</div>';
+    }).join('');
+  } catch(e) {
+    list.innerHTML = '<div style="color:var(--red);font-size:13px;padding:12px;">Error: '+UI.esc(e.message)+'</div>';
+  }
+}
+
+/* ═══��══════════════════════════════════════════════════════════
+   ACTIVITY LOG
+   ══════════════════════════════════════════════════════════════ */
+async function loadActivityLog() {
+  var tbody = $id('activity-log-tbody');
+  if (!tbody) return;
+
+  var filter = $id('activity-filter')?.value || '';
+  tbody.innerHTML = '<tr><td colspan="4"><div class="skel skel-row"></div></td></tr>';
+
+  try {
+    var logs = await API.fetchAllActivityLogs(100);
+
+    if (filter) {
+      logs = logs.filter(function(l) { return l.action === filter; });
+    }
+
+    if (!logs.length) {
+      tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text3);padding:12px;">No activity found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = logs.map(function(l) {
+      var teamName = l.team?.team_name || '—';
+      var details = l.details ? UI.esc(l.details) : '—';
+      var timeAgo = UI.relativeTime(l.created_at) || UI.shortDate(l.created_at);
+
+      return '<tr>'+
+        '<td style="font-size:12px;color:var(--text2);">'+timeAgo+'</td>'+
+        '<td style="font-weight:600;">'+UI.esc(teamName)+'</td>'+
+        '<td><span class="audit-tag" style="background:var(--accent-dim);color:var(--accent);">'+UI.esc(l.action||'—')+'</span></td>'+
+        '<td style="font-size:12px;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;">'+details+'</td>'+
+      '</tr>';
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="4" style="color:var(--red);padding:12px;">Error: '+UI.esc(e.message)+'</td></tr>';
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   EXPORT ACTIVITY REPORT
+   ══════════════════════════════════════════════════════════════ */
+async function exportActivityReport() {
+  try {
+    UI.toast('Generating report...', 'info');
+    var rows = await API.exportActivityReport();
+
+    if (!rows || !rows.length) {
+      UI.toast('No data to export', 'warn');
+      return;
+    }
+
+    var csv = 'Team Name,Owner,Last Active,Created,Predictions (Week),Predictions (Month),Squad Changes,Last Action,Last Action At\n';
+    rows.forEach(function(r) {
+      csv += '"'+(r.team_name||'').replace(/"/g,'""')+'",'+
+        '"'+(r.owner||'').replace(/"/g,'""')+'",'+
+        (r.last_active||'Never')+','+
+        (r.created||'')+','+
+        r.preds_week+','+
+        r.preds_month+','+
+        r.squad_changes+','+
+        (r.last_action||'None')+','+
+        (r.last_action_at||'')+'\n';
+    });
+
+    var blob = new Blob([csv], {type: 'text/csv'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'activity_report_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+
+    UI.toast('Report exported!', 'success');
+  } catch(e) {
+    UI.toast('Export failed: '+e.message, 'error');
   }
 }
 
