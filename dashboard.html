@@ -213,7 +213,7 @@ async function init() {
   var hr = now.getHours();
   var greet = hr<12?'Good morning':hr<17?'Good afternoon':'Good evening';
   document.getElementById('hero-greeting').innerHTML = greet + ' · <span id="hero-date">'+now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})+'</span>';
-  document.getElementById('hero-name').innerHTML = 'இனிய தமிழ் புத்தாண்டு நல்வாழ்த்துகள்!, ' + UI.championName(_myTeam.team_name) + ' 🥳';
+  document.getElementById('hero-name').innerHTML = 'Welcome Back!, ' + UI.championName(_myTeam.team_name) + ' 👋🏻';
 
   await Promise.all([loadStats(), loadNextMatch(), loadImpact(), loadPerformers(), loadRecent(), loadMiniLB()]);
   await API.checkAndAwardBadges(_myTeamId);
