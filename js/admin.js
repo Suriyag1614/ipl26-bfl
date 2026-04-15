@@ -532,7 +532,7 @@ async function loadTeamActivityDashboard() {
         onlineList.innerHTML = online.map(function(u) {
           return '<div class="user-row">'+
             '<div style="flex:1;font-weight:600;">'+UI.esc(u.team_name||'—')+'</div>'+
-            '<span class="status-active" style="padding:2px 8px;border-radius:10px;font-size:10px;">Active</span>'+
+            '<span class="status-active" style="padding:2px 8px;border-radius:10px;">Active</span>'+
           '</div>';
         }).join('');
       }
@@ -565,8 +565,8 @@ async function loadTeamActivityDashboard() {
         var statusClass = isActive ? 'status-active' : relTime ? 'status-inactive' : 'status-never';
 
         return '<div class="user-row" style="padding:6px 10px;">'+
-          '<div style="flex:1;font-weight:600;font-size:12px;">'+UI.esc(t.team_name||'—')+'</div>'+
-          '<span class="match-status '+statusClass+'" style="font-size:9px;">'+statusText+'</span>'+
+          '<div style="flex:1;font-weight:600;font-size:15px;">'+UI.esc(t.team_name||'—')+'</div>'+
+          '<span class="match-status '+statusClass+'" style="font-size:15px;">'+statusText+'</span>'+
         '</div>';
       }).join('');
     }
