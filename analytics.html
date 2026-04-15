@@ -147,7 +147,7 @@
   <!-- OVERVIEW -->
   <div class="tab-panel active" id="tab-overview">
     <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin-bottom:18px;">
-        <div class="card" style="padding:0; overflow:hidden;">
+        <div class="card" style="padding:0; overflow:auto;">
           <div class="card-title" style="padding:16px 20px 0;">Performance Benchmark</div>
           <div id="league-comparison-card" style="padding:24px;">
             <div class="skel skel-row" style="margin-bottom:12px;"></div>
@@ -275,7 +275,7 @@
   <!-- PREDICTION ACCURACY -->
   <div class="tab-panel" id="tab-accuracy">
     <div class="analytics-chart-row" style="display:grid;grid-template-columns:1fr 280px;gap:16px;">
-      <div class="card">
+      <div class="card" style="overflow:hidden">
         <div class="card-title">Accuracy by Match</div>
         <div id="accuracy-by-match" style="max-height:500px;overflow-y:auto;padding-right:8px;"><div class="skel skel-row"></div></div>
       </div>
@@ -337,7 +337,7 @@
 
   <!-- USER TEAMS OVERVIEW -->
   <div class="tab-panel" id="tab-user-teams">
-    <div class="card" style="padding:0;overflow:hidden;">
+    <div class="card" style="padding:0;overflow:auto;">
       <div class="table-wrap table-scroller" style="max-height:700px;">
         <table class="data-table" style="min-width:600px;">
           <thead><tr><th>User</th><th>Team Name</th><th>Captain</th><th>Vice-Captain</th><th>Impact</th><th>Roster</th></tr></thead>
@@ -349,7 +349,7 @@
 
   <!-- POWER RANKINGS -->
   <div class="tab-panel" id="tab-power-rankings">
-    <div class="card" style="padding:0;overflow:hidden;">
+    <div class="card" style="padding:0;overflow:auto;">
       <div class="table-wrap table-scroller">
         <table class="data-table">
           <thead><tr><th>Rank</th><th>Team</th><th>Pred Accuracy</th><th>Fantasy Points</th><th>BFL Score</th></tr></thead>
