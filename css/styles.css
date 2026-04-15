@@ -365,7 +365,7 @@ body { display:flex; flex-direction:column; }
   padding:22px; 
   position:relative; 
   max-height: 525px;
-  overflow:auto;
+  overflow-y:auto;
   transition:border-color var(--t), box-shadow var(--t), transform var(--t);
   animation:fade-up .4s ease both;
 }
