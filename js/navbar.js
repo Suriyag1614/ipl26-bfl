@@ -117,7 +117,10 @@ function buildNavbar(activePage, isAdmin) {
     '</aside>' +
     '<div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>';
 
-  applySidebarState(false);
+  // Apply sidebar state after a short delay to ensure DOM is ready
+  setTimeout(function() {
+    applySidebarState(false);
+  }, 50);
 
   // Mobile bottom nav — show 5 most important
   var bnavEl = document.getElementById('bottom-nav-inner');
@@ -146,10 +149,10 @@ function buildSbLinks(pages, allLinks, activePage) {
 }
 
 function toggleSidebar() {
-  // On mobile (<900px), toggle always closes sidebar
-  // On desktop, toggles between open/closed and persists
+  // On mobile (<900px), toggle between open/closed (no persistence)
+  // On desktop, toggles and persists state to localStorage
   if (window.innerWidth < 900) {
-    _sidebarOpen = false;
+    _sidebarOpen = !_sidebarOpen;
   } else {
     _sidebarOpen = !_sidebarOpen;
     try { localStorage.setItem('bfl_sidebar', _sidebarOpen ? '1' : '0'); } catch(e) {}
@@ -182,14 +185,12 @@ function applySidebarState(animate) {
   var icon     = document.getElementById('sb-toggle-icon');
   if (!sidebar) return;
 
-  // On mobile (<900px), sidebar should always be closed
-  var isMobile = window.innerWidth < 900;
-  var shouldBeOpen = !isMobile && _sidebarOpen;
+  var isDesktop = window.innerWidth >= 900;
 
-  if (shouldBeOpen) {
+  if (_sidebarOpen) {
     sidebar.classList.add('open');
     if (overlay) overlay.classList.add('visible');
-    if (wrap) wrap.classList.add('sidebar-open');
+    if (wrap && isDesktop) wrap.classList.add('sidebar-open');
   } else {
     sidebar.classList.remove('open');
     if (overlay) overlay.classList.remove('visible');
@@ -197,8 +198,8 @@ function applySidebarState(animate) {
   }
 
   if (icon) {
-    // Toggle between hamburger and X
-    icon.innerHTML = (shouldBeOpen)
+    // Show X icon when sidebar is open, hamburger when closed
+    icon.innerHTML = _sidebarOpen
       ? '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
       : '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
   }
