@@ -49,19 +49,25 @@
     .fl-icc-row { display: grid; grid-template-columns: 60px 80px 1fr 100px 180px; align-items: center; padding: 14px 20px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); transition: all 0.2s; }
     .fl-icc-row:hover { border-color: var(--accent-dim); transform: translateX(4px); background: var(--bg3); }
     
-    .fl-featured-card { position: relative; display: flex; align-items: anchor-center; gap: 30px; padding: 30px 40px; background: linear-gradient(135deg, var(--bg2), var(--bg3)); border: 2px solid var(--accent-dim); border-radius: var(--radius-lg); margin-bottom: 24px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-    .fl-featured-card::before { content: "01"; position: absolute; left: -10px; top: -20px; font-family: var(--f-display); font-size: 160px; font-weight: 900; color: var(--accent); opacity: 0.05; pointer-events: none; }
-    .fl-featured-img-wrap { position: relative; width: 180px; height: 180px; flex-shrink: 0; z-index: 2; }
-    .fl-featured-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 15px rgba(0,0,0,0.4)); }
+    .fl-featured-card { position: relative; display: flex; align-items: center; gap: 80px; padding: 40px 60px; background: linear-gradient(135deg, var(--bg2), var(--bg3)); border: 2px solid var(--accent-dim); border-radius: var(--radius-lg); margin-bottom: 32px; overflow: hidden; box-shadow: 0 15px 45px rgba(0,0,0,0.3); min-height: 420px; }
+    .fl-featured-card::before { content: "01"; position: absolute; right: 0px; top: -50px; font-family: var(--f-display); font-size: 180px; font-weight: 900; color: var(--accent); opacity: 0.05; pointer-events: none; }
+    .fl-featured-img-wrap { position: relative; width: 340px; height: 340px; flex-shrink: 0; z-index: 2; display: flex; align-items: flex-end; justify-content: center; margin-left: -40px; align-self: flex-end; margin-bottom: -40px; }
+    .fl-featured-img-wrap::after { content: ""; position: absolute; top: 50%; left: 55%; transform: translate(-50%, -50%); width: 520px; height: 520px; background: url('images/ipl/player-back-bg-numbers.png') no-repeat center; background-size: contain; z-index: -1; opacity: 0.35; }
+    .fl-featured-img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 15px 25px rgba(0,0,0,0.5)); position: relative; }
     .fl-featured-info { flex: 1; z-index: 2; padding-bottom: 10px; }
-    .fl-featured-rank { font-family: var(--f-display); font-size: 48px; font-weight: 900; line-height: 1; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
-    .fl-featured-name { font-family: var(--f-display); font-size: 32px; line-height: 1.1; margin-bottom: 12px; }
-    .fl-featured-name span { display: block; font-size: 14px; font-weight: 400; opacity: 0.8; font-family: var(--f-ui); text-transform: uppercase; letter-spacing: 1px; }
-    .fl-featured-name strong { display: block; font-weight: 900; text-transform: uppercase; color: var(--accent); }
-    .fl-featured-stats { display: flex; flex-wrap: wrap; gap: 30px; margin-top: 20px; }
-    .fl-featured-stat { display: flex; flex-direction: column; }
-    .fl-featured-stat-val { font-family: var(--f-display); font-size: 36px; font-weight: 900; color: var(--accent); }
-    .fl-featured-stat-lbl { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text3); }
+    
+    .fl-leader-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,193,7,0.08); border: 1px solid var(--accent-dim); padding: 5px 14px; border-radius: 4px; margin-bottom: 16px; }
+    .fl-leader-badge-text { font-family: var(--f-ui); font-size: 14px; font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: 0.8px; }
+    
+    .fl-featured-name { font-family: var(--f-display); font-size: 38px; line-height: 1; margin-bottom: 24px; }
+    .fl-featured-name span { display: block; font-size: 16px; font-weight: 400; opacity: 0.7; font-family: var(--f-ui); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+    .fl-featured-name strong { display: block; font-weight: 900; text-transform: uppercase; color: var(--accent); font-size: 52px; }
+
+    .fl-featured-stats-v { display: flex; flex-direction: column; gap: 14px; max-width: 420px; margin-top: 10px; }
+    .fl-featured-stat-v { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 6px; }
+    .fl-fstat-lbl { font-family: var(--f-ui); font-size: 16px; font-weight: 700; color: var(--text2); }
+    .fl-fstat-val { font-family: var(--f-display); font-size: 32px; font-weight: 900; color: var(--text); line-height: 1; }
+    .fl-fstat-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
     .fl-pos { font-family: var(--f-display); font-size: 20px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
     .fl-trend { font-size: 10px; font-weight: 700; width: 14px; text-align: center; }
@@ -77,17 +83,21 @@
     @media(max-width: 850px) {
       .fl-icc-header, .fl-icc-row { grid-template-columns: 50px 70px 1fr 90px; }
       .fl-icc-header .fl-best, .fl-icc-row .fl-best { display: none; }
-      .fl-featured-card { padding: 24px; gap: 24px; align-items: center; }
-      .fl-featured-img-wrap { width: 140px; height: 140px; }
-      .fl-featured-name { font-size: 26px; }
-      .fl-featured-stats { gap: 20px; }
-      .fl-featured-stat-val { font-size: 30px; }
+      .fl-featured-card { padding: 30px; gap: 40px; align-items: flex-end; }
+      .fl-featured-img-wrap { width: 220px; height: 220px; margin-left: -20px; margin-bottom: -30px; }
+      .fl-featured-img-wrap::after { width: 320px; height: 320px; }
+      .fl-featured-name { font-size: 30px; }
+      .fl-featured-name strong { font-size: 42px; }
+      .fl-featured-stats-v { gap: 10px; }
+      .fl-fstat-val { font-size: 26px; }
     }
     @media(max-width: 650px) {
-      .fl-featured-card { flex-direction: column; align-items: center; text-align: center; padding: 30px 20px; text-align: center; }
+      .fl-featured-card { flex-direction: column; align-items: center; text-align: center; padding: 40px 24px; }
       .fl-featured-info { width: 100%; display: flex; flex-direction: column; align-items: center; }
-      .fl-featured-rank { justify-content: center; }
-      .fl-featured-stats { width: 100%; justify-content: center; border-top: 1px solid var(--border); padding-top: 20px; }
+      .fl-featured-img-wrap { margin: 0 0 20px 0; width: 260px; height: 260px; align-self: center; }
+      .fl-featured-img-wrap::after { width: 380px; height: 380px; }
+      .fl-featured-img { bottom: 0; height: 110%; }
+      .fl-featured-stats-v { width: 100%; max-width: none; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 24px; margin-top: 24px; }
     }
     @media(max-width: 500px) {
       .fl-icc-header { display: none; }
@@ -1056,17 +1066,21 @@ function renderFlTable(list) {
     html += '<div class="fl-featured-card">' +
       '<div class="fl-featured-img-wrap"><img src="' + (p0.image_url || 'images/players/placeholder.png') + '" class="fl-featured-img" onerror="this.src=\'images/bfl/bfl-logo.png\'"></div>' +
       '<div class="fl-featured-info">' +
-        '<div class="fl-featured-rank">01 <span>Leader</span></div>' +
+        '<div class="fl-leader-badge"><span class="fl-leader-badge-text">Leader</span></div>' +
         '<div class="fl-featured-name"><span>' + UI.esc(p0First) + '</span><strong>' + UI.esc(p0Last) + '</strong></div>' +
-        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:15px;">' +
-          '<img src="' + bflLogo + '" style="width:32px;height:32px;object-fit:contain;">' +
-          '<span style="font-weight:800;font-size:14px;color:var(--accent);">' + UI.esc(p0.bfl_team || 'Free Agent') + '</span>' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">' +
+          '<img src="' + bflLogo + '" style="width:36px;height:36px;object-fit:contain;">' +
+          '<span style="font-weight:800;font-size:16px;color:var(--accent);text-transform:uppercase;letter-spacing:1px;">' + UI.esc(p0.bfl_team || 'Free Agent') + '</span>' +
         '</div>' +
-        '<div class="fl-featured-stats">' +
-          '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + p0.points + '</div><div class="fl-featured-stat-lbl">Total FP</div></div>' +
-          '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + avg + '</div><div class="fl-featured-stat-lbl">Avg Pts</div></div>' +
-          '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + p0.matches + '</div><div class="fl-featured-stat-lbl">Matches</div></div>' +
-           (p0.season_best ? '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + p0.season_best.pts + ' pts</div><div class="fl-featured-stat-lbl">Season Best</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">M' + (p0.season_best.match_no || '?') + ': ' + UI.tShort(p0.season_best.t1) + ' vs ' + UI.tShort(p0.season_best.t2) + '</div></div>' : '') +
+        '<div class="fl-featured-stats-v">' +
+          '<div class="fl-featured-stat-v"><div class="fl-fstat-lbl">Total Fantasy Points</div><div class="fl-fstat-val">' + p0.points + '</div></div>' +
+          '<div class="fl-featured-stat-v"><div class="fl-fstat-lbl">Average Fantasy Points</div><div class="fl-fstat-val">' + avg + '</div></div>' +
+          '<div class="fl-featured-stat-v"><div class="fl-fstat-lbl">Matches Played</div><div class="fl-fstat-val">' + p0.matches + '</div></div>' +
+          (p0.season_best ? 
+            '<div class="fl-featured-stat-v">' +
+              '<div><div class="fl-fstat-lbl">Season Best</div><div class="fl-fstat-sub">M' + (p0.season_best.match_no || '?') + ' · ' + UI.tShort(p0.season_best.t1) + ' vs ' + UI.tShort(p0.season_best.t2) + '</div></div>' +
+              '<div class="fl-fstat-val">' + p0.season_best.pts + ' <span style="font-size:14px;font-weight:400;">pts</span></div>' +
+            '</div>' : '') +
         '</div>' +
       '</div>' +
     '</div>';
