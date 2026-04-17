@@ -464,9 +464,9 @@ async function loadDashboard() {
             return '<div class="user-row">'+
               '<div style="flex:1;">'+
                 '<div style="font-weight:700;font-size:13px;">'+UI.esc(t.team_name||'—')+'</div>'+
-                '<div style="font-size:11px;color:var(--text3);">M'+(m.match_no||'?')+' '+UI.esc((m.team1||'').substring(0,3))+' vs '+UI.esc((m.team2||'').substring(0,3))+'</div>'+
+                 '<div style="font-size:11px;color:var(--text3);">M'+(m.match_no||'?')+' · '+UI.tShort(m.team1)+' vs '+UI.tShort(m.team2)+'</div>'+
               '</div>'+
-              '<div style="font-size:11px;color:var(--text2);">'+(p.predicted_winner||'—')+(p.target_score ? ' · '+p.target_score : '')+'</div>'+
+              '<div style="font-size:11px;color:var(--text2);">'+(UI.tShort(p.predicted_winner)||'—')+(p.target_score ? ' · '+p.target_score : '')+'</div>'+
             '</div>';
           }).join('');
     } catch(e) { $id('dash-predictions').innerHTML = '<div style="color:var(--text3);font-size:12px;">Could not load.</div>'; }
@@ -838,7 +838,7 @@ async function exportPredictionsCSV() {
     _allPredictionsCache.forEach(function(p) {
       var m = p.match || {};
       var t = p.fantasy_team || {};
-      csv += '"M'+(m.match_no||'')+' '+UI.esc((m.team1||'').substring(0,3))+' vs '+UI.esc((m.team2||'').substring(0,3))+'",' +
+      csv += '"M'+(m.match_no||'')+' · '+UI.tShort(m.team1)+' vs '+UI.tShort(m.team2)+'",' +
         '"'+(t.team_name||'').replace(/"/g,'""')+'",' +
         '"'+(t.owner_name||'').replace(/"/g,'""')+'",' +
         (p.predicted_winner||'') + ',' +
@@ -1330,7 +1330,7 @@ async function loadAdjustments() {
         '<div style="flex:1;min-width:0;">'+
           '<div style="font-family:var(--f-ui);font-weight:700;font-size:13px;">'+UI.championName(a.team?a.team.team_name:'—')+'</div>'+
           '<div style="font-size:11px;color:var(--text2);">'+UI.esc(a.remarks)+'</div>'+
-          (a.match?'<div style="font-size:10px;color:var(--text3);">'+UI.esc(a.match.match_title||'—')+'</div>':'')+
+           (a.match?'<div style="font-size:10px;color:var(--text3);">M'+(a.match.match_no||'?')+' · '+UI.tShort(a.match.team1)+' vs '+UI.tShort(a.match.team2)+'</div>':'')+
         '</div>'+
         '<div style="font-size:11px;color:var(--text3);flex-shrink:0;">'+UI.shortDate(a.created_at)+'</div>'+
         '<button class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:11px;" title="Undo" onclick="undoAdj(\''+a.id+'\')">↩</button>'+

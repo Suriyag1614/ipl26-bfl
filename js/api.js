@@ -534,9 +534,9 @@ const API = {
     return data;
   },
 
-  async fetchAllAdjustments() {
+   async fetchAllAdjustments() {
     const { data, error } = await sb.from('adjustments')
-      .select('*,match:matches(match_title,match_no),team:fantasy_teams(team_name)')
+      .select('*,match:matches(match_title,match_no,team1,team2),team:fantasy_teams(team_name)')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];

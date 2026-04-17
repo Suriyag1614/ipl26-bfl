@@ -217,7 +217,7 @@
       <div class="card-title">Prediction History</div>
       <div class="table-wrap table-scroller">
         <table class="data-table" style="min-width:500px;">
-          <thead><tr><th>Match</th><th>Target</th><th>Actual</th><th>Diff</th><th>Winner</th><th>Result</th><th>Pts</th></tr></thead>
+          <thead><tr><th>Match</th><th>Target</th><th>Actual</th><th>Difference</th><th>Predicted Winner</th><th>Result</th><th>Pts</th></tr></thead>
           <tbody id="pred-history-tbody"><tr><td colspan="7" class="empty-state">Loading…</td></tr></tbody>
         </table>
       </div>
@@ -591,7 +591,7 @@ function renderPredictions() {
       '<td class="font-mono">'+(p.target_score||'—')+'</td>'+
       '<td class="font-mono">'+(m.actual_target||'—')+'</td>'+
       '<td class="font-mono" style="color:'+(diff===0?'var(--accent)':diff&&diff<=5?'var(--green)':'var(--red)')+';">'+(diff!==null?'±'+diff:'—')+'</td>'+
-      '<td>'+UI.esc(p.predicted_winner||'—')+'</td>'+
+      '<td>'+UI.esc(UI.tShort(p.predicted_winner)||'—')+'</td>'+
       '<td>'+statusHtml+'</td>'+
       '<td class="pts">'+predPts+'</td></tr>';
   }).join('');
@@ -605,20 +605,20 @@ function renderImpact() {
     '<div class="metric-row"><span class="metric-label">Points from Impact</span><span class="metric-val" style="color:var(--gold);">'+UI.fmtPts(is.total_pts)+'</span></div>'+
     '<div class="metric-row"><span class="metric-label">Times Activated</span><span class="metric-val">'+is.uses+'</span></div>';
   var pl=document.getElementById('impact-picks-list');
-  if(pl) pl.innerHTML = _analytics.impactUsage.length ? _analytics.impactUsage.map(function(u){
-    var mTitle = u.match ? (u.match.match_title || UI.fmtMatch(u.match.team1, u.match.team2)) : '—';
-    var pName = (u.player && u.player.name) || (u.player && u.player.effective_name) || '—';
-    return '<div class="impact-pick-row"><div style="flex:1;"><div style="font-weight:700;">'+UI.esc(pName)+'</div><div style="font-size:12px;color:var(--text2);">'+UI.esc(mTitle)+'</div></div>'+
-      '<div style="font-family:var(--f-display);font-weight:900;font-size:17px;color:var(--accent);">+'+UI.fmtPts(u.points_earned)+'</div></div>';
-  }).join('') : '<div style="padding:12px;color:var(--text3);font-size:13px;">No impact activations yet</div>';
+   if(pl) pl.innerHTML = _analytics.impactUsage.length ? _analytics.impactUsage.map(function(u){
+     var mTitle = u.match ? ('M'+(u.match.match_no||'?')+' · '+UI.fmtMatch(u.match.team1, u.match.team2)) : '—';
+     var pName = (u.player && u.player.name) || (u.player && u.player.effective_name) || '—';
+     return '<div class="impact-pick-row"><div style="flex:1;"><div style="font-weight:700;">'+UI.esc(pName)+'</div><div style="font-size:12px;color:var(--text2);">'+UI.esc(mTitle)+'</div></div>'+
+       '<div style="font-family:var(--f-display);font-weight:900;font-size:17px;color:var(--accent);">+'+UI.fmtPts(u.points_earned)+'</div></div>';
+   }).join('') : '<div style="padding:12px;color:var(--text3);font-size:13px;">No impact activations yet</div>';
   
   var ih = document.getElementById('impact-history-tbody');
-  if(ih) ih.innerHTML = _analytics.impactUsage.length ? _analytics.impactUsage.map(function(u){
-    var mTitle = u.match ? (u.match.match_title || UI.fmtMatch(u.match.team1, u.match.team2)) : '—';
-    var pName = (u.player && u.player.name) || (u.player && u.player.effective_name) || '—';
-    var role = (u.player && u.player.role) || '—';
-    return '<tr><td>'+UI.esc(mTitle)+'</td><td>'+UI.esc(pName)+'</td><td>'+UI.esc(role)+'</td><td style="color:var(--accent);font-weight:700;">+'+UI.fmtPts(u.points_earned)+'</td></tr>';
-  }).join('') : '<tr><td colspan="4" class="empty-state">No impact activations yet</td></tr>';
+   if(ih) ih.innerHTML = _analytics.impactUsage.length ? _analytics.impactUsage.map(function(u){
+     var mTitle = u.match ? ('M'+(u.match.match_no||'?')+' · '+UI.fmtMatch(u.match.team1, u.match.team2)) : '—';
+     var pName = (u.player && u.player.name) || (u.player && u.player.effective_name) || '—';
+     var role = (u.player && u.player.role) || '—';
+     return '<tr><td>'+UI.esc(mTitle)+'</td><td>'+UI.esc(pName)+'</td><td>'+UI.esc(role)+'</td><td style="color:var(--accent);font-weight:700;">+'+UI.fmtPts(u.points_earned)+'</td></tr>';
+   }).join('') : '<tr><td colspan="4" class="empty-state">No impact activations yet</td></tr>';
 }
 
 async function renderBadges() {
@@ -642,7 +642,7 @@ async function renderBadges() {
       var earnedLabel = '';
       if (isEarned && earnRow) {
         if (earnRow.match && earnRow.match.match_no) {
-          earnedLabel = 'Match ' + earnRow.match.match_no;
+           earnedLabel = 'M' + earnRow.match.match_no;
         } else if (earnRow.earned_at) {
           earnedLabel = UI.shortDate(earnRow.earned_at);
         }
@@ -748,7 +748,7 @@ async function loadPredictionAccuracy() {
     var sortedStats = matchStats.slice().sort(function(a,b) { return (b.match.match_no||0) - (a.match.match_no||0); });
     byMatch.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px;">' + sortedStats.map(function(m) {
       var color = m.pct >= 70 ? 'var(--green)' : m.pct >= 40 ? 'var(--gold)' : 'var(--red)';
-      return '<div style="display:flex;align-items:center;gap:10px;font-size:12px;"><span style="width:80px;">Match ' + m.match.match_no + '</span><div style="flex:1;background:var(--bg3);height:20px;border-radius:3px;overflow:hidden;"><div style="width:' + m.pct + '%;background:' + color + ';height:100%;"></div></div><span style="width:50px;text-align:center;color:' + color + ';">' + m.correct + '/' + m.total + '</span></div>';
+       return '<div style="display:flex;align-items:center;gap:10px;font-size:12px;"><span style="width:80px;">M' + m.match.match_no + '</span><div style="flex:1;background:var(--bg3);height:20px;border-radius:3px;overflow:hidden;"><div style="width:' + m.pct + '%;background:' + color + ';height:100%;"></div></div><span style="width:50px;text-align:center;color:' + color + ';">' + m.correct + '/' + m.total + '</span></div>';
     }).join('') + '</div>';
     var totalCorrect = matchStats.reduce(function(s,m) { return s + m.correct; }, 0);
     var totalPreds = matchStats.reduce(function(s,m) { return s + m.total; }, 0);
@@ -1054,7 +1054,7 @@ function renderFlTable(list) {
           '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + p0.points + '</div><div class="fl-featured-stat-lbl">Total FP</div></div>' +
           '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + avg + '</div><div class="fl-featured-stat-lbl">Avg Pts</div></div>' +
           '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + p0.matches + '</div><div class="fl-featured-stat-lbl">Matches</div></div>' +
-          (p0.season_best ? '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + p0.season_best.pts + ' pts</div><div class="fl-featured-stat-lbl">Season Best</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">M' + (p0.season_best.match_no || '?') + ': ' + UI.tShort(p0.season_best.t1) + ' v ' + UI.tShort(p0.season_best.t2) + '</div></div>' : '') +
+           (p0.season_best ? '<div class="fl-featured-stat"><div class="fl-featured-stat-val">' + p0.season_best.pts + ' pts</div><div class="fl-featured-stat-lbl">Season Best</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">M' + (p0.season_best.match_no || '?') + ': ' + UI.tShort(p0.season_best.t1) + ' vs ' + UI.tShort(p0.season_best.t2) + '</div></div>' : '') +
         '</div>' +
       '</div>' +
     '</div>';

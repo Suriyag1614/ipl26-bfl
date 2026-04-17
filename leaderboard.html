@@ -215,11 +215,10 @@ function renderSeasonTable() {
 async function populateMatchSel() {
   var matches=await API.fetchMatches({limit:74});
   var sel=document.getElementById('mw-match-sel');
-  sel.innerHTML='<option value="">— Select match —</option>'+
-    matches.filter(function(m){return m.is_locked;}).map(function(m){
-      var title = m.match_title || ('M'+(m.match_no||'')+' · '+UI.tShort(m.team1)+' vs '+UI.tShort(m.team2));
-      return '<option value="'+m.id+'">'+UI.esc(title)+'</option>';
-    }).join('');
+    sel.innerHTML='<option value="">— Select match —</option>'+
+      matches.filter(function(m){return m.is_locked;}).map(function(m){
+        return '<option value="'+m.id+'">M'+(m.match_no||'?')+' · '+UI.tShort(m.team1)+' vs '+UI.tShort(m.team2)+'</option>';
+      }).join('');
 }
 
 async function loadMatchLB(matchId) {
@@ -259,8 +258,8 @@ async function loadBreakdown() {
     if(!logs.length){tbody.innerHTML='<tr><td colspan="7" class="empty-state">No match results yet</td></tr>';return;}
     var total=logs.reduce(function(s,l){return s+(l.total_points||0);},0);
     tbody.innerHTML=logs.slice().reverse().map(function(l){
-      return '<tr>'+
-        '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+UI.esc(l.match?(l.match.match_title||l.match.team1+' vs '+l.match.team2):'—')+'</td>'+
+        return '<tr>'+
+          '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(l.match?('M'+(l.match.match_no||'?')+' · '+UI.fmtMatch(l.match.team1, l.match.team2)):'—')+'</td>'+
         '<td style="font-size:11px;color:var(--text2);">'+UI.shortDate(l.match&&l.match.match_date)+'</td>'+
         '<td class="font-mono" style="color:#f87171;">'+(l.batting_pts||0)+'</td>'+
         '<td class="font-mono" style="color:#60a5fa;">'+(l.bowling_pts||0)+'</td>'+

@@ -665,7 +665,7 @@ function buildMatchHeader(m, si) {
     '<div>' +
       '<div class="pred-match-name">' + UI.esc(t1s || 'TBD') + ' vs ' + UI.esc(t2s || 'TBD') + '</div>' +
       '<div class="pred-match-meta">' +
-        (m.match_no ? 'Match ' + m.match_no + ' · ' : '') +
+         (m.match_no ? 'M' + m.match_no + ' · ' : '') +
         UI.fmtDate(m.match_date) +
         (m.venue ? ' · ' + UI.esc(m.venue) : '') +
       '</div>' +

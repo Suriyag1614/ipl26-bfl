@@ -235,7 +235,7 @@
           <div class="card-title">All Team Predictions</div>
           <div class="mc-table-wrap">
             <table class="mc-table">
-              <thead><tr><th>Team</th><th>Target</th><th>Winner</th><th>Actual</th><th>Result</th></tr></thead>
+              <thead><tr><th>Team</th><th>Predicted Target</th><th>Predicted Winner</th><th>Actual Target</th><th>Result</th></tr></thead>
               <tbody id="all-preds-tbody"></tbody>
             </table>
           </div>
@@ -471,7 +471,7 @@ function renderPredSummary(mc) {
     '<div class="metric-row"><span class="metric-label">Total Predictions</span><span class="metric-val">'+s.total_preds+'</span></div>' +
     '<div class="metric-row"><span class="metric-label">Avg Predicted Target</span><span class="metric-val" style="color:var(--accent);">'+(s.avg_target||'—')+'</span></div>' +
     (m.actual_target?'<div class="metric-row"><span class="metric-label">Actual Target</span><span class="metric-val" style="color:var(--gold);">'+m.actual_target+'</span></div>':'') +
-    '<div class="metric-row"><span class="metric-label">Most Picked Winner</span><span class="metric-val">'+UI.esc(s.most_picked||'—')+'</span></div>' +
+    '<div class="metric-row"><span class="metric-label">Most Picked Winner</span><span class="metric-val">'+UI.esc(UI.tShort(s.most_picked)||'—')+'</span></div>' +
     '<div style="margin-top:12px;"><div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--f-ui);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Winner Distribution</div>' +
     '<div class="winner-bar">'+barHtml+'</div>' +
     '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--text2);">' +
@@ -491,7 +491,7 @@ function renderAllPredictions(mc) {
     return '<tr class="'+(isMe?'highlight-me':'')+'">' +
       '<td class="mc-team">' + UI.championName(p.team?.team_name||'—') + (isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'') + '</td>' +
       '<td class="mc-label">'+(p.target_score||'—')+'</td>' +
-      '<td>'+UI.esc(p.predicted_winner||'—')+'</td>' +
+      '<td>'+UI.esc(UI.tShort(p.predicted_winner)||'—')+'</td>' +
       '<td class="mc-label">'+(m.actual_target||'—')+'</td>' +
       '<td>'+(m.winner ? (corW?'<span class="mc-success">✓</span>':'<span class="mc-fail">✗</span>') : '—')+(diff!==null?' <span style="font-size:11px;color:var(--text3);">(±'+diff+')</span>':'')+'</td>' +
     '</tr>';

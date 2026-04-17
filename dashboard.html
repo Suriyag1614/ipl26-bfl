@@ -246,7 +246,7 @@ async function loadStats() {
     var widgets = [
       { val:UI.fmtPts(total), lbl:'Season Points', sub:'All matches combined', c:'var(--accent)', anim:true },
       { val:rank?UI.ordinal(rank):'—', lbl:'Current Rank', sub:'Out of '+lb.length+' teams', c:'var(--gold)' },
-      { val:lastPts, lbl:'Last Match', sub:lastMatch&&lastMatch.match?('Match No.'+(lastMatch.match.match_no||'?')+' '+(UI.tShort(lastMatch.match.team1))+' vs '+(UI.tShort(lastMatch.match.team2))):'' , c:'var(--cyan)' },
+       { val:lastPts, lbl:'Last Match', sub:lastMatch&&lastMatch.match?('M'+(lastMatch.match.match_no||'?')+' · '+UI.tShort(lastMatch.match.team1)+' vs '+UI.tShort(lastMatch.match.team2)):'' , c:'var(--cyan)' },
       { val:UI.fmtPts(avg), lbl:'Avg / Match', sub:'Points per game', c:'var(--purple)' },
     ];
     $('#stat-widgets').innerHTML = widgets.map(function(w,i){
@@ -355,7 +355,7 @@ async function loadRecent() {
     if(!logs.length){ $('#recent-results').innerHTML='<div style="text-align:center;color:var(--text3);padding:16px;font-size:14px;">No match results yet</div>'; return; }
     $('#recent-results').innerHTML='<div class="table-wrap"><table class="data-table"><thead><tr><th>Match</th><th>Squad</th><th>Pred</th><th>Total</th></tr></thead><tbody>'+
       logs.slice().reverse().slice(0,5).map(function(l){
-        var matchTitle = l.match ? (l.match.match_title || UI.fmtMatch(l.match.team1, l.match.team2)) : '—';
+         var matchTitle = l.match ? ('M'+(l.match.match_no||'?')+' · '+UI.fmtMatch(l.match.team1, l.match.team2)) : '—';
         return '<tr class="clickable-row" onclick="showBreakdown(\''+l.id+'\')"><td style="font-weight:400;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+matchTitle+'</td><td class="font-mono">'+UI.fmtPts(l.squad_points)+'</td><td class="font-mono">'+UI.fmtPts(l.prediction_points)+'</td><td class="pts">'+UI.fmtPts(l.total_points)+'</td></tr>';
       }).join('')+'</tbody></table></div>';
   } catch(e) { UI.toast('Could not load recent results','error'); }
@@ -376,7 +376,7 @@ function showBreakdown(logId) {
   html+='</tbody></table></div><div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">'+
     '<div style="font-size:12px;color:var(--text3);">Prediction: <span style="color:var(--text2);font-weight:600;">+'+UI.fmtPts(log.prediction_points)+'</span></div>'+
     '<div style="font-size:16px;font-weight:700;">Total: <span style="color:var(--accent);">'+UI.fmtPts(log.total_points)+'</span></div></div>';
-  var mTitle = log.match ? (log.match.match_title || UI.fmtMatch(log.match.team1, log.match.team2)) : 'Match Breakdown';
+   var m = log.match; var mTitle = m ? ('M'+(m.match_no||'?')+' · '+UI.fmtMatch(m.team1, m.team2)) : 'Match Breakdown';
   UI.showModal({title:mTitle, content:html});
 }
 
