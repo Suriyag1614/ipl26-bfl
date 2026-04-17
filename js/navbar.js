@@ -110,7 +110,7 @@ function buildNavbar(activePage, isAdmin) {
             '<div class="sb-user-role">' + (isAdmin ? 'Admin' : 'Team') + '</div>' +
           '</div>' +
         '</div>' +
-        '<button class="btn btn-ghost btn-sm btn-full" onclick="doLogout()" style="margin-top:8px;">Logout</button>' +
+        '<button class="btn btn-danger btn-sm btn-full" onclick="doLogout()" style="margin-top:8px;">Sign Out</button>' +
       '</div>' +
     '</aside>' +
     '<div class="sb-overlay" id="sb-overlay" onclick="closeSidebar()"></div>';
