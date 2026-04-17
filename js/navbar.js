@@ -15,7 +15,7 @@ var NAV_LINKS = [
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>' },
   
   // Analytics sub-links (all point to analytics.html with ?tab)
-  { href:'analytics.html',    label:'Team Analytics', page:'analytics',     bnav:false,
+  { href:'analytics.html?tab=overview', label:'Team Analytics', page:'analytics',     bnav:false,
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' },
   { href:'analytics.html?tab=pred-summary', label:'Predictions Summary', page:'pred-summary', bnav:false,
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>' },
@@ -35,12 +35,14 @@ var NAV_LINKS = [
 ];
 
 // Sidebar state — persisted in localStorage
-var _sidebarOpen = true;
+var _sidebarOpen = false; // Default to closed
 try {
   var _saved = localStorage.getItem('bfl_sidebar');
   if (_saved !== null) {
-    _sidebarOpen = _saved === '1';
+    // Only restore open state on desktop (>900px), otherwise default to closed
+    _sidebarOpen = (_saved === '1' && window.innerWidth > 900);
   } else {
+    // First visit: default to closed on mobile, open on desktop
     _sidebarOpen = window.innerWidth > 900;
     localStorage.setItem('bfl_sidebar', _sidebarOpen ? '1' : '0');
   }
@@ -144,14 +146,25 @@ function buildSbLinks(pages, allLinks, activePage) {
 }
 
 function toggleSidebar() {
-  _sidebarOpen = !_sidebarOpen;
-  try { localStorage.setItem('bfl_sidebar', _sidebarOpen ? '1' : '0'); } catch(e) {}
+  // On mobile (<900px), toggle always closes sidebar
+  // On desktop, toggles between open/closed and persists
+  if (window.innerWidth < 900) {
+    _sidebarOpen = false;
+  } else {
+    _sidebarOpen = !_sidebarOpen;
+    try { localStorage.setItem('bfl_sidebar', _sidebarOpen ? '1' : '0'); } catch(e) {}
+  }
   applySidebarState(true);
 }
 function closeSidebar() {
   _sidebarOpen = false;
   applySidebarState(true);
 }
+
+// Handle resize to keep sidebar state consistent
+window.addEventListener('resize', function() {
+  applySidebarState(false);
+});
 
 function initOverlay() {
   var overlay = document.getElementById('sb-overlay');
@@ -169,10 +182,14 @@ function applySidebarState(animate) {
   var icon     = document.getElementById('sb-toggle-icon');
   if (!sidebar) return;
 
-  if (_sidebarOpen) {
+  // On mobile (<900px), sidebar should always be closed
+  var isMobile = window.innerWidth < 900;
+  var shouldBeOpen = !isMobile && _sidebarOpen;
+
+  if (shouldBeOpen) {
     sidebar.classList.add('open');
     if (overlay) overlay.classList.add('visible');
-    if (wrap && window.innerWidth >= 900) wrap.classList.add('sidebar-open');
+    if (wrap) wrap.classList.add('sidebar-open');
   } else {
     sidebar.classList.remove('open');
     if (overlay) overlay.classList.remove('visible');
@@ -181,7 +198,7 @@ function applySidebarState(animate) {
 
   if (icon) {
     // Toggle between hamburger and X
-    icon.innerHTML = (_sidebarOpen && window.innerWidth >= 900)
+    icon.innerHTML = (shouldBeOpen)
       ? '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
       : '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
   }

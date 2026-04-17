@@ -394,7 +394,19 @@ async function init() {
   var params = new URLSearchParams(window.location.search);
   var activeTab = params.get('tab') || 'overview';
   
-  await initNavbar(activeTab); // Highlight the specific sub-link in the sidebar
+  // Map URL tab params to navbar page identifiers
+  var tabToPage = {
+    'overview': 'analytics',
+    'pred-summary': 'pred-summary',
+    'accuracy': 'accuracy',
+    'match-preds': 'match-preds',
+    'fantasy-players': 'fantasy-players',
+    'user-teams': 'user-teams',
+    'power-rankings': 'power-rankings'
+  };
+  
+  var navbarPage = tabToPage[activeTab] || 'analytics';
+  await initNavbar(navbarPage); // Highlight the specific sub-link in the sidebar
   var team = await Auth.fetchTeam(sess.user.id); if(!team) return;
   _myTeamId = team.id;
 
@@ -1080,7 +1092,7 @@ function renderFlTable(list) {
     var bflLogo = UI.getTeamLogo(p.bfl_team) || 'images/bfl/bfl-logo.png';
     var sb = p.season_best;
     var sbHtml = sb ? '<strong>' + sb.pts + 'pts</strong>' +
-      '<span>M' + (sb.match_no || '?') + ': ' + UI.tShort(sb.t1) + ' v ' + UI.tShort(sb.t2) + '</span>' : '—';
+      '<span>M' + (sb.match_no || '?') + ' · ' + UI.tShort(sb.t1) + ' vs ' + UI.tShort(sb.t2) + '</span>' : '—';
     
     return '<div class="fl-icc-row" style="animation: fade-up .3s ease ' + (i * 0.05) + 's both;">' +
       '<div class="fl-pos">' + (rank < 10 ? '0' + rank : rank) + ' <span class="fl-trend">•</span></div>' +
@@ -1091,7 +1103,7 @@ function renderFlTable(list) {
       '<div class="fl-rating">' + p.points + '</div>' +
       '<div class="fl-best">' +
         '<span class="fl-best-pts">' + (sb ? sb.pts + ' pts' : '—') + '</span>' +
-        '<span class="fl-best-meta">' + (sb ? 'M' + (sb.match_no || '?') + ': ' + UI.tShort(sb.t1) + ' v ' + UI.tShort(sb.t2) : '') + '</span>' +
+        '<span class="fl-best-meta">' + (sb ? 'M' + (sb.match_no || '?') + ' · ' + UI.tShort(sb.t1) + ' vs ' + UI.tShort(sb.t2) : '—') + '</span>' +
       '</div>' +
     '</div>';
   }).join('');
