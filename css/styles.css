@@ -440,7 +440,7 @@ body { display:flex; flex-direction:column; }
   transform:translateY(-2px); 
   background: linear-gradient(135deg, var(--accent-bright) 0%, var(--accent) 100%);
 }
-.btn-ghost  { background:transparent; color:var(--text2); border:1px solid var(--border); }
+.btn-ghost  { background:var(--bg2); color:var(--text2); border:1px solid var(--border); }
 .btn-ghost:hover { border-color:var(--border-h); color:var(--text); }
 .btn-gold   { 
   background: linear-gradient(135deg, var(--gold) 0%, var(--accent-bright) 100%); 
