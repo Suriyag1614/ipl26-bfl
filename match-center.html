@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="css/styles.css">
   <style>
     .mc-layout { display: flex; gap: 24px; align-items: flex-start; }
-    .mc-sidebar { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; height: calc(100vh - 120px); position: sticky; top: 80px; background: var(--bg1); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; overflow: hidden; }
+    .mc-sidebar { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; height: calc(100vh - 120px); position: sticky; top: 80px; background: var(--bg1); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; overflow: auto; }
     .mc-main { flex: 1; min-width: 0; }
     
     /* Scrollbar - system theme aware */
@@ -46,6 +46,8 @@
       padding: 12px 14px; cursor: pointer; transition: all 0.2s ease;
       display: flex; flex-direction: column; gap: 4px;
     }
+    .match-pill.selected:hover { transform: translateX(4px); }
+    .match-pill-priority { border-left: 3px solid var(--accent); }
     .match-pill:hover { border-color: var(--border-h); background: var(--bg3); transform: translateX(4px); }
     .match-pill.selected { border-color: var(--accent); background: var(--accent-dim); box-shadow: 0 4px 12px rgba(200, 241, 53, 0.15); }
     .match-pill.selected:hover { transform: translateX(4px); }
@@ -110,19 +112,18 @@
 
     @media(max-width:900px) {
       .mc-layout { flex-direction: column; gap: 16px; }
-      .mc-sidebar { width: 100%; height: auto; max-height: calc(100vh - 120px); position: sticky; top: 70px; display: flex; flex-direction: column; overflow: hidden; padding: 16px; background: var(--bg1); border: 1px solid var(--border); border-radius: var(--radius-lg); z-index: 100; }
-      .mc-sidebar { scrollbar-width: none; -ms-overflow-style: none; }
-      .mc-sidebar::-webkit-scrollbar { display: none; }
+      .mc-sidebar { width: 100%; height: auto; max-height: calc(100vh - 120px); position: sticky; top: 70px; display: flex; flex-direction: column; padding: 16px; background: var(--bg1); border: 1px solid var(--border); border-radius: var(--radius-lg); z-index: 100; overflow: auto; }
       .mc-sidebar-header { flex-shrink: 0; padding-bottom: 12px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
       .mc-sidebar-controls { padding-right: 50px; }
       .match-selector { flex-direction: row; padding: 0; gap: 8px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex: 1; min-height: 0; }
+      .match-selector::-webkit-scrollbar { display: none; }
       .match-pill { min-width: 170px; flex-shrink: 0; padding: 10px 12px; }
       .mc-grid { grid-template-columns: 1fr; gap: 16px; }
       .mc-table { font-size: 12px; }
       .mc-table th, .mc-table td { padding: 10px 8px; }
     }
     @media(max-width:700px){
-      .mc-sidebar { padding: 12px; top: 60px; max-height: calc(100vh - 100px); }
+      .mc-sidebar { padding: 12px; top: 60px; max-height: calc(100vh - 100px); overflow: auto; }
       .mc-sidebar-title { font-size: 10px; }
       .mc-sidebar-controls { flex-direction: column; gap: 8px; padding-right: 0; }
       .mc-search-wrap, .mc-filter-wrap { min-width: 100%; width: 100%; }
@@ -182,10 +183,11 @@
           </div>
           <div class="mc-filter-wrap">
             <select class="mc-filter" id="mc-filter" onchange="filterMatches()">
-              <option value="all">All</option>
+              <option value="recent">Recent</option>
               <option value="open">Open</option>
-              <option value="locked">Locked</option>
               <option value="completed">Completed</option>
+              <option value="all">All Matches</option>
+              <option value="locked">Locked</option>
               <option value="abandoned">Abandoned</option>
             </select>
             <img src="images/ipl/drop_down_icon.svg" class="mc-filter-icon" alt="Filter">
@@ -286,6 +288,15 @@ async function loadMatchPills() {
     if (!matches.length) { cont.innerHTML = '<div style="color:var(--text3);font-size:13px;">No matches yet</div>'; return; }
     window._allMatches = matches;
     filterMatches();
+    // Auto-select last completed match, or first open match
+    var completed = matches.filter(function(m) { return m.winner && !m.is_abandoned; });
+    var open = matches.filter(function(m) { return !m.is_locked && !m.is_abandoned; });
+    var priorityMatch = (completed.length ? completed[completed.length - 1] : null) || 
+                        (open.length ? open[0] : null) ||
+                        matches[0];
+    if (priorityMatch && !_selectedMatch) {
+      showMatchDetail(priorityMatch.id);
+    }
   } catch(e) { cont.innerHTML = '<div style="color:var(--red);">'+UI.esc(e.message)+'</div>'; }
 }
 
@@ -300,16 +311,47 @@ function filterMatches() {
     if (filter === 'locked') return m.is_locked && !m.winner && !m.is_abandoned;
     if (filter === 'completed') return m.winner && !m.is_abandoned;
     if (filter === 'abandoned') return m.is_abandoned || m.status === 'abandoned';
+    if (filter === 'recent') return !m.is_abandoned && (m.winner || !m.is_locked);
     return true;
   });
+  
   var cont = document.getElementById('match-selector');
-  cont.innerHTML = filtered.map(function(m, i) {
+  // Sort: Completed (by match_no asc), then Locked, then Open (by match_no asc)
+  var sortedMatches = [...filtered].sort(function(a, b) {
+    var aCompleted = a.winner && !a.is_abandoned;
+    var bCompleted = b.winner && !b.is_abandoned;
+    var aLocked = a.is_locked && !a.winner && !a.is_abandoned;
+    var bLocked = b.is_locked && !b.winner && !b.is_abandoned;
+    var aOpen = !a.is_locked && !a.is_abandoned;
+    var bOpen = !b.is_locked && !b.is_abandoned;
+    
+    // Completed first (M1, M2, M3... M24)
+    if (aCompleted && !bCompleted) return -1;
+    if (!aCompleted && bCompleted) return 1;
+    // Then Locked
+    if (aLocked && !bLocked) return -1;
+    if (!aLocked && bLocked) return 1;
+    // Then Open
+    
+    // Within same group, sort by match_no ascending
+    return (a.match_no || 0) - (b.match_no || 0);
+  });
+  
+  cont.innerHTML = sortedMatches.map(function(m, i) {
     var status = m.is_abandoned ? 'status-upcoming' : (m.is_locked ? (m.winner ? 'status-done' : 'status-locked') : 'status-open');
     var statusTxt = m.is_abandoned ? 'Abandoned' : (m.is_locked ? (m.winner?'Completed':'Locked') : 'Open');
     var t1s = UI.tShort(m.team1), t2s = UI.tShort(m.team2);
     var isSelected = _selectedMatch === m.id ? ' selected' : '';
-    return '<div class="match-pill'+isSelected+'" id="pill-'+m.id+'" onclick="showMatchDetail(\''+m.id+'\')" style="animation-delay:'+(.04*i)+'s;">' +
-      '<div class="match-pill-teams">M'+(m.match_no||i+1)+' · '+UI.esc(t1s)+' vs '+UI.esc(t2s)+'</div>' +
+    // Add priority class for open/completed matches
+    var isPriority = !m.is_abandoned && (m.winner || !m.is_locked) ? ' match-pill-priority' : '';
+    
+    // Team colors using UI helper
+    var c1 = UI.getTeamColor(m.team1);
+    var c2 = UI.getTeamColor(m.team2);
+    var borderStyle = isSelected ? '' : 'border-left: 3px solid ' + c1 + '; background: linear-gradient(90deg, ' + c1 + '08, transparent 30%);';
+    
+    return '<div class="match-pill'+isSelected+isPriority+'" id="pill-'+m.id+'" onclick="showMatchDetail(\''+m.id+'\')" style="animation-delay:'+(.04*i)+'s;' + borderStyle + '">' +
+      '<div class="match-pill-teams">M'+(m.match_no||'')+' · '+UI.esc(t1s)+' vs '+UI.esc(t2s)+'</div>' +
       '<div class="match-pill-date">'+UI.shortDate(m.match_date)+(m.venue?' · '+m.venue:'')+'</div>' +
       '<span class="match-status '+status+'" style="font-size:10px;padding:1px 6px;align-self:flex-start;">'+statusTxt+'</span>' +
     '</div>';
@@ -333,7 +375,11 @@ async function showMatchDetail(matchId) {
   _selectedMatch = matchId;
   document.querySelectorAll('.match-pill').forEach(function(p){ p.classList.remove('selected'); });
   var pill = document.getElementById('pill-'+matchId);
-  if (pill) { pill.classList.add('selected'); pill.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+  if (pill) { 
+    pill.classList.add('selected'); 
+    var isMobile = window.innerWidth <= 900;
+    pill.scrollIntoView({behavior:'smooth',block:isMobile?'nearest':'center',inline:isMobile?'center':'nearest'}); 
+  }
   document.getElementById('match-detail').style.display = '';
   document.getElementById('no-match').style.display     = 'none';
   window.history.replaceState(null,'','?match='+matchId);
@@ -365,8 +411,6 @@ function renderMatchHeader(mc) {
   var m   = mc.match || {};
   var hdr = document.getElementById('match-header-card');
   var isComplete = m.winner;
-  var iplColors  = { CSK:'#fdb913',MI:'#004ba0',RCB:'#da1818',KKR:'#6a1bac',SRH:'#f26522',
-  DC:'#004c93',PBKS:'#ed1b24',RR:'#ea1a85',GT:'#1c2c5b',LSG:'#ff002b',SURA:'#1a3a8a' };
     var t1s = UI.tShort(m.team1), t2s = UI.tShort(m.team2);
     hdr.innerHTML =
       '<div class="flex-between mb-8">' +

@@ -15,6 +15,14 @@ const UI = {
     'C':'CSK','D':'DC','G':'GT','K':'KKR','L':'LSG','M':'MI',
     'P':'PBKS','R':'RR','B':'RCB','S':'SRH','U':'SURA'
   },
+  TEAM_COLORS: {
+    'CSK':'#fdb913','MI':'#004ba0','RCB':'#da1818','KKR':'#6a1bac','SRH':'#f26522',
+    'DC':'#004c93','PBKS':'#ed1b24','RR':'#ea1a85','GT':'#1c2c5b','LSG':'#ff002b','SURA':'#1a3a8a'
+  },
+  getTeamColor(teamName) {
+    var code = this.tCode(teamName);
+    return (code && this.TEAM_COLORS[code]) || 'var(--accent)';
+  },
   tCode: function(name) {
     var key = String(name || '').trim().toUpperCase();
     return this.TEAM_CODES[key] || null;
