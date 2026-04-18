@@ -394,6 +394,22 @@ const API = {
     return log.payload_before;
   },
 
+  async deletePlayerStats(matchId, playerId) {
+    // Get current stats before deleting for logging
+    const { data: before } = await sb.from('player_match_stats')
+      .select('*').eq('match_id', matchId).eq('player_id', playerId).maybeSingle();
+    if (!before) throw new Error('No stats found to delete');
+    
+    // Delete the stats
+    const { error } = await sb.from('player_match_stats')
+      .delete().eq('match_id', matchId).eq('player_id', playerId);
+    if (error) throw error;
+    
+    // Log the deletion
+    await this._log('stat_entry_deleted', 'player', playerId, before, null);
+    return true;
+  },
+
   parseStatsCsv(csvText, matchId) {
     const lines = csvText.trim().split('\n').filter(l => l.trim());
     if (lines.length < 2) throw new Error('CSV must have header + data rows');

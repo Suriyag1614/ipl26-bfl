@@ -1167,26 +1167,44 @@ async function loadSavedStats() {
           '<div class="stat-breakdown">R:'+s.runs+' B:'+s.balls_faced+' W:'+s.wickets+' C:'+s.catches+' | Bat:'+bat+' Bowl:'+bowl+' Fld:'+fld+'</div>'+
         '</div>'+
         '<div class="stat-pts">'+tot+'</div>'+
-        '<button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px;" onclick="editSavedStat(\''+p.id+'\',\''+UI.esc(p.name||'')+'\')">Edit</button>'+
+        '<button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px;" onclick="editSavedStat(\''+p.id+'\')">Edit</button>'+
+        '<button class="btn btn-danger btn-sm" style="padding:3px 8px;font-size:11px;" onclick="deleteSavedStat(\''+p.id+'\')">Delete</button>'+
       '</div>';
     }).join('');
   } catch(e) { list.innerHTML='<div style="color:var(--red);font-size:13px;padding:12px;">'+UI.esc(e.message)+'</div>'; }
 }
 
-async function editSavedStat(playerId, playerName) {
+async function editSavedStat(playerId) {
   try {
     var {data} = await sb.from('player_match_stats').select('*,player:players(id,name,role,ipl_team)').eq('match_id',_statsMatchId).eq('player_id',playerId).maybeSingle();
     if (!data) return;
     _statsPlayerId = playerId;
     var sel = $id('stats-player-select');
     if (sel) sel.value = playerId;
-    $id('sf-player-name').textContent = playerName;
     var p = data.player||{};
+    $id('sf-player-name').textContent = p.name || '—';
     $id('sf-player-sub').textContent = (p.role||'')+(p.ipl_team?' · '+p.ipl_team:'');
     $id('stats-form-card').style.display='';
     prefillStats(data);
     $id('pts-ring').scrollIntoView({behavior:'smooth',block:'nearest'});
   } catch(e){ UI.toast(e.message,'error'); }
+}
+
+async function deleteSavedStat(playerId) {
+  var stats = await API.fetchPlayerStats(_statsMatchId);
+  var stat = stats.find(function(s){ return s.player_id === playerId; });
+  var p = stat?.player||{};
+  UI.showConfirm({
+    icon:'⚠️', title:'Delete Stats?', msg:'Remove stats for '+UI.esc(p.name||'player')+'?',
+    consequence:'This will delete the stats and log the deletion.', okLabel:'Delete', okClass:'btn-danger',
+    onOk: async function(){
+      try {
+        await API.deletePlayerStats(_statsMatchId, playerId);
+        UI.toast('Stats deleted','success');
+        await loadSavedStats();
+      } catch(e){ UI.toast('Delete failed: '+e.message,'error'); }
+    }
+  });
 }
 
 /* ══════════════════════════════════════════════════════════════
