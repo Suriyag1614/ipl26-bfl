@@ -627,7 +627,7 @@ function renderImpact() {
     '<div class="metric-row"><span class="metric-label">Points from Impact</span><span class="metric-val" style="color:var(--gold);">'+UI.fmtPts(is.total_pts)+'</span></div>'+
     '<div class="metric-row"><span class="metric-label">Times Activated</span><span class="metric-val">'+is.uses+'</span></div>';
   var pl=document.getElementById('impact-picks-list');
-   if(pl) pl.innerHTML = _analytics.impactUsage.length ? _analytics.impactUsage.map(function(u){
+   if(pl) pl.innerHTML = _analytics.impactUsage.length ? _analytics.impactUsage.sort(function(a,b){return (b.points_earned||0)-(a.points_earned||0);}).map(function(u){
      var mTitle = u.match ? ('M'+(u.match.match_no||'?')+' · '+UI.fmtMatch(u.match.team1, u.match.team2)) : '—';
      var pName = (u.player && u.player.name) || (u.player && u.player.effective_name) || '—';
      return '<div class="impact-pick-row"><div style="flex:1;"><div style="font-weight:700;">'+UI.esc(pName)+'</div><div style="font-size:12px;color:var(--text2);">'+UI.esc(mTitle)+'</div></div>'+
