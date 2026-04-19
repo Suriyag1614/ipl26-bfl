@@ -446,9 +446,10 @@ const API = {
   async fetchPointsBreakdown(teamId) {
     const { data, error } = await sb.from('points_log')
       .select('*,match:matches(id,match_title,match_date,team1,team2,winner,actual_target,status,match_no)')
-      .eq('fantasy_team_id', teamId).order('created_at', { ascending: true });
+      .eq('fantasy_team_id', teamId);
     if (error) throw error;
-    return data || [];
+    // Sort by match number, not created_at
+    return (data || []).sort((a, b) => (a.match?.match_no || 0) - (b.match?.match_no || 0));
   },
 
   async fetchMatchLeaderboard(matchId) {
@@ -901,15 +902,22 @@ const API = {
     onLog?.(`Found ${allPredictions.length} predictions, ${allStats.length} stat rows, PoM=${pomPlayerId ? 'yes' : 'no'}`, 'good');
 
     const { data: actRows } = await sb.from('impact_activations')
-      .select('fantasy_team_id,is_active').eq('match_id', matchId);
+      .select('fantasy_team_id,is_active,player_id').eq('match_id', matchId);
     const actMap = {};
-    (actRows || []).forEach(r => { actMap[r.fantasy_team_id] = !!r.is_active; });
+    (actRows || []).forEach(r => {
+      actMap[r.fantasy_team_id] = {
+        is_active: !!r.is_active,
+        player_id: r.player_id
+      };
+    });
 
     const logs = [];
     for (const team of (teams || [])) {
       const squadRows = await this.fetchSquad(team.id);
       const pred      = predMap[team.id] || null;
-      const isActive  = !!actMap[team.id];
+      const actData   = actMap[team.id] || { is_active: false, player_id: null };
+      const isActive  = actData.is_active;
+      const storedIpPlayerId = actData.player_id;
       let squadPts = 0, batPts = 0, bowlPts = 0, fldPts = 0, bonPts = 0;
       const breakdown = { players: [], impactActive: isActive };
 
@@ -927,7 +935,8 @@ const API = {
         const fld  = stats ? this.calcFieldingPoints(stats) : 0;
         const bon  = stats ? this.calcBonusPoints(stats, pomPlayerId, potPlayerId) : 0;
         const base = bat + bowl + fld;
-        const { multiplier, label } = this.resolveMultiplier(sp, isActive);
+        const isImpactPlayer = storedIpPlayerId && (effectivePid === storedIpPlayerId);
+        const { multiplier, label } = this.resolveMultiplier({ is_impact: isImpactPlayer }, isActive);
         const final = (base * multiplier) + bon;
 
         playerResults.push({
@@ -940,8 +949,8 @@ const API = {
           base: base, bat: bat, bowl: bowl,
           fld: fld, bon: bon, multiplier, label,
           final: final,
-          isImpact: !!sp.is_impact,
-          isImpactActive: !!(sp.is_impact && isActive),
+          isImpact: isImpactPlayer,
+          isImpactActive: !!(isImpactPlayer && isActive),
           isCaptain: !!sp.is_captain, isVC: !!sp.is_vc,
           isPom: pomPlayerId && (effectivePid === pomPlayerId), isPot: potPlayerId && (effectivePid === potPlayerId),
           points: final // raw points for sorting

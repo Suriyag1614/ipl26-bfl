@@ -39,18 +39,28 @@ CREATE TABLE public.fantasy_teams (
   team_name text NOT NULL UNIQUE,
   owner_name text,
   created_at timestamp with time zone DEFAULT now(),
+  last_active timestamp with time zone,
   CONSTRAINT fantasy_teams_pkey PRIMARY KEY (id),
   CONSTRAINT fantasy_teams_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
+);
+CREATE TABLE public.ground_stats (
+  venue text NOT NULL,
+  avg_first_innings numeric DEFAULT 0,
+  match_count integer DEFAULT 0,
+  updated_at timestamp with time zone,
+  CONSTRAINT ground_stats_pkey PRIMARY KEY (venue)
 );
 CREATE TABLE public.impact_activations (
   id uuid NOT NULL DEFAULT uuid_generate_v4(),
   fantasy_team_id uuid,
   match_id uuid,
+  player_id uuid REFERENCES players(id),
   is_active boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT impact_activations_pkey PRIMARY KEY (id),
   CONSTRAINT impact_activations_fantasy_team_id_fkey FOREIGN KEY (fantasy_team_id) REFERENCES public.fantasy_teams(id),
-  CONSTRAINT impact_activations_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id)
+  CONSTRAINT impact_activations_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id),
+  CONSTRAINT impact_activations_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
 );
 CREATE TABLE public.impact_usage (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -211,6 +221,15 @@ CREATE TABLE public.squad_players (
   CONSTRAINT squad_players_pkey PRIMARY KEY (id),
   CONSTRAINT squad_players_fantasy_team_id_fkey FOREIGN KEY (fantasy_team_id) REFERENCES public.fantasy_teams(id),
   CONSTRAINT squad_players_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(id)
+);
+CREATE TABLE public.team_activity_log (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  fantasy_team_id uuid,
+  action text NOT NULL,
+  details text,
+  created_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT team_activity_log_pkey PRIMARY KEY (id),
+  CONSTRAINT team_activity_log_fantasy_team_id_fkey FOREIGN KEY (fantasy_team_id) REFERENCES public.fantasy_teams(id)
 );
 CREATE TABLE public.tournament_settings (
   key text NOT NULL,
