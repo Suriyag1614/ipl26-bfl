@@ -936,7 +936,11 @@ const API = {
         const bon  = stats ? this.calcBonusPoints(stats, pomPlayerId, potPlayerId) : 0;
         const base = bat + bowl + fld;
         const isImpactPlayer = storedIpPlayerId && (effectivePid === storedIpPlayerId);
-        const { multiplier, label } = this.resolveMultiplier({ is_impact: isImpactPlayer }, isActive);
+        const { multiplier, label } = this.resolveMultiplier({
+          is_impact: isImpactPlayer,
+          is_captain: !!sp.is_captain,
+          is_vc: !!sp.is_vc
+        }, isActive);
         const final = (base * multiplier) + bon;
 
         playerResults.push({
@@ -950,6 +954,7 @@ const API = {
           fld: fld, bon: bon, multiplier, label,
           final: final,
           isImpact: isImpactPlayer,
+          isCaptain: !!sp.is_captain, isVC: !!sp.is_vc,
           isImpactActive: !!(isImpactPlayer && isActive),
           isCaptain: !!sp.is_captain, isVC: !!sp.is_vc,
           isPom: pomPlayerId && (effectivePid === pomPlayerId), isPot: potPlayerId && (effectivePid === potPlayerId),
