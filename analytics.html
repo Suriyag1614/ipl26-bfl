@@ -645,6 +645,8 @@ function renderImpact() {
 
 async function renderBadges() {
   try {
+    // Ensure badge definitions are synced
+    await API.ensureBadgeDefinitions();
     var earned=await API.fetchUserBadges(_myTeamId);
     var defsRes=await sb.from('badge_definitions').select('*');
     var allDefs=(defsRes&&defsRes.data)||[];

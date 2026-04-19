@@ -1002,13 +1002,17 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   _badgeDefs: [
     { id: 'centurion',      name: 'Centurion',         description: 'Had a player score 100+ runs in a match', icon: '💯', color: '#f59e0b' },
-
+    { id: 'super-centurion', name: 'Super Centurion',  description: 'Had a player score 200+ runs in a match', icon: '🌟', color: '#f43f5e' },
     { id: 'perfect-pick',   name: 'Perfect Pick',      description: 'Predicted the exact target score', icon: '🔮', color: '#a855f7' },
     { id: 'prediction-pro', name: 'Prediction Pro',    description: 'Correct winner with target within 5 runs', icon: '🧠', color: '#06b6d4' },
-    { id: 'high-flyer',     name: 'High Flyer',        description: 'Scored 250+ points in a single match', icon: '🦅', color: '#ef4444' },
-    { id: '1000-points',    name: 'Millennium Club',   description: 'Reached 1000 career points', icon: '🔥', color: '#f97316' },
-    { id: '3000-points',    name: 'Triple Threat',     description: 'Reached 3000 career points', icon: '⚡', color: '#eab308' },
+    { id: 'high-flyer',     name: 'High Flyer',        description: 'Scored 500+ points in a single match', icon: '🦅', color: '#ef4444' },
+    { id: 'super-flyer',    name: 'Super Flyer',       description: 'Scored 1000+ points in a single match', icon: '🚀', color: '#ec4899' },
+    { id: 'mega-flyer',     name: 'Mega Flyer',        description: 'Scored 1500+ points in a single match', icon: '💎', color: '#8b5cf6' },
     { id: '5000-points',    name: 'Elite 5000',        description: 'Reached 5000 career points', icon: '👑', color: '#fbbf24' },
+    { id: '7500-points',    name: 'Super Elite',       description: 'Reached 7500 career points', icon: '💍', color: '#f472b6' },
+    { id: '10000-points',   name: 'Legend',            description: 'Reached 10000 career points', icon: '🏆', color: '#fbbf24' },
+    { id: '12500-points',   name: 'Grandmaster',       description: 'Reached 12500 career points', icon: '🎖️', color: '#d4d4d8' },
+    { id: '15000-points',   name: 'Immortal',          description: 'Reached 15000 career points', icon: '🌈', color: '#a855f7' },
     { id: 'rank-1',         name: 'Champion',          description: 'Reached #1 on the leaderboard', icon: '🥇', color: '#fbbf24' },
     { id: 'top-3',          name: 'Podium Finish',     description: 'Reached top 3 on the leaderboard', icon: '🥉', color: '#d97706' },
     { id: 'top-5',          name: 'Top 5',             description: 'Reached top 5 on the leaderboard', icon: '🏅', color: '#6b7280' },
@@ -1016,12 +1020,20 @@ const API = {
     { id: 'first_blood',    name: 'First Blood',       description: 'First prediction submitted in the season', icon: '🩸', color: '#f87171' },
     { id: 'first_win',      name: 'First Win',         description: 'Ranked 1st in a match', icon: '🏆', color: '#f5c842' },
     { id: 'consistent',     name: 'Consistent Performer', description: 'Top 3 for 3 consecutive matches', icon: '🔥', color: '#ff4d6d' },
+    { id: 'super-consistent', name: 'Super Consistent', description: 'Top 3 for 5 consecutive matches', icon: '💫', color: '#facc15' },
     { id: 'streak_3',       name: 'Hat Trick',         description: '3 correct winner predictions in a row', icon: '🎩', color: '#a78bfa' },
     { id: 'streak_5',       name: 'Prediction Maestro', description: '5 correct winner predictions in a row', icon: '🧙', color: '#f5c842' },
+    { id: 'streak_7',       name: 'Prophet',           description: '7 correct winner predictions in a row', icon: '🔱', color: '#38bdf8' },
+    { id: 'streak_10',      name: 'Oracle',            description: '10 correct winner predictions in a row', icon: '🌙', color: '#c084fc' },
     { id: 'all_rounder',    name: 'All-Rounder',       description: 'Scored points in all categories in a match', icon: '🌟', color: '#a78bfa' },
     { id: 'captain_king',   name: 'Captain King',      description: 'Captain scored 200+ points in a match', icon: '👑', color: '#f5c842' },
+    { id: 'captain_legend', name: 'Captain Legend',    description: 'Captain scored 300+ points in a match', icon: '🦁', color: '#fb923c' },
     { id: 'impact_master',  name: 'Impact Master',     description: 'Impact Player scored 300+ points', icon: '⚡', color: '#38d9f5' },
+    { id: 'impact_legend',  name: 'Impact Legend',     description: 'Impact Player scored 400+ points', icon: '💥', color: '#f43f5e' },
     { id: 'perfect_pred',   name: 'Perfect Predictor', description: 'Predicted exact target score', icon: '🎯', color: '#c8f135' },
+    { id: 'victory-veteran', name: 'Victory Veteran',  description: 'Won 10 matches', icon: '⚔️', color: '#22c55e' },
+    { id: 'match-king',     name: 'Match King',        description: 'Won 25 matches', icon: '👑', color: '#eab308' },
+    { id: 'dominator',      name: 'Dominator',         description: 'Won 50 matches', icon: '🏹', color: '#dc2626' },
   ],
 
   async ensureBadgeDefinitions() {
@@ -1103,8 +1115,8 @@ const API = {
 
       // Centurion (100+ batting pts by any player, unmultiplied)
       if (players.some(p => (p.bat / (p.multiplier || 1)) >= 100)) give('centurion');
-
-
+      // Super Centurion (200+ batting pts)
+      if (players.some(p => (p.bat / (p.multiplier || 1)) >= 200)) give('super-centurion');
 
       // Perfect Pick / Perfect Predictor (exact target match)
       if (pred && match.actual_target && Math.abs(pred.target_score - match.actual_target) === 0) {
@@ -1117,8 +1129,12 @@ const API = {
         give('prediction-pro');
       }
 
-      // High Flyer (match total >= 250)
-      if (log.total_points >= 250) give('high-flyer');
+      // High Flyer (match total >= 500)
+      if (log.total_points >= 500) give('high-flyer');
+      // Super Flyer (1000+ points)
+      if (log.total_points >= 1000) give('super-flyer');
+      // Mega Flyer (1500+ points)
+      if (log.total_points >= 1500) give('mega-flyer');
 
       // First Win (ranked 1st in this match)
       if (matchRank === 1) give('first_win');
@@ -1139,17 +1155,23 @@ const API = {
       // Captain King (captain scored 200+ final points)
       const captain = players.find(p => p.isCaptain);
       if (captain && (captain.final || 0) >= 200) give('captain_king');
+      // Captain Legend (captain scored 300+ final points)
+      if (captain && (captain.final || 0) >= 300) give('captain_legend');
 
       // Impact Master (impact player scored 300+ final points)
       const impact = players.find(p => p.isImpact && p.isImpactActive);
       if (impact && (impact.final || 0) >= 300) give('impact_master');
+      // Impact Legend (impact player scored 400+ final points)
+      if (impact && (impact.final || 0) >= 400) give('impact_legend');
 
       // ── Career Milestones ──
 
-      // Point milestones
-      if (totalPoints >= 1000) give('1000-points');
-      if (totalPoints >= 3000) give('3000-points');
+      // Point milestones (74 matches, ~200 avg = ~14800 max)
       if (totalPoints >= 5000) give('5000-points');
+      if (totalPoints >= 7500) give('7500-points');
+      if (totalPoints >= 10000) give('10000-points');
+      if (totalPoints >= 12500) give('12500-points');
+      if (totalPoints >= 15000) give('15000-points');
 
       // Rank milestones
       if (rank === 1) give('rank-1');
@@ -1173,7 +1195,15 @@ const API = {
         const maxStreak = Math.max(bestStreak, currentStreak);
         if (maxStreak >= 3) give('streak_3');
         if (maxStreak >= 5) give('streak_5');
+        if (maxStreak >= 7) give('streak_7');
+        if (maxStreak >= 10) give('streak_10');
       }
+
+      // ── Match Win Badges ──
+      const matchWins = (allLogs || []).filter(l => l.fantasy_team_id === teamId && l.match && l.match.status === 'completed').length;
+      if (matchWins >= 10) give('victory-veteran');
+      if (matchWins >= 25) give('match-king');
+      if (matchWins >= 50) give('dominator');
 
       // ── Consistent Performer (top 3 in 3 consecutive completed matches) ──
       const teamLogs = allLogs.filter(l => l.fantasy_team_id === teamId && l.match && ['completed', 'processed'].includes(l.match.status));
@@ -1192,6 +1222,13 @@ const API = {
           else consec = 0;
         }
         if (consec >= 3) give('consistent');
+        // Super Consistent (5 consecutive top-3)
+        let consec5 = 0;
+        for (const r of matchRanks) {
+          if (r > 0 && r <= 3) { consec5++; if (consec5 >= 5) break; }
+          else consec5 = 0;
+        }
+        if (consec5 >= 5) give('super-consistent');
       }
     }
 
@@ -1253,7 +1290,7 @@ const API = {
       // 4. Player Milestones
       if (breakdown.some(log => (log.breakdown?.players || []).some(p => p.isImpact && (p.final || 0) >= 300))) give('impact_master');
       if (breakdown.some(log => (log.breakdown?.players || []).some(p => (p.bat / (p.multiplier || 1)) >= 100))) give('centurion');
-      if (breakdown.some(log => log.total_points >= 250)) give('high-flyer');
+      if (breakdown.some(log => log.total_points >= 500)) give('high-flyer');
       if (breakdown.some(log => (log.breakdown?.players || []).some(p => p.isCaptain && (p.final || 0) >= 200))) give('captain_king');
       if (breakdown.some(log => {
         const pp = log.breakdown?.players || [];
