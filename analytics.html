@@ -671,7 +671,7 @@ async function renderBadges() {
           earnedLabel = UI.shortDate(earnRow.earned_at);
         }
       }
-      return '<div class="badge-card'+(isEarned?'':' locked')+'" style="--badge-color:'+(def.color||'#f0b429')+';"><span class="badge-icon">'+(def.icon||'🏅')+'</span><div class="badge-name">'+UI.esc(def.name||'')+'</div><div class="badge-desc">'+UI.esc(def.description||'')+'</div>'+(earnedLabel?'<div style="font-size:10px;color:var(--accent);margin-top:5px;font-family:var(--f-ui);font-weight:700;">'+earnedLabel+'</div>':'')+'</div>';
+      return '<div class="badge-card'+(isEarned?'':' locked')+'" style="--badge-color:'+(def.color||'#f0b429')+';"><span class="badge-icon">'+(def.icon||'🏅')+'</span><div class="badge-name">'+UI.esc(def.name||'')+'</div><div class="badge-desc">'+UI.esc(def.description||'')+'</div>'+(earnedLabel?'<div style="color:var(--accent);margin-top:5px;font-family:var(--f-ui);font-weight:700;">'+earnedLabel+'</div>':'')+'</div>';
     }).join('');
   } catch(e){
     var grid=document.getElementById('badges-grid');
