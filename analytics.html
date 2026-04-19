@@ -608,7 +608,7 @@ function renderPredictions() {
     var diff=m.actual_target?Math.abs((p.target_score||0)-(m.actual_target||0)):null;
     var corW=m.winner&&p.predicted_winner===m.winner;
     var predPts=API.calcPredictionPoints(p,m);
-    var statusHtml=m.status==='abandoned'?'<span class="match-status status-locked" style="font-size:10px;">Abandoned</span>':(!m.winner?'<span class="match-status status-upcoming" style="font-size:10px;">Pending</span>':(corW?'<span class="match-status status-done" style="font-size:10px;">Correct</span>':'<span class="match-status status-locked" style="font-size:10px;">Wrong</span>'));
+    var statusHtml=!m.winner?'<span class="match-status status-upcoming" style="font-size:10px;">Pending</span>':(corW?'<span class="match-status status-done" style="font-size:10px;">Correct</span>':'<span class="match-status status-locked" style="font-size:10px;">Wrong</span>');
     return '<tr><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+'M'+(m.match_no||'?')+' · '+UI.tShort(m.team1)+' vs '+UI.tShort(m.team2)+'</td>'+
       '<td class="font-mono">'+(p.target_score||'—')+'</td>'+
       '<td class="font-mono">'+(m.actual_target||'—')+'</td>'+

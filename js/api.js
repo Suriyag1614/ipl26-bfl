@@ -1625,8 +1625,13 @@ const API = {
       const stats = await this.fetchImpactStats(teamId);
       if (stats.used >= stats.total) throw new Error('Maximum tournament uses (8) reached.');
     }
+    // Get current IP player_id from squad
+    const squad = await this.fetchSquad(teamId);
+    const ipPlayer = squad.find(sp => sp.is_impact);
+    const playerId = ipPlayer?.player?.id || null;
+
     const { error } = await sb.from('impact_activations')
-      .upsert({ fantasy_team_id: teamId, match_id: matchId, is_active: isActive }, { onConflict: 'fantasy_team_id,match_id' });
+      .upsert({ fantasy_team_id: teamId, match_id: matchId, is_active: isActive, player_id: playerId }, { onConflict: 'fantasy_team_id,match_id' });
     if (error) throw error;
     return true;
   },
