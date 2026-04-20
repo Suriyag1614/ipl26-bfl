@@ -1053,7 +1053,9 @@ async function renderPointsSummary() {
     // Compute prediction breakdown from all predictions
     var predBreakdown = {};
     var allPreds = safeArr(await API.fetchAllPredictionsAllMatches());
-    var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var completedMatches = _matches.filter(function(m) { 
+      return (m.status === 'completed' || m.status === 'processed') && !m.is_abandoned; 
+    });
     var completedMatchIds = completedMatches.map(m => m.id);
     allPreds.forEach(function(p) {
       if (!p.fantasy_team_id || !completedMatchIds.includes(p.match_id)) return;
@@ -1067,10 +1069,10 @@ async function renderPointsSummary() {
       if (match && match.actual_target && p.target_score) {
         var diff = Math.abs(p.target_score - match.actual_target);
         var tp = 0;
-        if (diff === 0) tp = 25;
-        else if (diff <= 5) tp = 20;
-        else if (diff <= 10) tp = 15;
-        else if (diff <= 20) tp = 10;
+        if (diff === 0) tp = 250;
+        else if (diff === 1) tp = 150;
+        else if (diff <= 5) tp = 100;
+        else if (diff <= 10) tp = 50;
         predBreakdown[p.fantasy_team_id].target += tp;
       }
     });
