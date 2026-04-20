@@ -14,21 +14,10 @@ var NAV_LINKS = [
   { href:'leaderboard.html',  label:'Standings',    page:'leaderboard',    bnav:true, bnavLabel:'Rank',
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>' },
   
-  // Analytics sub-links (all point to analytics.html with ?tab)
-  { href:'analytics.html?tab=overview', label:'Team Analytics', page:'analytics',     bnav:false,
+  { href:'analytics.html', label:'Team Analytics', page:'analytics',     bnav:false,
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' },
-  { href:'analytics.html?tab=pred-summary', label:'Predictions Summary', page:'pred-summary', bnav:false,
+  { href:'summary.html', label:'Season Analytics', page:'summary',     bnav:false,
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>' },
-  { href:'analytics.html?tab=accuracy', label:'Prediction Accuracy', page:'accuracy', bnav:false,
-    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>' },
-  { href:'analytics.html?tab=match-preds',  label:'Match Predictions', page:'match-preds', bnav:false,
-    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' },
-  { href:'analytics.html?tab=fantasy-players',  label:'Fantasy Players', page:'fantasy-players', bnav:false,
-    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15l-2 5-3-1-3 1-2-5"/><circle cx="12" cy="8" r="5"/></svg>' },
-  { href:'analytics.html?tab=user-teams',  label:'User Teams', page:'user-teams', bnav:false,
-    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>' },
-  { href:'analytics.html?tab=power-rankings',  label:'Power Rankings', page:'power-rankings', bnav:false,
-    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' },
 
   { href:'instructions.html', label:'Guide',         page:'instructions',   bnav:false,
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="12" x2="12.01" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' },
@@ -100,7 +89,7 @@ function buildNavbar(activePage, isAdmin) {
         '<span class="sb-section-lbl">Rankings</span>' +
         buildSbLinks(['leaderboard'], links, activePage) +
         '<span class="sb-section-lbl">Insights</span>' +
-        buildSbLinks(['analytics','pred-summary','accuracy','match-preds','fantasy-players','user-teams','power-rankings'], links, activePage) +
+        buildSbLinks(['analytics','summary'], links, activePage) +
         '<span class="sb-section-lbl">Resources</span>' +
         buildSbLinks(['instructions'], links, activePage) +
       '</nav>' +
