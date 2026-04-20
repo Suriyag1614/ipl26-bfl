@@ -384,6 +384,19 @@
 <script>
 'use strict';
 var _myTeamId = null, _analytics = null, _matches = [], _teams = [], _playerSquadMap = {};
+var _ptsSortSquad = { col: 'team_name', asc: true }; // Sort state for Squad Points table
+var _ptsSortPred = { col: 'team_name', asc: true }; // Sort state for Prediction Points table
+
+function _ptsSortBy(table, col) {
+  var sort = table === 'squad' ? _ptsSortSquad : _ptsSortPred;
+  if (sort.col === col) {
+    sort.asc = !sort.asc;
+  } else {
+    sort.col = col;
+    sort.asc = true;
+  }
+  renderPointsSummary();
+}
 function $id(i){return document.getElementById(i);}
 function safeArr(a){return Array.isArray(a)?a:[];}
 </script>
@@ -978,6 +991,18 @@ function resetFantasyLeaderboard(){
 }
 
 async function renderPointsSummary() {
+  function sortPtsRows(rows, col, asc) {
+    return rows.slice().sort(function(a, b) {
+      var av = a[col], bv = b[col];
+      if (typeof av === 'string') av = (av || '').toLowerCase();
+      if (typeof bv === 'string') bv = (bv || '').toLowerCase();
+      if (col === 'team_name') {
+        return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+      }
+      return asc ? (av - bv) : (bv - av);
+    });
+  }
+  
   try {
     var leaderboard = safeArr(await API.fetchLeaderboard());
     var allTeams = safeArr(await API.fetchAllTeamPoints());
@@ -1080,21 +1105,36 @@ async function renderPointsSummary() {
       var predPts = (t.target_pts || 0) + (t.winner_pts || 0);
       var bonusPts = t.bonus_pts || 0;
       teamDataMap[tid].team_total = squadPts + predPts + bonusPts;
+      teamDataMap[tid].squad_total = squadPts;
+      teamDataMap[tid].pred_total = predPts;
     });
     
-    // Sort teams alphabetically for consistency
-    var sortedTeams = Object.values(teamDataMap).sort(function(a, b) {
-      return UI.tShort(a.team_name).localeCompare(UI.tShort(b.team_name));
-    });
+    // Sort teams based on current sort column - Squad table uses _ptsSortSquad, Pred table uses _ptsSortPred
+    var sortedSquadTeams = sortPtsRows(Object.values(teamDataMap), _ptsSortSquad.col, _ptsSortSquad.asc);
+    var sortedPredTeams = sortPtsRows(Object.values(teamDataMap), _ptsSortPred.col, _ptsSortPred.asc);
     
-    // Render Squad Points Table
+    // Render Squad Points Table Headers with sort indicators
+    var squadTable = document.querySelector('#tab-points-summary .card:first-child table');
+    if (squadTable) {
+      var squadHeaders = squadTable.querySelector('thead tr');
+      if (squadHeaders) {
+        var arrowSquad = function(col) { return _ptsSortSquad.col === col ? (_ptsSortSquad.asc ? ' ▲' : ' ▼') : ''; };
+        squadHeaders.innerHTML = '<th style="text-align:left;cursor:pointer;user-select:none;" onclick="_ptsSortBy(\'squad\',\'team_name\')">Team' + arrowSquad('team_name') + '</th>' +
+          '<th style="text-align:right;cursor:pointer;user-select:none;" onclick="_ptsSortBy(\'squad\',\'batting_pts\')">Batting' + arrowSquad('batting_pts') + '</th>' +
+          '<th style="text-align:right;cursor:pointer;user-select:none;" onclick="_ptsSortBy(\'squad\',\'bowling_pts\')">Bowling' + arrowSquad('bowling_pts') + '</th>' +
+          '<th style="text-align:right;cursor:pointer;user-select:none;" onclick="_ptsSortBy(\'squad\',\'fielding_pts\')">Fielding' + arrowSquad('fielding_pts') + '</th>' +
+          '<th style="text-align:right;cursor:pointer;user-select:none;" onclick="_ptsSortBy(\'squad\',\'squad_total\')">Squad Total' + arrowSquad('squad_total') + '</th>' +
+          '<th style="text-align:right;cursor:pointer;user-select:none;" onclick="_ptsSortBy(\'squad\',\'team_total\')">Season Total' + arrowSquad('team_total') + '</th>';
+      }
+    }
+    
+// Render Squad Points Table
     var squadTbody = document.getElementById('points-squad-tbody');
     if (squadTbody) {
-      if (!sortedTeams.length) {
+      if (!sortedSquadTeams.length) {
         squadTbody.innerHTML = '<tr><td colspan="6" class="empty-state">No team data available</td></tr>';
       } else {
-        var maxSquad = Math.max(...sortedTeams.map(t => (t.batting_pts || 0) + (t.bowling_pts || 0) + (t.fielding_pts || 0)));
-        squadTbody.innerHTML = sortedTeams.map(function(t) {
+        squadTbody.innerHTML = sortedSquadTeams.map(function(t) {
           var batPts = t.batting_pts || 0;
           var bowlPts = t.bowling_pts || 0;
           var fldPts = t.fielding_pts || 0;
@@ -1118,13 +1158,26 @@ async function renderPointsSummary() {
     }
     
     // Render Prediction Points Table
+    var predTable = document.querySelector('#tab-points-summary .card:nth-child(2) table');
+    if (predTable) {
+      var predHeaders = predTable.querySelector('thead tr');
+      if (predHeaders) {
+        var arrowPred = function(col) { return _ptsSortPred.col === col ? (_ptsSortPred.asc ? ' ▲' : ' ▼') : ''; };
+        predHeaders.innerHTML = '<th style="text-align:left;cursor:pointer;user-select:none;" onclick="_ptsSortBy(\'pred\',\'team_name\')">Team' + arrowPred('team_name') + '</th>' +
+          '<th style="text-align:right;cursor:pointer;user-select:none;" onclick="_ptsSortBy(\'pred\',\'target_pts\')">Target' + arrowPred('target_pts') + '</th>' +
+          '<th style="text-align:right;cursor:pointer;user-select:none;" onclick="_ptsSortBy(\'pred\',\'winner_pts\')">Winner' + arrowPred('winner_pts') + '</th>' +
+          '<th style="text-align:right;cursor:pointer;user-select:none;" onclick="_ptsSortBy(\'pred\',\'pred_total\')">Pred Total' + arrowPred('pred_total') + '</th>' +
+          '<th style="text-align:right;cursor:pointer;user-select:none;" onclick="_ptsSortBy(\'pred\',\'bonus_pts\')">Bonus' + arrowPred('bonus_pts') + '</th>' +
+          '<th style="text-align:right;cursor:pointer;user-select:none;" onclick="_ptsSortBy(\'pred\',\'team_total\')">Season Total' + arrowPred('team_total') + '</th>';
+      }
+    }
+    
     var predTbody = document.getElementById('points-pred-tbody');
     if (predTbody) {
-      if (!sortedTeams.length) {
+      if (!sortedPredTeams.length) {
         predTbody.innerHTML = '<tr><td colspan="7" class="empty-state">No team data available</td></tr>';
       } else {
-        var maxPred = Math.max(...sortedTeams.map(t => (t.target_pts || 0) + (t.winner_pts || 0)));
-        predTbody.innerHTML = sortedTeams.map(function(t) {
+        predTbody.innerHTML = sortedPredTeams.map(function(t) {
           var targetPts = t.target_pts || 0;
           var winnerPts = t.winner_pts || 0;
           var predPts = targetPts + winnerPts;
