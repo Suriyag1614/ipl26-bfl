@@ -31,12 +31,26 @@
     .kpi-chip { background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center; }
     .kpi-label{ font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:800;letter-spacing:1px;margin-bottom:2px; }
     .kpi-value{ font-family:var(--f-display);font-size:20px;font-weight:900;line-height:1.1; }
+    .kpi-chip.total-chip { border-color:var(--accent);background:var(--accent-dim); }
+    .kpi-chip.total-chip .kpi-value { color:var(--accent); }
     .clickable-team { transition:transform .2s; }
     .clickable-team:hover { transform:scale(1.05); }
 
     .tabs { overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
     .tabs::-webkit-scrollbar { display: none; }
     .tab-btn { white-space: nowrap; }
+
+    .table-total-divider { 
+      width: 3px; 
+      background: linear-gradient(180deg, transparent, var(--accent), transparent);
+      margin: 0 8px;
+      border-radius: 2px;
+    }
+
+    .data-table th,
+    .data-table td { text-align: center; }
+    .data-table th:first-child,
+    .data-table td:first-child { text-align: left; }
 
     @media(max-width:700px){
       .metrics-row{grid-template-columns:repeat(2,1fr);}
@@ -144,6 +158,7 @@
     <button class="tab-btn" onclick="switchTab('players')">Players</button>
     <button class="tab-btn" onclick="switchTab('predictions')">Predictions</button>
     <button class="tab-btn" onclick="switchTab('impact')">Impact</button>
+    <button class="tab-btn" onclick="switchTab('breakdown')">Points Breakdown</button>
     <button class="tab-btn" onclick="switchTab('badges')">Badges</button>
   </div>
 
@@ -245,6 +260,29 @@
         <table class="data-table" style="min-width:400px;">
           <thead><tr><th>Match</th><th>Player</th><th>Role</th><th>Points (3×)</th></tr></thead>
           <tbody id="impact-history-tbody"><tr><td colspan="4" class="empty-state">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- POINTS BREAKDOWN -->
+  <div class="tab-panel" id="tab-breakdown">
+    <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;">
+      <div class="card">
+        <div class="card-title">Squad Points</div>
+        <div id="breakdown-squad"><div class="skel skel-row"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Prediction Points</div>
+        <div id="breakdown-predictions"><div class="skel skel-row"></div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">Points by Match</div>
+      <div class="table-wrap table-scroller">
+        <table class="data-table" style="min-width:600px;">
+          <thead><tr><th>Match</th><th>Batting</th><th>Bowling</th><th>Fielding</th><th>Squad Total</th><th>Target</th><th>Winner</th><th>Pred Total</th><th>Bonus</th><th>Match Total</th></tr></thead>
+          <tbody id="breakdown-history-tbody"><tr><td colspan="8" class="empty-state">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -566,6 +604,104 @@ async function renderBadges() {
   } catch(e){
     var grid=document.getElementById('badges-grid');
     if(grid) grid.innerHTML='<div class="empty-state"><div class="empty-state-text">Could not load badges</div></div>';
+  }
+}
+
+async function renderPointsBreakdown() {
+  var a = _analytics;
+  var bd = Array.isArray(a.breakdown) ? a.breakdown : [];
+  var totalBatting = 0, totalBowling = 0, totalFielding = 0, totalTarget = 0, totalWinner = 0, totalBonus = 0;
+
+  bd.forEach(function(l) {
+    totalBatting += (l.batting_pts || 0);
+    totalBowling += (l.bowling_pts || 0);
+    totalFielding += (l.fielding_pts || 0);
+    totalBonus += (l.bonus_pts || 0);
+  });
+
+  // Calculate separate target and winner points from predictions
+  var matchPredictions = {};
+  try {
+    var preds = safeArr(await API.fetchAllPredictionsAllMatches());
+    preds.forEach(function(p) {
+      if (!p.fantasy_team_id || p.fantasy_team_id !== _myTeamId) return;
+      var match = _matches.find(function(m) { return m.id === p.match_id; });
+      if (!match || (match.status !== 'completed' && match.status !== 'processed')) return;
+
+      if (!matchPredictions[p.match_id]) {
+        matchPredictions[p.match_id] = { target: 0, winner: 0 };
+      }
+
+      if (match.winner && p.predicted_winner === match.winner) {
+        matchPredictions[p.match_id].winner += 25;
+        totalWinner += 25;
+      }
+
+      if (match.actual_target && p.target_score) {
+        var diff = Math.abs(p.target_score - match.actual_target);
+        var targetPts = 0;
+        if (diff === 0) targetPts = 25;
+        else if (diff <= 5) targetPts = 20;
+        else if (diff <= 10) targetPts = 15;
+        else if (diff <= 20) targetPts = 10;
+        matchPredictions[p.match_id].target += targetPts;
+        totalTarget += targetPts;
+      }
+    });
+  } catch(e) {
+    console.warn('Error calculating prediction breakdown:', e);
+  }
+
+  var squadTotal = totalBatting + totalBowling + totalFielding;
+  var predTotal = totalTarget + totalWinner;
+
+  var squadEl = document.getElementById('breakdown-squad');
+  if (squadEl) {
+    squadEl.innerHTML = '<div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);">' +
+      '<div class="kpi-chip"><div class="kpi-label">Batting</div><div class="kpi-value" style="color:#f87171;">' + UI.fmtPts(totalBatting) + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Bowling</div><div class="kpi-value" style="color:#60a5fa;">' + UI.fmtPts(totalBowling) + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Fielding</div><div class="kpi-value" style="color:#34d399;">' + UI.fmtPts(totalFielding) + '</div></div>' +
+      '<div class="kpi-chip total-chip"><div class="kpi-label">Squad Total</div><div class="kpi-value">' + UI.fmtPts(squadTotal) + '</div></div>' +
+      '</div>';
+  }
+
+  var predEl = document.getElementById('breakdown-predictions');
+  if (predEl) {
+    predEl.innerHTML = '<div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);">' +
+      '<div class="kpi-chip"><div class="kpi-label">Target Prediction</div><div class="kpi-value" style="color:#fbbf24;">' + UI.fmtPts(totalTarget) + '</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Winner Prediction</div><div class="kpi-value" style="color:#a78bfa;">' + UI.fmtPts(totalWinner) + '</div></div>' +
+      '<div class="kpi-chip total-chip"><div class="kpi-label">Predictions Total</div><div class="kpi-value">' + UI.fmtPts(predTotal) + '</div></div>' +
+      '<div class="kpi-chip total-chip"><div class="kpi-label">Bonus Points (PoM&PoT)</div><div class="kpi-value">' + UI.fmtPts(totalBonus) + '</div></div>' +
+      '</div>';
+  }
+
+  var tbody = document.getElementById('breakdown-history-tbody');
+  if (tbody) {
+    if (!bd.length) {
+      tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No match data yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = bd.slice().reverse().map(function(l) {
+      var match = _matches.find(function(m) { return m.id === l.match_id; });
+      var matchLabel = match ? 'M' + (match.match_no || '?') + ' · ' + UI.tShort(match.team1) + ' vs ' + UI.tShort(match.team2) : 'M?';
+      var squadMatch = (l.batting_pts || 0) + (l.bowling_pts || 0) + (l.fielding_pts || 0);
+      var predData = matchPredictions[l.match_id] || { target: 0, winner: 0 };
+      var predMatch = predData.target + predData.winner;
+      var bonusMatch = (l.bonus_pts || 0);
+      var totalMatch = squadMatch + predMatch + bonusMatch;
+      return '<tr>' +
+        '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + matchLabel + '</td>' +
+        '<td class="font-mono" style="color:#f87171;">' + (l.batting_pts || 0) + '</td>' +
+        '<td class="font-mono" style="color:#60a5fa;">' + (l.bowling_pts || 0) + '</td>' +
+        '<td class="font-mono" style="color:#34d399;">' + (l.fielding_pts || 0) + '</td>' +
+        '<td class="font-mono" style="color:var(--accent);font-weight:700;border-right:2px solid var(--border);">' + squadMatch + '</td>' +
+        '<td class="font-mono" style="color:#fbbf24;">' + predData.target + '</td>' +
+        '<td class="font-mono" style="color:#a78bfa;">' + predData.winner + '</td>' +
+         '<td class="font-mono" style="color:var(--cyan);font-weight:700;border-right:2px solid var(--border);">' + predMatch + '</td>' +
+        '<td class="font-mono" style="color:#8b5cf6;">' + bonusMatch + '</td>' +
+         '<td class="font-mono pts" style="color:var(--gold);font-weight:700;border-left:3px solid var(--accent);background:var(--accent-dim);">' + totalMatch + '</td>' +
+      '</tr>';
+    }).join('');
   }
 }
 
@@ -1125,7 +1261,7 @@ async function switchTab(tab) {
     prevPanel.classList.remove('active', 'leaving');
   }
 
-  var tabs=['overview','players','predictions','impact','badges'];
+  var tabs=['overview','players','predictions','impact','breakdown','badges'];
   document.querySelectorAll('.tab-btn').forEach(function(b){
     var id = b.getAttribute('onclick').match(/'([^']+)'/)[1];
     b.classList.toggle('active', id === tab);
@@ -1147,6 +1283,7 @@ async function switchTab(tab) {
   if(tab==='players') setTimeout(renderPlayers,60);
   if(tab==='predictions') setTimeout(renderPredictions,60);
   if(tab==='impact') setTimeout(renderImpact,60);
+  if(tab==='breakdown') renderPointsBreakdown();
 }
 init();
 </script>
