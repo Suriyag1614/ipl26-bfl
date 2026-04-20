@@ -31,6 +31,7 @@
     .kpi-chip { background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center; }
     .kpi-label{ font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:800;letter-spacing:1px;margin-bottom:2px; }
     .kpi-value{ font-family:var(--f-display);font-size:20px;font-weight:900;line-height:1.1; }
+    .kpi-sub { font-size:10px;color:var(--text3);margin-top:2px;font-weight:600; }
     .clickable-team { transition:transform .2s; }
     .clickable-team:hover { transform:scale(1.05); }
 
@@ -38,9 +39,95 @@
     .tabs::-webkit-scrollbar { display: none; }
     .tab-btn { white-space: nowrap; }
 
+    /* Season Points Summary — Percentage bars */
+    .season-pct-bar { 
+      display: inline-block; 
+      width: 100%; 
+      max-width: 120px; 
+      height: 6px; 
+      background: var(--bg3); 
+      border-radius: 3px; 
+      overflow: hidden; 
+      position: relative;
+    }
+    .season-pct-fill { 
+      height: 100%; 
+      border-radius: 3px; 
+      background: linear-gradient(90deg, var(--accent), var(--gold)); 
+    }
+    .season-pct-text { 
+      font-family: var(--f-mono); 
+      font-size: 11px; 
+      font-weight: 700; 
+      color: var(--text2); 
+      display: block; 
+      margin-top: 2px; 
+    }
+
+    /* Table center alignment for numeric columns */
+    .data-table th,
+    .data-table td { text-align: center; }
+    .data-table th:first-child,
+    .data-table td:first-child { text-align: left; }
+
+    /* Points Summary Table Styling */
+    .points-summary-table { min-width: 700px; }
+    .points-summary-table th { 
+      padding: 12px 8px; 
+      font-size: 11px; 
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: center !important;
+    }
+    .points-summary-table th:first-child {
+      text-align: left !important;
+    }
+    .points-summary-table td { 
+      padding: 10px 6px; 
+      vertical-align: middle;
+      text-align: center;
+      font-family: var(--f-body);
+    }
+    .points-summary-table td:first-child { 
+      text-align: left;
+    }
+    .points-summary-table .pts-cell {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .points-summary-table .pts-value {
+      font-size: 16px;
+      font-weight: 700;
+      font-family: var(--f-display);
+    }
+
+    .points-summary-table .pts-pct {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 2px;
+      font-family: var(--f-mono);
+      font-weight: 700;
+    }
+
+    .points-summary-table .total-cell .pts-value {
+      font-size: 18px;
+      font-weight: 700;
+      font-family: var(--f-mono);
+    }
+
     @media(max-width:700px){
       .metrics-row{grid-template-columns:repeat(2,1fr);}
       .analytics-chart-row { grid-template-columns:1fr !important; }
+      .points-summary-table { font-size: 12px; }
+      .points-summary-table th { font-size: 10px; padding: 8px 4px; }
+      .points-summary-table td { padding: 6px 3px; }
+      .points-summary-table .pts-value { font-size: 13px; }
+      .points-summary-table .pts-pct { font-size: 9px; }
+      .points-summary-table .total-cell .pts-value { font-size: 15px; }
     }
 
     /* ICC Style Leaderboard */
@@ -132,15 +219,16 @@
     <button class="btn btn-ghost btn-sm" onclick="loadAnalytics()">↻ Refresh</button>
   </div>
 
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('pred-summary')">Summary</button>
-    <button class="tab-btn" onclick="switchTab('accuracy')">Accuracy</button>
-    <button class="tab-btn" onclick="switchTab('match-preds')">Match Preds</button>
-    <button class="tab-btn" onclick="switchTab('fantasy-players')">Fantasy Players</button>
-    <button class="tab-btn" onclick="switchTab('user-teams')">User Teams</button>
-    <button class="tab-btn" onclick="switchTab('power-rankings')">Power Rankings</button>
-  </div>
+   <!-- Tabs -->
+   <div class="tabs">
+     <button class="tab-btn active" onclick="switchTab('pred-summary')">Summary</button>
+     <button class="tab-btn" onclick="switchTab('accuracy')">Accuracy</button>
+     <button class="tab-btn" onclick="switchTab('match-preds')">Match Preds</button>
+     <button class="tab-btn" onclick="switchTab('points-summary')">Points Summary</button>
+     <button class="tab-btn" onclick="switchTab('fantasy-players')">Fantasy Players</button>
+     <button class="tab-btn" onclick="switchTab('user-teams')">User Teams</button>
+     <button class="tab-btn" onclick="switchTab('power-rankings')">Power Rankings</button>
+   </div>
 
   <!-- PREDICTIONS SUMMARY -->
   <div class="tab-panel active" id="tab-pred-summary">
@@ -193,8 +281,48 @@
     </div>
   </div>
 
-  <!-- FANTASY PLAYERS LEADERBOARD -->
-  <div class="tab-panel" id="tab-fantasy-players">
+   <!-- POINTS SUMMARY -->
+   <div class="tab-panel" id="tab-points-summary">
+     <div class="card mb-20">
+       <div class="card-title">Squad Points — Team Distribution</div>
+       <div class="table-wrap table-scroller">
+<table class="data-table points-summary-table" style="min-width:600px;">
+<thead>
+              <tr>
+                <th style="text-align:left;">Team</th>
+                <th style="text-align:right;">Batting</th>
+                <th style="text-align:right;">Bowling</th>
+                <th style="text-align:right;">Fielding</th>
+                <th style="text-align:right;">Squad Total</th>
+                <th style="text-align:right;">Season Total</th>
+              </tr>
+            </thead>
+           <tbody id="points-squad-tbody"><tr><td colspan="6" class="empty-state">Loading…</td></tr></tbody>
+         </table>
+       </div>
+     </div>
+     <div class="card">
+       <div class="card-title">Prediction Points — Team Distribution</div>
+       <div class="table-wrap table-scroller">
+         <table class="data-table points-summary-table" style="min-width:750px;">
+<thead>
+              <tr>
+                <th style="text-align:left;">Team</th>
+                <th style="text-align:right;">Target</th>
+                <th style="text-align:right;">Winner</th>
+                <th style="text-align:right;">Pred Total</th>
+                <th style="text-align:right;">Bonus</th>
+                <th style="text-align:right;">Season Total</th>
+              </tr>
+            </thead>
+           <tbody id="points-pred-tbody"><tr><td colspan="6" class="empty-state">Loading…</td></tr></tbody>
+         </table>
+       </div>
+     </div>
+   </div>
+
+   <!-- FANTASY PLAYERS LEADERBOARD -->
+   <div class="tab-panel" id="tab-fantasy-players">
     <div class="card mb-12">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
         <div style="position:relative;flex:1;min-width:180px;">
@@ -849,6 +977,183 @@ function resetFantasyLeaderboard(){
   _flPage = 1; filterFantasyLeaderboard();
 }
 
+async function renderPointsSummary() {
+  try {
+    var leaderboard = safeArr(await API.fetchLeaderboard());
+    var allTeams = safeArr(await API.fetchAllTeamPoints());
+    var seasonSquadTotal = 0, seasonPredTotal = 0, seasonBonusTotal = 0;
+    
+    // Build team data map
+    var teamDataMap = {};
+    allTeams.forEach(function(t) {
+      teamDataMap[t.id] = {
+        team_name: t.team_name,
+        total_points: t.total_points || 0,
+        squad_points: t.squad_points || 0,
+        prediction_points: t.prediction_points || 0,
+        batting_pts: 0,
+        bowling_pts: 0,
+        fielding_pts: 0,
+        bonus_pts: t.bonus_pts || 0,
+        target_pts: 0,
+        winner_pts: 0
+      };
+    });
+    
+    // Fetch ALL points_log entries in bulk (no team filter) to aggregate Bat/Bowl/Fld per team
+    var allLogs = safeArr(await API.fetchAllPointsLogAllTeams());
+    var teamSquadBreakdown = {};
+    allLogs.forEach(function(log) {
+      if (!log.fantasy_team_id) return;
+      if (!teamSquadBreakdown[log.fantasy_team_id]) {
+        teamSquadBreakdown[log.fantasy_team_id] = { bat:0, bowl:0, fld:0, bonus:0 };
+      }
+      teamSquadBreakdown[log.fantasy_team_id].bat += (log.batting_pts || 0);
+      teamSquadBreakdown[log.fantasy_team_id].bowl += (log.bowling_pts || 0);
+      teamSquadBreakdown[log.fantasy_team_id].fld += (log.fielding_pts || 0);
+      teamSquadBreakdown[log.fantasy_team_id].bonus += (log.bonus_pts || 0);
+    });
+    // Assign squad breakdown from bulk points log
+    Object.keys(teamSquadBreakdown).forEach(function(tid) {
+      if (teamDataMap[tid]) {
+        teamDataMap[tid].batting_pts = teamSquadBreakdown[tid].bat;
+        teamDataMap[tid].bowling_pts = teamSquadBreakdown[tid].bowl;
+        teamDataMap[tid].fielding_pts = teamSquadBreakdown[tid].fld;
+        teamDataMap[tid].bonus_pts = teamSquadBreakdown[tid].bonus;
+        // Compute squad_points as sum of components
+        teamDataMap[tid].squad_points = teamSquadBreakdown[tid].bat + teamSquadBreakdown[tid].bowl + teamSquadBreakdown[tid].fld;
+      }
+    });
+    
+    // Compute prediction breakdown from all predictions
+    var predBreakdown = {};
+    var allPreds = safeArr(await API.fetchAllPredictionsAllMatches());
+    var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var completedMatchIds = completedMatches.map(m => m.id);
+    allPreds.forEach(function(p) {
+      if (!p.fantasy_team_id || !completedMatchIds.includes(p.match_id)) return;
+      if (!predBreakdown[p.fantasy_team_id]) {
+        predBreakdown[p.fantasy_team_id] = { target: 0, winner: 0 };
+      }
+      var match = _matches.find(m => m.id === p.match_id);
+      if (match && match.winner && p.predicted_winner === match.winner) {
+        predBreakdown[p.fantasy_team_id].winner += 25;
+      }
+      if (match && match.actual_target && p.target_score) {
+        var diff = Math.abs(p.target_score - match.actual_target);
+        var tp = 0;
+        if (diff === 0) tp = 25;
+        else if (diff <= 5) tp = 20;
+        else if (diff <= 10) tp = 15;
+        else if (diff <= 20) tp = 10;
+        predBreakdown[p.fantasy_team_id].target += tp;
+      }
+    });
+    // Assign prediction breakdown
+    Object.keys(predBreakdown).forEach(function(tid) {
+      if (teamDataMap[tid]) {
+        teamDataMap[tid].target_pts = predBreakdown[tid].target;
+        teamDataMap[tid].winner_pts = predBreakdown[tid].winner;
+      } else {
+        if (!teamDataMap[tid]) teamDataMap[tid] = {};
+        teamDataMap[tid].target_pts = predBreakdown[tid].target;
+        teamDataMap[tid].winner_pts = predBreakdown[tid].winner;
+      }
+    });
+    
+    // Recalculate season totals after all assignments
+    seasonSquadTotal = 0; seasonPredTotal = 0; seasonBonusTotal = 0;
+    Object.keys(teamDataMap).forEach(function(tid) {
+      var t = teamDataMap[tid];
+      var derivedSquad = (t.batting_pts || 0) + (t.bowling_pts || 0) + (t.fielding_pts || 0);
+      seasonSquadTotal += derivedSquad;
+      seasonPredTotal += ((t.target_pts || 0) + (t.winner_pts || 0));
+      seasonBonusTotal += (t.bonus_pts || 0);
+    });
+    
+    var allSeasonTotal = seasonSquadTotal + seasonPredTotal + seasonBonusTotal;
+    
+    // Calculate each team's total season points
+    Object.keys(teamDataMap).forEach(function(tid) {
+      var t = teamDataMap[tid];
+      var squadPts = (t.batting_pts || 0) + (t.bowling_pts || 0) + (t.fielding_pts || 0);
+      var predPts = (t.target_pts || 0) + (t.winner_pts || 0);
+      var bonusPts = t.bonus_pts || 0;
+      teamDataMap[tid].team_total = squadPts + predPts + bonusPts;
+    });
+    
+    // Sort teams alphabetically for consistency
+    var sortedTeams = Object.values(teamDataMap).sort(function(a, b) {
+      return UI.tShort(a.team_name).localeCompare(UI.tShort(b.team_name));
+    });
+    
+    // Render Squad Points Table
+    var squadTbody = document.getElementById('points-squad-tbody');
+    if (squadTbody) {
+      if (!sortedTeams.length) {
+        squadTbody.innerHTML = '<tr><td colspan="6" class="empty-state">No team data available</td></tr>';
+      } else {
+        var maxSquad = Math.max(...sortedTeams.map(t => (t.batting_pts || 0) + (t.bowling_pts || 0) + (t.fielding_pts || 0)));
+        squadTbody.innerHTML = sortedTeams.map(function(t) {
+          var batPts = t.batting_pts || 0;
+          var bowlPts = t.bowling_pts || 0;
+          var fldPts = t.fielding_pts || 0;
+          var squadPts = batPts + bowlPts + fldPts;
+          var teamTotal = t.team_total || 0;
+          var squadShare = teamTotal > 0 ? Math.round((squadPts / teamTotal) * 100) : 0;
+          var batPct = squadPts > 0 ? Math.round((batPts / squadPts) * 100) : 0;
+          var bowlPct = squadPts > 0 ? Math.round((bowlPts / squadPts) * 100) : 0;
+          var fldPct = squadPts > 0 ? Math.round((fldPts / squadPts) * 100) : 0;
+          
+          return '<tr>' +
+            '<td style="font-weight:800;">' + UI.esc(UI.tShort(t.team_name)) + '</td>' +
+            '<td><div class="pts-cell"><span class="pts-value" style="color:#f87171;">' + UI.fmtPts(batPts) + '</span><span class="pts-pct">' + (batPct || 0) + '%</span></div></td>' +
+            '<td><div class="pts-cell"><span class="pts-value" style="color:#60a5fa;">' + UI.fmtPts(bowlPts) + '</span><span class="pts-pct">' + (bowlPct || 0) + '%</span></div></td>' +
+            '<td><div class="pts-cell"><span class="pts-value" style="color:#34d399;">' + UI.fmtPts(fldPts) + '</span><span class="pts-pct">' + (fldPct || 0) + '%</span></div></td>' +
+            '<td><div class="pts-cell"><span class="pts-value" style="color:var(--cyan);">' + UI.fmtPts(squadPts) + '</span><span class="pts-pct">' + (squadShare || 0) + '%</span></div></td>' +
+            '<td class="total-cell"><div class="pts-cell"><span class="pts-value" style="color:var(--accent);">' + UI.fmtPts(teamTotal) + '</span></div></td>' +
+          '</tr>';
+        }).join('');
+      }
+    }
+    
+    // Render Prediction Points Table
+    var predTbody = document.getElementById('points-pred-tbody');
+    if (predTbody) {
+      if (!sortedTeams.length) {
+        predTbody.innerHTML = '<tr><td colspan="7" class="empty-state">No team data available</td></tr>';
+      } else {
+        var maxPred = Math.max(...sortedTeams.map(t => (t.target_pts || 0) + (t.winner_pts || 0)));
+        predTbody.innerHTML = sortedTeams.map(function(t) {
+          var targetPts = t.target_pts || 0;
+          var winnerPts = t.winner_pts || 0;
+          var predPts = targetPts + winnerPts;
+          var bonusPts = t.bonus_pts || 0;
+          var predShare = allSeasonTotal > 0 ? Math.round(((predPts + bonusPts) / allSeasonTotal) * 100) : 0;
+          var teamTotal = t.team_total || 0;
+          var predShare = teamTotal > 0 ? Math.round((predPts / teamTotal) * 100) : 0;
+          var bonusShare = teamTotal > 0 ? Math.round((bonusPts / teamTotal) * 100) : 0;
+          
+          return '<tr>' +
+            '<td style="font-weight:700;font-size:14px;">' + UI.esc(UI.tShort(t.team_name)) + '</td>' +
+            '<td><div class="pts-cell"><span class="pts-value" style="color:#f87171;">' + UI.fmtPts(targetPts) + '</span><span class="pts-pct">' + (targetPts > 0 && predPts > 0 ? Math.round((targetPts/predPts)*100) : 0) + '%</span></div></td>' +
+            '<td><div class="pts-cell"><span class="pts-value" style="color:#60a5fa;">' + UI.fmtPts(winnerPts) + '</span><span class="pts-pct">' + (winnerPts > 0 && predPts > 0 ? Math.round((winnerPts/predPts)*100) : 0) + '%</span></div></td>' +
+            '<td><div class="pts-cell"><span class="pts-value" style="color:var(--cyan);">' + UI.fmtPts(predPts) + '</span><span class="pts-pct">' + (predShare || 0) + '%</span></div></td>' +
+            '<td><div class="pts-cell"><span class="pts-value" style="color:var(--purple);">' + UI.fmtPts(bonusPts) + '</span><span class="pts-pct">' + (bonusShare || 0) + '%</span></div></td>' +
+            '<td class="total-cell"><div class="pts-cell"><span class="pts-value" style="color:var(--accent);">' + UI.fmtPts(teamTotal) + '</span></div></td>' +
+          '</tr>';
+        }).join('');
+      }
+    }
+  } catch(e) {
+    console.warn('Points summary error:', e);
+    var squadTbody = document.getElementById('points-squad-tbody');
+    var predTbody = document.getElementById('points-pred-tbody');
+    if (squadTbody) squadTbody.innerHTML = '<tr><td colspan="6" class="empty-state">Error loading data</td></tr>';
+    if (predTbody) predTbody.innerHTML = '<tr><td colspan="6" class="empty-state">Error loading data</td></tr>';
+  }
+}
+
 async function switchTab(tab) {
   var prevPanel = document.querySelector('.tab-panel.active');
   if (prevPanel && prevPanel.id !== 'tab-' + tab) {
@@ -857,7 +1162,7 @@ async function switchTab(tab) {
     prevPanel.classList.remove('active', 'leaving');
   }
 
-  var tabs=['pred-summary','accuracy','match-preds','fantasy-players','user-teams','power-rankings'];
+   var tabs=['pred-summary','accuracy','match-preds','points-summary','fantasy-players','user-teams','power-rankings'];
   document.querySelectorAll('.tab-btn').forEach(function(b){
     var id = b.getAttribute('onclick').match(/'([^']+)'/)[1];
     b.classList.toggle('active', id === tab);
@@ -874,13 +1179,14 @@ async function switchTab(tab) {
     }
   }
 
-  // Specific tab loads
-  if(tab==='pred-summary') loadPredictionsSummary();
-  if(tab==='accuracy') loadPredictionAccuracy();
-  if(tab==='match-preds') loadMatchPredictionsPanel();
-  if(tab==='fantasy-players') loadFantasyLeaderboard();
-  if(tab==='user-teams') loadUserTeams();
-  if(tab==='power-rankings') loadPowerRankings();
+   // Specific tab loads
+   if(tab==='pred-summary') loadPredictionsSummary();
+   if(tab==='accuracy') loadPredictionAccuracy();
+   if(tab==='match-preds') loadMatchPredictionsPanel();
+   if(tab==='points-summary') renderPointsSummary();
+   if(tab==='fantasy-players') loadFantasyLeaderboard();
+   if(tab==='user-teams') loadUserTeams();
+   if(tab==='power-rankings') loadPowerRankings();
 }
 init();
 </script>

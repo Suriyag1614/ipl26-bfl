@@ -452,6 +452,14 @@ const API = {
     return (data || []).sort((a, b) => (a.match?.match_no || 0) - (b.match?.match_no || 0));
   },
 
+  async fetchAllPointsLogAllTeams() {
+    // Fetch all points_log entries across all teams for league-wide aggregation
+    const { data, error } = await sb.from('points_log')
+      .select('fantasy_team_id,batting_pts,bowling_pts,fielding_pts,bonus_pts,prediction_points,squad_points');
+    if (error) throw error;
+    return data || [];
+  },
+
   async fetchMatchLeaderboard(matchId) {
     const { data, error } = await sb.from('points_log')
       .select('*,team:fantasy_teams(team_name)').eq('match_id', matchId).order('total_points', { ascending: false });
@@ -1964,12 +1972,35 @@ async fetchTeams() {
       console.error('[fetchAllTeamPoints] Error:', error);
       throw error;
     }
+    // Get squad and prediction points from points_log aggregation
+    const { data: logs, error: logsErr } = await sb.from('points_log')
+      .select('fantasy_team_id,squad_points,prediction_points,bonus_pts');
+    if (logsErr) {
+      console.error('[fetchAllTeamPoints] Logs error:', logsErr);
+    }
+    var pointsMap = {};
+    if (logs && logs.length) {
+      logs.forEach(function(l) {
+        if (!pointsMap[l.fantasy_team_id]) {
+          pointsMap[l.fantasy_team_id] = { squad_points: 0, prediction_points: 0, bonus_pts: 0 };
+        }
+        pointsMap[l.fantasy_team_id].squad_points += (l.squad_points || 0);
+        pointsMap[l.fantasy_team_id].prediction_points += (l.prediction_points || 0);
+        pointsMap[l.fantasy_team_id].bonus_pts += (l.bonus_pts || 0);
+      });
+    }
+
     return (data || []).map(function(r) {
+      var fid = r.fantasy_team_id;
+      var pts = pointsMap[fid] || { squad_points: 0, prediction_points: 0, bonus_pts: 0 };
       return {
-        id: r.fantasy_team_id,
+        id: fid,
         team_name: r.fantasy_team?.team_name || 'Unknown',
         owner_name: r.fantasy_team?.owner_name || '-',
         total_points: r.total_points,
+        squad_points: pts.squad_points,
+        prediction_points: pts.prediction_points,
+        bonus_pts: pts.bonus_pts,
         matches_played: r.matches_played
       };
     });
