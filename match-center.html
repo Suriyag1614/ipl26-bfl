@@ -476,7 +476,7 @@ function renderPredSummary(mc) {
     '<div class="metric-row"><span class="metric-label">Total Predictions</span><span class="metric-val">'+s.total_preds+'</span></div>' +
     '<div class="metric-row"><span class="metric-label">Avg Predicted Target</span><span class="metric-val" style="color:var(--accent);">'+(s.avg_target||'—')+'</span></div>' +
     (m.actual_target?'<div class="metric-row"><span class="metric-label">Actual Target</span><span class="metric-val" style="color:var(--gold);">'+m.actual_target+'</span></div>':'') +
-    '<div class="metric-row"><span class="metric-label">Most Picked Winner</span><span class="metric-val">'+UI.esc(UI.tShort(s.most_picked)||'—')+'</span></div>' +
+    '<div class="metric-row"><span class="metric-label">Most Picked Winner</span><span class="metric-val">'+(s.most_picked && s.most_picked.startsWith('TIED:') ? UI.esc(s.most_picked) : UI.esc(UI.tShort(s.most_picked)||'—'))+'</span></div>' +
     '<div style="margin-top:12px;"><div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--f-ui);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Winner Distribution</div>' +
     '<div class="winner-bar">'+barHtml+'</div>' +
     '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--text2);">' +

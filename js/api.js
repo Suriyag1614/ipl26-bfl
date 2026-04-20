@@ -1475,7 +1475,11 @@ const API = {
       if (p.predicted_winner) wc[p.predicted_winner] = (wc[p.predicted_winner] || 0) + 1;
       if (p.target_score)     targetSum += Number(p.target_score);
     });
-    const mostPicked = Object.entries(wc).sort((a, b) => b[1] - a[1])[0]?.[0];
+    const sorted = Object.entries(wc).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    const maxCount = sorted[0]?.[1] || 0;
+    const tied = sorted.filter(x => x[1] === maxCount).map(x => x[0]);
+    const tiedShort = tied.map(function(t) { return UI.tShort(t); });
+    const mostPicked = tied.length > 1 ? 'TIED: ' + tiedShort.join(' / ') : tied[0]?.[0];
     return {
       match, predictions: preds, leaderboard: lb,
       summary: {
