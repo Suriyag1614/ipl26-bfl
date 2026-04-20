@@ -449,7 +449,7 @@ async function loadPredictionsSummary() {
   targetDist.innerHTML = '<div class="skel skel-row"></div>';
   try {
     var preds = safeArr(await API.fetchAllPredictionsAllMatches());
-    var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var completedMatches = _matches.filter(function(m) { return (m.status === 'completed' || m.status === 'processed') && !m.is_abandoned; });
     var teamCounts = {};
     var targetScores = [];
     var validPredsCount = 0;
@@ -518,7 +518,7 @@ async function loadPredictionAccuracy() {
   if (teamLeaderboard) teamLeaderboard.innerHTML = '<div class="skel skel-row"></div>';
   try {
     var preds = safeArr(await API.fetchAllPredictionsAllMatches());
-    var matches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var matches = _matches.filter(function(m) { return (m.status === 'completed' || m.status === 'processed') && !m.is_abandoned; });
     var matchStats = [];
     matches.forEach(function(m) {
       var matchPreds = preds.filter(function(p) { return String(p.match_id) === String(m.id); });
@@ -636,13 +636,13 @@ async function loadTeamMatchPredictions() {
     sortedPreds.forEach(function(p) {
       var match = _matches.find(function(m) { return String(m.id) === String(p.match_id) });
       if (!match) return;
-      if (match.actual_target && p.target_score && (match.status === 'completed' || match.status === 'processed')) {
+      if (match.actual_target && p.target_score && (match.status === 'completed' || match.status === 'processed') && !match.is_abandoned) {
         totalDiff += Math.abs((p.target_score||0) - (match.actual_target||0));
         diffCount++;
       }
       if (match.status === 'abandoned') { abandonedCount++; }
       else if (match.winner && p.predicted_winner === match.winner) { correctCount++; currentStreak++; maxStreak = Math.max(maxStreak, currentStreak); currentWrongStreak = 0; }
-      else if (match.status === 'completed' || match.status === 'processed') { incorrectCount++; currentWrongStreak++; maxWrong = Math.max(maxWrong, currentWrongStreak); currentStreak = 0; }
+      else if ((match.status === 'completed' || match.status === 'processed') && !match.is_abandoned) { incorrectCount++; currentWrongStreak++; maxWrong = Math.max(maxWrong, currentWrongStreak); currentStreak = 0; }
       else { currentStreak = 0; currentWrongStreak = 0; }
     });
     var completedCount = correctCount + incorrectCount;
@@ -670,7 +670,7 @@ async function loadFantasyLeaderboard() {
   container.innerHTML = '<div class="skel skel-card" style="height:200px;margin-bottom:20px;"></div><div class="skel skel-row" style="margin:12px;"></div><div class="skel skel-row" style="margin:12px;"></div>';
   try {
     var stats = safeArr(await API.fetchAllPlayerStats());
-    var completedMatches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var completedMatches = _matches.filter(function(m) { return (m.status === 'completed' || m.status === 'processed') && !m.is_abandoned; });
     var completedMatchIds = completedMatches.map(function(m) { return m.id; });
     var playerPoints = {};
     var playerMatches = {};
@@ -945,7 +945,7 @@ async function loadPowerRankings() {
   try {
     var teams = safeArr(await API.fetchAllTeamPoints());
     var preds = safeArr(await API.fetchAllPredictionsAllMatches());
-    var matches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    var matches = _matches.filter(function(m) { return (m.status === 'completed' || m.status === 'processed') && !m.is_abandoned; });
     var completedMatchIds = matches.map(function(m) { return m.id; });
     var userStats = {};
     teams.forEach(function(t) {
