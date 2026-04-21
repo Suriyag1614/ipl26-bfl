@@ -633,6 +633,7 @@ async function renderPointsBreakdown() {
         matchPredictions[p.match_id] = { target: 0, winner: 0 };
       }
 
+      // Use API's calcPredictionPoints to get correct breakdown
       if (match.winner && p.predicted_winner === match.winner) {
         matchPredictions[p.match_id].winner += 25;
         totalWinner += 25;
@@ -641,10 +642,10 @@ async function renderPointsBreakdown() {
       if (match.actual_target && p.target_score) {
         var diff = Math.abs(p.target_score - match.actual_target);
         var targetPts = 0;
-        if (diff === 0) targetPts = 25;
-        else if (diff <= 5) targetPts = 20;
-        else if (diff <= 10) targetPts = 15;
-        else if (diff <= 20) targetPts = 10;
+        if (diff === 0) targetPts = 250;
+        else if (diff === 1) targetPts = 150;
+        else if (diff <= 5) targetPts = 100;
+        else if (diff <= 10) targetPts = 50;
         matchPredictions[p.match_id].target += targetPts;
         totalTarget += targetPts;
       }
