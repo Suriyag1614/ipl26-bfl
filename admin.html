@@ -263,6 +263,10 @@
       .col-2, .col-3 { grid-template-columns: 1fr; }
       .kpi-grid { grid-template-columns: repeat(2,1fr); }
       .stats-form-grid { grid-template-columns: repeat(2,1fr); }
+      .data-table td:first-child, .data-table th:first-child {
+        position: sticky; left: 0; background: var(--bg2); z-index: 2;
+        box-shadow: 2px 0 4px rgba(0,0,0,0.15);
+      }
     }
     @media (max-width: 640px) {
       .admin-topbar {

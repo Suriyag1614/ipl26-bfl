@@ -526,6 +526,10 @@ body { display:flex; flex-direction:column; }
   padding:12px 12px; text-align:left; border-bottom:1px solid var(--border);
   position:sticky; top:0; background:var(--bg2); z-index:1;
 }
+.data-table td:first-child, .data-table th:first-child {
+  position:sticky; left:0; background:var(--bg2); z-index:2;
+}
+.data-table tbody tr:hover td:first-child { background:var(--bg3); }
 .data-table td { padding:12px 12px; border-bottom:1px solid var(--border); vertical-align:middle; transition:background 0.2s; }
 .data-table tbody tr { transition:background 0.2s; }
 .data-table tbody tr:hover td { background:var(--bg2); }

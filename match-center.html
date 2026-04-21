@@ -75,7 +75,7 @@
     /* Tables */
     .mc-table-wrap { 
       max-height: 400px; 
-      overflow-y: auto; 
+      overflow: auto; 
       scrollbar-width: thin; 
       scrollbar-color: var(--border) transparent;
       border-radius: var(--radius-md);
@@ -112,6 +112,11 @@
       vertical-align: middle;
       color: var(--text2);
     }
+    .mc-table td:first-child, .mc-table th:first-child {
+      position: sticky; left: 0; background: var(--bg2); z-index: 2;
+      box-shadow: 2px 0 4px rgba(0,0,0,0.15);
+    }
+    .mc-table tbody tr:hover td:first-child { background: var(--bg3); }
     .mc-table tbody tr { transition: background 0.2s; }
     .mc-table tbody tr:hover td { background: var(--bg2); }
     .mc-table .mc-rank { font-family: var(--f-mono); font-weight: 700; font-size: 14px; color: var(--accent); }
