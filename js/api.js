@@ -1364,7 +1364,7 @@ const API = {
     const impactUsage = [];
     breakdown.forEach(log => {
       const ip = (log.breakdown?.players || []).find(p => p.isImpact && p.isImpactActive);
-      if (ip && (ip.final || 0) > 0) {
+      if (ip) {
         impactUsage.push({
           match: log.match,
           player: { name: ip.name, effective_name: ip.effective_name, role: ip.role },
@@ -1430,7 +1430,7 @@ const API = {
     let totalPts = 0;
     const picks = [];
     const history = [];
-    breakdown.forEach(log => {
+    const used = breakdown.filter(log => {
       const ip = log.breakdown?.players?.find(p => p.isImpact && p.isImpactActive);
       if (ip) {
         const pts = ip.final || 0;
@@ -1443,13 +1443,15 @@ const API = {
         };
         picks.push(entry);
         history.push(entry);
+        return true;
       }
-    });
+      return false;
+    }).length;
     picks.sort((a, b) => b.pts - a.pts);
     return {
       total_pts: totalPts,
-      uses: impactStats.uses,
-      remaining: impactStats.remaining,
+      uses: used,
+      remaining: Math.max(0, 8 - used),
       best_picks: picks.slice(0, 3),
       history: history.reverse()
     };

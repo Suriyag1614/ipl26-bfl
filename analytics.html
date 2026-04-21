@@ -559,8 +559,9 @@ function renderImpact() {
    if(pl) pl.innerHTML = _analytics.impactUsage.length ? _analytics.impactUsage.sort(function(a,b){return (b.points_earned||0)-(a.points_earned||0);}).map(function(u){
      var mTitle = u.match ? ('M'+(u.match.match_no||'?')+' · '+UI.fmtMatch(u.match.team1, u.match.team2)) : '—';
      var pName = (u.player && u.player.name) || (u.player && u.player.effective_name) || '—';
-     return '<div class="impact-pick-row"><div style="flex:1;"><div style="font-weight:700;">'+UI.esc(pName)+'</div><div style="font-size:12px;color:var(--text2);">'+UI.esc(mTitle)+'</div></div>'+
-       '<div style="font-family:var(--f-display);font-weight:900;font-size:17px;color:var(--accent);">+'+UI.fmtPts(u.points_earned)+'</div></div>';
+var ptsSign = (u.points_earned||0) >= 0 ? '+' : '';
+      return '<div class="impact-pick-row"><div style="flex:1;"><div style="font-weight:700;">'+UI.esc(pName)+'</div><div style="font-size:12px;color:var(--text2);">'+UI.esc(mTitle)+'</div></div>'+
+        '<div style="font-family:var(--f-display);font-weight:900;font-size:17px;color:var(--accent);">'+ptsSign+UI.fmtPts(u.points_earned)+'</div></div>';
    }).join('') : '<div style="padding:12px;color:var(--text3);font-size:13px;">No impact activations yet</div>';
   
   var ih = document.getElementById('impact-history-tbody');
@@ -568,7 +569,8 @@ function renderImpact() {
      var mTitle = u.match ? ('M'+(u.match.match_no||'?')+' · '+UI.fmtMatch(u.match.team1, u.match.team2)) : '—';
      var pName = (u.player && u.player.name) || (u.player && u.player.effective_name) || '—';
      var role = (u.player && u.player.role) || '—';
-     return '<tr><td>'+UI.esc(mTitle)+'</td><td>'+UI.esc(pName)+'</td><td>'+UI.esc(role)+'</td><td style="color:var(--accent);font-weight:700;">+'+UI.fmtPts(u.points_earned)+'</td></tr>';
+     var ptsSign = (u.points_earned||0) >= 0 ? '+' : '';
+      return '<tr><td>'+UI.esc(mTitle)+'</td><td>'+UI.esc(pName)+'</td><td>'+UI.esc(role)+'</td><td style="color:var(--accent);font-weight:700;">'+ptsSign+UI.fmtPts(u.points_earned)+'</td></tr>';
    }).join('') : '<tr><td colspan="4" class="empty-state">No impact activations yet</td></tr>';
 }
 
