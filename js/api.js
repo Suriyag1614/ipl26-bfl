@@ -455,7 +455,7 @@ const API = {
   async fetchAllPointsLogAllTeams() {
     // Fetch all points_log entries across all teams for league-wide aggregation
     const { data, error } = await sb.from('points_log')
-      .select('fantasy_team_id,batting_pts,bowling_pts,fielding_pts,bonus_pts,prediction_points,squad_points');
+      .select('id,match_id,fantasy_team_id,batting_pts,bowling_pts,fielding_pts,bonus_pts,prediction_points,squad_points,total_points');
     if (error) throw error;
     return data || [];
   },

@@ -130,6 +130,45 @@
       .points-summary-table .total-cell .pts-value { font-size: 15px; }
     }
 
+    /* Team Insights Table */
+    .team-insights-table { min-width: 900px; font-size: 13px; }
+    .team-insights-table th {
+      padding: 12px 8px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .team-insights-table td {
+      padding: 10px 8px;
+      vertical-align: middle;
+    }
+    .team-insights-table .th-sortable { cursor: pointer; user-select: none; }
+    .team-insights-table .th-sortable:hover { color: var(--accent); }
+    .team-insights-table .ti-team { font-weight: 800; min-width: 100px; }
+    .team-insights-table .ti-num { font-family: var(--f-mono); font-weight: 700; }
+    .team-insights-table .ti-low { color: var(--red); }
+    .team-insights-table .ti-high { color: var(--green); }
+    .team-insights-table .ti-match { font-size: 10px; color: var(--text3); display: block; }
+    .team-insights-table .ti-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      min-width: 28px;
+      text-align: center;
+    }
+    .team-insights-table .ti-badge-red { background: rgba(248,113,113,0.15); color: var(--red); }
+    .team-insights-table .ti-badge-gold { background: rgba(251,191,36,0.15); color: var(--gold); }
+    .team-insights-table .ti-badge-green { background: rgba(52,211,153,0.15); color: var(--green); }
+    .team-insights-table .ti-badge-cyan { background: rgba(56,217,245,0.15); color: var(--cyan); }
+    .team-insights-table .ti-total { background: var(--accent-dim); font-weight: 900; }
+    @media(max-width:700px){
+      .team-insights-table { font-size: 11px; }
+      .team-insights-table th, .team-insights-table td { padding: 6px 4px; }
+    }
+
     /* ICC Style Leaderboard */
     .fl-icc-container { display: flex; flex-direction: column; gap: 8px; padding-bottom: 20px; }
     .fl-icc-header { display: grid; grid-template-columns: 60px 80px 1fr 100px 180px; align-items: center; padding: 12px 20px; border-bottom: 2px solid var(--border); font-family: var(--f-ui); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); opacity: 0.8; }
@@ -225,6 +264,7 @@
      <button class="tab-btn" onclick="switchTab('accuracy')">Accuracy</button>
      <button class="tab-btn" onclick="switchTab('match-preds')">Match Preds</button>
      <button class="tab-btn" onclick="switchTab('points-summary')">Points Summary</button>
+     <button class="tab-btn" onclick="switchTab('team-insights')">Team Insights</button>
      <button class="tab-btn" onclick="switchTab('fantasy-players')">Fantasy Players</button>
      <button class="tab-btn" onclick="switchTab('user-teams')">User Teams</button>
      <button class="tab-btn" onclick="switchTab('power-rankings')">Power Rankings</button>
@@ -261,25 +301,53 @@
     </div>
   </div>
 
-  <!-- MATCH PREDICTIONS -->
-  <div class="tab-panel" id="tab-match-preds">
-    <div class="card mb-16">
-      <div class="form-group" style="max-width:400px;margin-bottom:0;">
-        <label class="form-label" style="font-size:11px;">View Analysis for BFL Team</label>
-        <select class="form-select" id="mp-team-select" onchange="loadTeamMatchPredictions()">
-          <option value="">— Select BFL Team —</option>
-        </select>
-      </div>
-    </div>
-    <div class="analytics-chart-row" style="display:grid;grid-template-columns:1fr 320px;gap:16px;">
-      <div class="card" style="padding:0;overflow:hidden;">
-        <div id="team-preds-list" style="max-height:600px;overflow-y:auto;">
-          <div class="empty-state" style="padding:40px;">Select a BFL Team to view their prediction history</div>
-        </div>
-      </div>
-      <div id="team-preds-stats"></div>
-    </div>
-  </div>
+<!-- MATCH PREDICTIONS -->
+   <div class="tab-panel" id="tab-match-preds">
+     <div class="card mb-16">
+       <div class="form-group" style="max-width:400px;margin-bottom:0;">
+         <label class="form-label" style="font-size:11px;">View Analysis for BFL Team</label>
+         <select class="form-select" id="mp-team-select" onchange="loadTeamMatchPredictions()">
+           <option value="">— Select BFL Team —</option>
+         </select>
+       </div>
+     </div>
+     <div class="analytics-chart-row" style="display:grid;grid-template-columns:1fr 320px;gap:16px;">
+       <div class="card" style="padding:0;overflow:hidden;">
+         <div id="team-preds-list" style="max-height:600px;overflow-y:auto;">
+           <div class="empty-state" style="padding:40px;">Select a BFL Team to view their prediction history</div>
+         </div>
+       </div>
+       <div id="team-preds-stats"></div>
+     </div>
+   </div>
+
+   <!-- TEAM INSIGHTS -->
+   <div class="tab-panel" id="tab-team-insights">
+     <div class="card" style="padding:0;overflow:auto;">
+       <div class="table-wrap table-scroller">
+         <table class="data-table team-insights-table">
+           <thead id="ti-thead">
+             <tr>
+               <th class="th-sortable" onclick="_tiSortBy('team_name')">Team <span class="ti-sort-arrow"></span></th>
+               <th class="th-sortable" onclick="_tiSortBy('matches')">MP <span class="ti-sort-arrow"></span></th>
+               <th class="th-sortable" onclick="_tiSortBy('squad')">Squad <span class="ti-sort-arrow"></span></th>
+               <th class="th-sortable" onclick="_tiSortBy('pred')">Pred <span class="ti-sort-arrow"></span></th>
+               <th class="th-sortable" onclick="_tiSortBy('bonus')">Bonus <span class="ti-sort-arrow"></span></th>
+               <th class="th-sortable ti-total" onclick="_tiSortBy('total')">Total <span class="ti-sort-arrow"></span></th>
+               <th class="th-sortable" onclick="_tiSortBy('avg')">Avg <span class="ti-sort-arrow"></span></th>
+               <th class="th-sortable" onclick="_tiSortBy('lowest')">Lowest <span class="ti-sort-arrow"></span></th>
+               <th class="th-sortable" onclick="_tiSortBy('highest')">Highest <span class="ti-sort-arrow"></span></th>
+               <th class="th-sortable" onclick="_tiSortBy('below25')">&lt;25 <span class="ti-sort-arrow"></span></th>
+               <th class="th-sortable" onclick="_tiSortBy('over250')">250+ <span class="ti-sort-arrow"></span></th>
+               <th class="th-sortable" onclick="_tiSortBy('over500')">500+ <span class="ti-sort-arrow"></span></th>
+               <th class="th-sortable" onclick="_tiSortBy('over1000')">1000+ <span class="ti-sort-arrow"></span></th>
+             </tr>
+           </thead>
+           <tbody id="ti-tbody"><tr><td colspan="13" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+         </table>
+       </div>
+     </div>
+   </div>
 
    <!-- POINTS SUMMARY -->
    <div class="tab-panel" id="tab-points-summary">
@@ -297,7 +365,7 @@
                 <th style="text-align:right;">Season Total</th>
               </tr>
             </thead>
-           <tbody id="points-squad-tbody"><tr><td colspan="6" class="empty-state">Loading…</td></tr></tbody>
+           <tbody id="points-squad-tbody"><tr><td colspan="6" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
          </table>
        </div>
      </div>
@@ -315,7 +383,7 @@
                 <th style="text-align:right;">Season Total</th>
               </tr>
             </thead>
-           <tbody id="points-pred-tbody"><tr><td colspan="6" class="empty-state">Loading…</td></tr></tbody>
+           <tbody id="points-pred-tbody"><tr><td colspan="6" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
          </table>
        </div>
      </div>
@@ -386,6 +454,7 @@
 var _myTeamId = null, _analytics = null, _matches = [], _teams = [], _playerSquadMap = {};
 var _ptsSortSquad = { col: 'team_name', asc: true }; // Sort state for Squad Points table
 var _ptsSortPred = { col: 'team_name', asc: true }; // Sort state for Prediction Points table
+var _tiSort = { col: 'total', asc: false }; // Sort state for Team Insights table
 
 function _ptsSortBy(table, col) {
   var sort = table === 'squad' ? _ptsSortSquad : _ptsSortPred;
@@ -396,6 +465,16 @@ function _ptsSortBy(table, col) {
     sort.asc = true;
   }
   renderPointsSummary();
+}
+
+function _tiSortBy(col) {
+  if (_tiSort.col === col) {
+    _tiSort.asc = !_tiSort.asc;
+  } else {
+    _tiSort.col = col;
+    _tiSort.asc = false;
+  }
+  renderTeamInsights();
 }
 function $id(i){return document.getElementById(i);}
 function safeArr(a){return Array.isArray(a)?a:[];}
@@ -1209,6 +1288,166 @@ async function renderPointsSummary() {
   }
 }
 
+async function renderTeamInsights() {
+  var tbody = document.getElementById('ti-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="13" class="empty-state">Loading…</td></tr>';
+  
+  try {
+    var allLogs = safeArr(await API.fetchAllPointsLogAllTeams());
+    var allTeams = safeArr(await API.fetchAllTeamPoints());
+    var matches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+    
+    // Build team insights data
+    var teamData = {};
+    allTeams.forEach(function(t) {
+      teamData[t.id] = {
+        team_name: t.team_name,
+        team_short: UI.tShort(t.team_name),
+        logs: [],
+        total: t.total_points || 0
+      };
+    });
+    
+    // Aggregate points by team - only for completed/processed matches
+    allLogs.forEach(function(log) {
+      var teamId = log.fantasy_team_id;
+      var matchId = log.match_id;
+      
+      if (!teamId || !matchId) return;
+      var match = matches.find(function(m) { return String(m.id) === String(matchId); });
+      if (!match) return;
+      if (match.status !== 'completed' && match.status !== 'processed') return;
+      if (!teamData[teamId]) return;
+      teamData[teamId].logs.push({
+        match_id: matchId,
+        match_no: match?.match_no,
+        match_label: match ? 'M' + (match.match_no || '?') + ' · ' + UI.tShort(match.team1) + ' vs ' + UI.tShort(match.team2) : 'M?',
+        team1: match?.team1,
+        team2: match?.team2,
+        batting: log.batting_pts || 0,
+        bowling: log.bowling_pts || 0,
+        fielding: log.fielding_pts || 0,
+        squad: (log.batting_pts || 0) + (log.bowling_pts || 0) + (log.fielding_pts || 0),
+        pred: log.prediction_points || 0,
+        bonus: log.bonus_pts || 0,
+        total: log.total_points || 0
+      });
+    });
+    
+    // Calculate insights
+    var insights = Object.values(teamData).map(function(t) {
+      var logs = t.logs;
+      var matches_played = logs.length;
+      var squad = logs.reduce(function(s, l) { return s + l.squad; }, 0);
+      var pred = logs.reduce(function(s, l) { return s + l.pred; }, 0);
+      var bonus = logs.reduce(function(s, l) { return s + l.bonus; }, 0);
+      var total = squad + pred + bonus;
+      var avg = matches_played > 0 ? Math.round(total / matches_played) : 0;
+      
+      // Find lowest and highest
+      var sorted = logs.slice().sort(function(a, b) { return a.total - b.total; });
+      var lowest = sorted[0] || null;
+      var highest = sorted[sorted.length - 1] || null;
+      
+      // Count thresholds
+      var below25 = logs.filter(function(l) { return l.total < 25; }).length;
+      var over250 = logs.filter(function(l) { return l.total >= 250; }).length;
+      var over500 = logs.filter(function(l) { return l.total >= 500; }).length;
+      var over1000 = logs.filter(function(l) { return l.total >= 1000; }).length;
+      
+      return {
+        team_name: t.team_name,
+        team_short: t.team_short,
+        matches: matches_played,
+        squad: squad,
+        pred: pred,
+        bonus: bonus,
+        total: total,
+        avg: avg,
+        lowest: lowest,
+        highest: highest,
+        below25: below25,
+        over250: over250,
+        over500: over500,
+        over1000: over1000
+      };
+    });
+    
+    // Sort
+    var col = _tiSort.col;
+    var asc = _tiSort.asc;
+    insights.sort(function(a, b) {
+      var av = a[col];
+      var bv = b[col];
+      if (col === 'team_name') {
+        return asc ? av.localeCompare(bv) : bv.localeCompare(av);
+      }
+      if (col === 'lowest' || col === 'highest') {
+        av = a[col] ? a[col].total : (col === 'lowest' ? Infinity : -Infinity);
+        bv = b[col] ? b[col].total : (col === 'lowest' ? Infinity : -Infinity);
+      }
+      return asc ? av - bv : bv - av;
+    });
+    
+    // Update headers with arrows
+    var arrow = function(c) { return _tiSort.col === c ? (_tiSort.asc ? ' ▲' : ' ▼') : ''; };
+    var thead = document.getElementById('ti-thead');
+    if (thead) {
+      thead.innerHTML = '<tr>' +
+        '<th class="th-sortable" onclick="_tiSortBy(\'team_name\')">Team' + arrow('team_name') + '</th>' +
+        '<th class="th-sortable" onclick="_tiSortBy(\'matches\')">MP' + arrow('matches') + '</th>' +
+        '<th class="th-sortable" onclick="_tiSortBy(\'squad\')">Squad' + arrow('squad') + '</th>' +
+        '<th class="th-sortable" onclick="_tiSortBy(\'pred\')">Pred' + arrow('pred') + '</th>' +
+        '<th class="th-sortable" onclick="_tiSortBy(\'bonus\')">Bonus' + arrow('bonus') + '</th>' +
+        '<th class="th-sortable ti-total" onclick="_tiSortBy(\'total\')">Total' + arrow('total') + '</th>' +
+        '<th class="th-sortable" onclick="_tiSortBy(\'avg\')">Avg' + arrow('avg') + '</th>' +
+        '<th class="th-sortable" onclick="_tiSortBy(\'lowest\')">Lowest' + arrow('lowest') + '</th>' +
+        '<th class="th-sortable" onclick="_tiSortBy(\'highest\')">Highest' + arrow('highest') + '</th>' +
+        '<th class="th-sortable" onclick="_tiSortBy(\'below25\')">&lt;25' + arrow('below25') + '</th>' +
+        '<th class="th-sortable" onclick="_tiSortBy(\'over250\')">250+' + arrow('over250') + '</th>' +
+        '<th class="th-sortable" onclick="_tiSortBy(\'over500\')">500+' + arrow('over500') + '</th>' +
+        '<th class="th-sortable" onclick="_tiSortBy(\'over1000\')">1000+' + arrow('over1000') + '</th>' +
+      '</tr>';
+    }
+    
+    // Render rows
+    if (!insights.length) {
+      tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No team data available</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = insights.map(function(t) {
+      var lowestHtml = t.lowest 
+        ? '<span class="ti-num ti-low">' + t.lowest.total + '</span><span class="ti-match">' + t.lowest.match_label.split('·')[0] + '</span>'
+        : '—';
+      var highestHtml = t.highest 
+        ? '<span class="ti-num ti-high">' + t.highest.total + '</span><span class="ti-match">' + t.highest.match_label.split('·')[0] + '</span>'
+        : '—';
+      
+      return '<tr>' +
+        '<td class="ti-team">' + UI.esc(t.team_short) + '</td>' +
+        '<td class="ti-num">' + t.matches + '</td>' +
+        '<td class="ti-num">' + UI.fmtPts(t.squad) + '</td>' +
+        '<td class="ti-num">' + UI.fmtPts(t.pred) + '</td>' +
+        '<td class="ti-num">' + UI.fmtPts(t.bonus) + '</td>' +
+        '<td class="ti-num ti-total">' + UI.fmtPts(t.total) + '</td>' +
+        '<td class="ti-num">' + UI.fmtPts(t.avg) + '</td>' +
+        '<td>' + lowestHtml + '</td>' +
+        '<td>' + highestHtml + '</td>' +
+        '<td><span class="ti-badge ti-badge-red">' + t.below25 + '</span></td>' +
+        '<td><span class="ti-badge ti-badge-gold">' + t.over250 + '</span></td>' +
+        '<td><span class="ti-badge ti-badge-green">' + t.over500 + '</span></td>' +
+        '<td><span class="ti-badge ti-badge-cyan">' + t.over1000 + '</span></td>' +
+      '</tr>';
+    }).join('');
+    
+  } catch(e) {
+    console.warn('Team insights error:', e);
+    tbody.innerHTML = '<tr><td colspan="13" class="empty-state">Error loading data</td></tr>';
+  }
+}
+
 async function switchTab(tab) {
   var prevPanel = document.querySelector('.tab-panel.active');
   if (prevPanel && prevPanel.id !== 'tab-' + tab) {
@@ -1217,7 +1456,7 @@ async function switchTab(tab) {
     prevPanel.classList.remove('active', 'leaving');
   }
 
-   var tabs=['pred-summary','accuracy','match-preds','points-summary','fantasy-players','user-teams','power-rankings'];
+   var tabs=['pred-summary','accuracy','match-preds','points-summary','team-insights','fantasy-players','user-teams','power-rankings'];
   document.querySelectorAll('.tab-btn').forEach(function(b){
     var id = b.getAttribute('onclick').match(/'([^']+)'/)[1];
     b.classList.toggle('active', id === tab);
@@ -1239,6 +1478,7 @@ async function switchTab(tab) {
    if(tab==='accuracy') loadPredictionAccuracy();
    if(tab==='match-preds') loadMatchPredictionsPanel();
    if(tab==='points-summary') renderPointsSummary();
+   if(tab==='team-insights') renderTeamInsights();
    if(tab==='fantasy-players') loadFantasyLeaderboard();
    if(tab==='user-teams') loadUserTeams();
    if(tab==='power-rankings') loadPowerRankings();

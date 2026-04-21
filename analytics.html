@@ -271,11 +271,11 @@
     <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;">
       <div class="card">
         <div class="card-title">Squad Points</div>
-        <div id="breakdown-squad"><div class="skel skel-row"></div></div>
+        <div id="breakdown-squad" style="padding:20px;"><div class="skel skel-card" style="height:100px;margin-bottom:10px;"></div><div class="skel skel-card" style="height:100px;"></div></div>
       </div>
       <div class="card">
         <div class="card-title">Prediction Points</div>
-        <div id="breakdown-predictions"><div class="skel skel-row"></div></div>
+        <div id="breakdown-predictions" style="padding:20px;"><div class="skel skel-card" style="height:100px;margin-bottom:10px;"></div><div class="skel skel-card" style="height:100px;"></div></div>
       </div>
     </div>
     <div class="card" style="margin-top:16px;">
@@ -294,7 +294,7 @@
             <th style="text-align:right;cursor:pointer;user-select:none;" onclick="_bdSortBy('bonus')">Bonus</th>
             <th style="text-align:right;cursor:pointer;user-select:none;" onclick="_bdSortBy('total')">Match Total</th>
           </tr></thead>
-          <tbody id="breakdown-history-tbody"><tr><td colspan="10" class="empty-state">Loading…</td></tr></tbody>
+          <tbody id="breakdown-history-tbody"><tr><td colspan="10" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
         </table>
       </div>
     </div>
@@ -634,6 +634,11 @@ async function renderBadges() {
 
 async function renderPointsBreakdown() {
   var a = _analytics;
+  if (!a) {
+    var tbody = document.getElementById('breakdown-history-tbody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="10" class="empty-state">Loading…</td></tr>';
+    return;
+  }
   var bd = Array.isArray(a.breakdown) ? a.breakdown : [];
   var totalBatting = 0, totalBowling = 0, totalFielding = 0, totalTarget = 0, totalWinner = 0, totalBonus = 0;
 
