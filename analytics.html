@@ -282,8 +282,19 @@
       <div class="card-title">Points by Match</div>
       <div class="table-wrap table-scroller">
         <table class="data-table" style="min-width:600px;">
-          <thead><tr><th>Match</th><th>Batting</th><th>Bowling</th><th>Fielding</th><th>Squad Total</th><th>Target</th><th>Winner</th><th>Pred Total</th><th>Bonus</th><th>Match Total</th></tr></thead>
-          <tbody id="breakdown-history-tbody"><tr><td colspan="8" class="empty-state">Loading…</td></tr></tbody>
+          <thead id="breakdown-history-thead"><tr>
+            <th style="text-align:left;cursor:pointer;user-select:none;" onclick="_bdSortBy('match')">Match</th>
+            <th style="text-align:right;cursor:pointer;user-select:none;" onclick="_bdSortBy('batting')">Batting</th>
+            <th style="text-align:right;cursor:pointer;user-select:none;" onclick="_bdSortBy('bowling')">Bowling</th>
+            <th style="text-align:right;cursor:pointer;user-select:none;" onclick="_bdSortBy('fielding')">Fielding</th>
+            <th style="text-align:right;cursor:pointer;user-select:none;" onclick="_bdSortBy('squad_total')">Squad Total</th>
+            <th style="text-align:right;cursor:pointer;user-select:none;" onclick="_bdSortBy('target')">Target</th>
+            <th style="text-align:right;cursor:pointer;user-select:none;" onclick="_bdSortBy('winner')">Winner</th>
+            <th style="text-align:right;cursor:pointer;user-select:none;" onclick="_bdSortBy('pred_total')">Pred Total</th>
+            <th style="text-align:right;cursor:pointer;user-select:none;" onclick="_bdSortBy('bonus')">Bonus</th>
+            <th style="text-align:right;cursor:pointer;user-select:none;" onclick="_bdSortBy('total')">Match Total</th>
+          </tr></thead>
+          <tbody id="breakdown-history-tbody"><tr><td colspan="10" class="empty-state">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -325,8 +336,19 @@
 <script>
 'use strict';
 var _myTeamId = null, _analytics = null, _matches = [], _teams = [], _playerSquadMap = {};
+var _bdSort = { col: 'match', asc: false }; // Sort state for breakdown table
 function $id(i){return document.getElementById(i);}
 function safeArr(a){return Array.isArray(a)?a:[];}
+
+function _bdSortBy(col) {
+  if (_bdSort.col === col) {
+    _bdSort.asc = !_bdSort.asc;
+  } else {
+    _bdSort.col = col;
+    _bdSort.asc = false; // Default descending for numeric columns
+  }
+  renderPointsBreakdown();
+}
 
 // Fantasy Leaderboard State
 var _flData = [], _flPage = 1, _flSort = { col: 'points', asc: false }, _flPerPage = 15;
@@ -660,6 +682,24 @@ async function renderPointsBreakdown() {
   var predTotal = totalTarget + totalWinner;
   var seasonTotal = squadTotal + predTotal + totalBonus;
 
+  // Update table headers with sort arrows
+  var arrow = function(col) { return _bdSort.col === col ? (_bdSort.asc ? ' ▲' : ' ▼') : ''; };
+  var thead = document.getElementById('breakdown-history-thead');
+  if (thead) {
+    thead.innerHTML = '<tr>' +
+      '<th style="text-align:left;cursor:pointer;user-select:none;" onclick="_bdSortBy(\'match\')">Match' + arrow('match') + '</th>' +
+      '<th style="cursor:pointer;user-select:none;" onclick="_bdSortBy(\'batting\')">Batting' + arrow('batting') + '</th>' +
+      '<th style="cursor:pointer;user-select:none;" onclick="_bdSortBy(\'bowling\')">Bowling' + arrow('bowling') + '</th>' +
+      '<th style="cursor:pointer;user-select:none;" onclick="_bdSortBy(\'fielding\')">Fielding' + arrow('fielding') + '</th>' +
+      '<th style="cursor:pointer;user-select:none;" onclick="_bdSortBy(\'squad_total\')">Squad Total' + arrow('squad_total') + '</th>' +
+      '<th style="cursor:pointer;user-select:none;" onclick="_bdSortBy(\'target\')">Target' + arrow('target') + '</th>' +
+      '<th style="cursor:pointer;user-select:none;" onclick="_bdSortBy(\'winner\')">Winner' + arrow('winner') + '</th>' +
+      '<th style="cursor:pointer;user-select:none;" onclick="_bdSortBy(\'pred_total\')">Pred Total' + arrow('pred_total') + '</th>' +
+      '<th style="cursor:pointer;user-select:none;" onclick="_bdSortBy(\'bonus\')">Bonus' + arrow('bonus') + '</th>' +
+      '<th style="cursor:pointer;user-select:none;" onclick="_bdSortBy(\'total\')">Match Total' + arrow('total') + '</th>' +
+    '</tr>';
+  }
+
   var squadEl = document.getElementById('breakdown-squad');
   if (squadEl) {
     var squadPct = seasonTotal > 0 ? Math.round((squadTotal / seasonTotal) * 100) : 0;
@@ -694,25 +734,51 @@ async function renderPointsBreakdown() {
       tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No match data yet</td></tr>';
       return;
     }
-    tbody.innerHTML = bd.slice().reverse().map(function(l) {
+    
+    // Build sortable data
+    var sortData = bd.map(function(l) {
       var match = _matches.find(function(m) { return m.id === l.match_id; });
-      var matchLabel = match ? 'M' + (match.match_no || '?') + ' · ' + UI.tShort(match.team1) + ' vs ' + UI.tShort(match.team2) : 'M?';
-      var squadMatch = (l.batting_pts || 0) + (l.bowling_pts || 0) + (l.fielding_pts || 0);
       var predData = matchPredictions[l.match_id] || { target: 0, winner: 0 };
-      var predMatch = predData.target + predData.winner;
-      var bonusMatch = (l.bonus_pts || 0);
-      var totalMatch = squadMatch + predMatch + bonusMatch;
+      return {
+        log: l,
+        match: match,
+        batting: l.batting_pts || 0,
+        bowling: l.bowling_pts || 0,
+        fielding: l.fielding_pts || 0,
+        squad_total: (l.batting_pts || 0) + (l.bowling_pts || 0) + (l.fielding_pts || 0),
+        target: predData.target,
+        winner: predData.winner,
+        pred_total: predData.target + predData.winner,
+        bonus: l.bonus_pts || 0,
+        total: ((l.batting_pts || 0) + (l.bowling_pts || 0) + (l.fielding_pts || 0)) + predData.target + predData.winner + (l.bonus_pts || 0)
+      };
+    });
+    
+    // Sort
+    var col = _bdSort.col;
+    var asc = _bdSort.asc;
+    sortData.sort(function(a, b) {
+      if (col === 'match') {
+        var am = a.match?.match_no || 0;
+        var bm = b.match?.match_no || 0;
+        return asc ? am - bm : bm - am;
+      }
+      return asc ? a[col] - b[col] : b[col] - a[col];
+    });
+    
+    tbody.innerHTML = sortData.map(function(d) {
+      var matchLabel = d.match ? 'M' + (d.match.match_no || '?') + ' · ' + UI.tShort(d.match.team1) + ' vs ' + UI.tShort(d.match.team2) : 'M?';
       return '<tr>' +
         '<td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + matchLabel + '</td>' +
-        '<td class="font-mono" style="color:#f87171;">' + (l.batting_pts || 0) + '</td>' +
-        '<td class="font-mono" style="color:#60a5fa;">' + (l.bowling_pts || 0) + '</td>' +
-        '<td class="font-mono" style="color:#34d399;">' + (l.fielding_pts || 0) + '</td>' +
-        '<td class="font-mono" style="color:var(--accent);font-weight:700;border-right:2px solid var(--border);">' + squadMatch + '</td>' +
-        '<td class="font-mono" style="color:#fbbf24;">' + predData.target + '</td>' +
-        '<td class="font-mono" style="color:#a78bfa;">' + predData.winner + '</td>' +
-         '<td class="font-mono" style="color:var(--cyan);font-weight:700;border-right:2px solid var(--border);">' + predMatch + '</td>' +
-        '<td class="font-mono" style="color:#8b5cf6;">' + bonusMatch + '</td>' +
-         '<td class="font-mono pts" style="color:var(--gold);font-weight:700;border-left:3px solid var(--accent);background:var(--accent-dim);">' + totalMatch + '</td>' +
+        '<td class="font-mono" style="color:#f87171;">' + d.batting + '</td>' +
+        '<td class="font-mono" style="color:#60a5fa;">' + d.bowling + '</td>' +
+        '<td class="font-mono" style="color:#34d399;">' + d.fielding + '</td>' +
+        '<td class="font-mono" style="color:var(--accent);font-weight:700;border-right:2px solid var(--border);">' + d.squad_total + '</td>' +
+        '<td class="font-mono" style="color:#fbbf24;">' + d.target + '</td>' +
+        '<td class="font-mono" style="color:#a78bfa;">' + d.winner + '</td>' +
+         '<td class="font-mono" style="color:var(--cyan);font-weight:700;border-right:2px solid var(--border);">' + d.pred_total + '</td>' +
+        '<td class="font-mono" style="color:#8b5cf6;">' + d.bonus + '</td>' +
+         '<td class="font-mono pts" style="color:var(--gold);font-weight:700;border-left:3px solid var(--accent);background:var(--accent-dim);">' + d.total + '</td>' +
       '</tr>';
     }).join('');
   }
