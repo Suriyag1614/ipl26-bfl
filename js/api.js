@@ -2047,14 +2047,31 @@ async fetchTeams() {
   },
 
   async fetchMyMatchConsistency(teamId) {
-    const { data, error } = await sb.from('points_log')
-      .select('total_points')
+    // First get processed match IDs for this team
+    const { data: pointsData, error } = await sb.from('points_log')
+      .select('total_points, match_id')
       .eq('fantasy_team_id', teamId);
-    if (error) throw error;
-    if (!data || data.length < 2) return 0;
+    if (error) {
+      console.warn('fetchMyMatchConsistency error:', error);
+      return 0;
+    }
+    if (!pointsData || pointsData.length < 2) return 0;
     
-    // Filter to only positive points (processed matches)
-    const pts = data.map(d => d.total_points || 0).filter(p => p > 0);
+    // Get match statuses
+    const matchIds = pointsData.map(d => d.match_id).filter(Boolean);
+    const { data: matches } = await sb.from('matches')
+      .select('id')
+      .in('id', matchIds)
+      .eq('status', 'processed');
+    
+    const processedMatchIds = new Set((matches || []).map(m => m.id));
+    
+    // Filter points to only processed matches with positive values
+    const pts = pointsData
+      .filter(d => processedMatchIds.has(d.match_id))
+      .map(d => d.total_points || 0)
+      .filter(p => p > 0);
+    
     if (pts.length < 2) return 0;
     
     const max = Math.max(...pts);
