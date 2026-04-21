@@ -44,12 +44,23 @@
     .match-pill {
       background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg);
       padding: 12px 14px; cursor: pointer; transition: all 0.2s ease;
-      display: flex; flex-direction: column; gap: 4px;
+      display: flex; flex-direction: column; gap: 4px; position: relative;
     }
     .match-pill.selected:hover { transform: translateX(4px); }
     .match-pill-priority { border-left: 3px solid var(--accent); }
     .match-pill:hover { border-color: var(--border-h); background: var(--bg3); transform: translateX(4px); }
     .match-pill.selected { border-color: var(--accent); background: var(--accent-dim); box-shadow: 0 4px 12px rgba(200, 241, 53, 0.15); }
+    .match-pill.selected::before {
+      content: ''; position: absolute; top: 0; left: 0; width: 0; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: pill-sweep 2.5s ease-in-out infinite;
+      z-index: 1; pointer-events: none;
+    }
+    @keyframes pill-sweep {
+      0% { width: 0; left: 0; }
+      50% { width: 100%; left: 0; }
+      100% { width: 0; left: 100%; }
+    }
     .match-pill.selected:hover { transform: translateX(4px); }
     .match-pill-teams { font-family: var(--f-display); font-weight: 400; font-size: 14px; line-height: 1.2; }
     .match-pill-date { font-size: 11px; color: var(--text3); }
@@ -353,7 +364,7 @@ function filterMatches() {
     // Team colors using UI helper
     var c1 = UI.getTeamColor(m.team1);
     var c2 = UI.getTeamColor(m.team2);
-    var borderStyle = isSelected ? '' : 'border-left: 3px solid ' + c1 + '; background: linear-gradient(90deg, ' + c1 + '08, transparent 30%);';
+    var borderStyle = isSelected ? '' : 'border: 2px solid ' + c1 + '; background: linear-gradient(90deg, ' + c1 + '35, ' + c2 + '35 100%, transparent 70%);';
     
     return '<div class="match-pill'+isSelected+isPriority+'" id="pill-'+m.id+'" onclick="showMatchDetail(\''+m.id+'\')" style="animation-delay:'+(.04*i)+'s;' + borderStyle + '">' +
       '<div class="match-pill-teams">M'+(m.match_no||'')+' · '+UI.esc(t1s)+' vs '+UI.esc(t2s)+'</div>' +
