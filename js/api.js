@@ -472,9 +472,10 @@ const API = {
     if (le) throw le;
 
     // Fetch squad players with their IPL teams and all matches for matches_played calc
+    // Include released players but track their release dates
     const [squadsRes, matchesRes] = await Promise.all([
-      sb.from('squad_players').select('fantasy_team_id, player_id, players(ipl_team)'),
-      sb.from('matches').select('id,team1,team2').in('status', ['completed', 'processed'])
+      sb.from('squad_players').select('fantasy_team_id, player_id, is_released, released_at, players(ipl_team)'),
+      sb.from('matches').select('id,team1,team2,match_date').in('status', ['completed', 'processed']).order('match_date', { ascending: true })
     ]);
     const allSquads = squadsRes.data || [];
     const allMatches = matchesRes.data || [];
@@ -485,20 +486,33 @@ const API = {
       return (name||'').toUpperCase().trim();
     };
 
-    // Build map: fantasy_team_id → Set of normalized IPL teams their squad players belong to
-    const teamIplMap = {};
+    // Build map: fantasy_team_id → Array of { iplTeam, releasedAt }
+    const teamPlayersMap = {};
     allSquads.forEach(sp => {
       const iplTeam = sp.players?.ipl_team;
       if (!iplTeam) return;
-      if (!teamIplMap[sp.fantasy_team_id]) teamIplMap[sp.fantasy_team_id] = new Set();
-      teamIplMap[sp.fantasy_team_id].add(tNorm(iplTeam));
+      const ftId = sp.fantasy_team_id;
+      if (!teamPlayersMap[ftId]) teamPlayersMap[ftId] = [];
+      teamPlayersMap[ftId].push({
+        iplTeam: tNorm(iplTeam),
+        releasedAt: sp.released_at ? new Date(sp.released_at) : null
+      });
     });
 
-    // Build matches_played: count matches where at least one squad player's team is playing
+    // Build matches_played: count matches where at least one squad player was in the squad at match time
     const matchesPlayedMap = {};
-    Object.keys(teamIplMap).forEach(ftId => {
-      const iplTeams = teamIplMap[ftId];
-      matchesPlayedMap[ftId] = allMatches.filter(m => iplTeams.has(tNorm(m.team1)) || iplTeams.has(tNorm(m.team2))).length;
+    Object.keys(teamPlayersMap).forEach(ftId => {
+      const players = teamPlayersMap[ftId];
+      let count = 0;
+      allMatches.forEach(m => {
+        const matchDate = new Date(m.match_date);
+        const hasPlayerInTeam = players.some(p => 
+          (p.iplTeam === tNorm(m.team1) || p.iplTeam === tNorm(m.team2)) &&
+          (!p.releasedAt || p.releasedAt > matchDate)
+        );
+        if (hasPlayerInTeam) count++;
+      });
+      matchesPlayedMap[ftId] = count;
     });
 
     const agg = {};
