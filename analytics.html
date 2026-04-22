@@ -727,9 +727,9 @@ async function renderPointsBreakdown() {
     var bonusPct = seasonTotal > 0 ? Math.round((totalBonus / seasonTotal) * 100) : 0;
     predEl.innerHTML = '<div class="kpi-grid" style="grid-template-columns:repeat(2,1fr);">' +
       '<div class="kpi-chip"><div class="kpi-label">Target Prediction</div><div class="kpi-value" style="color:#fbbf24;">' + UI.fmtPts(totalTarget) + '</div><div class="kpi-sub">' + targetPct + '% of preds</div></div>' +
-      '<div class="kpi-chip"><div class="kpi-label">Winner Prediction</div><div class="kpi-value" style="color:#a78bfa;">' + UI.fmtPts(totalWinner) + '</div><div class="kpi-sub">' + winnerPct + '% of preds</div></div>' +
-      '<div class="kpi-chip total-chip"><div class="kpi-label">Predictions Total</div><div class="kpi-value">' + UI.fmtPts(predTotal) + '</div><div class="kpi-sub">' + predPct + '% of season</div></div>' +
-      '<div class="kpi-chip total-chip"><div class="kpi-label">Bonus Points (PoM&PoT)</div><div class="kpi-value">' + UI.fmtPts(totalBonus) + '</div><div class="kpi-sub">' + bonusPct + '% of season</div></div>' +
+      '<div class="kpi-chip"><div class="kpi-label">Winner Prediction</div><div class="kpi-value" style="color:var(--purple);">' + UI.fmtPts(totalWinner) + '</div><div class="kpi-sub">' + winnerPct + '% of preds</div></div>' +
+      '<div class="kpi-chip total-chip"><div class="kpi-label">Predictions Total</div><div class="kpi-value" style="color:var(--cyan);">' + UI.fmtPts(predTotal) + '</div><div class="kpi-sub">' + predPct + '% of season</div></div>' +
+      '<div class="kpi-chip total-chip"><div class="kpi-label">Bonus Points (PoM&PoT)</div><div class="kpi-value" style="color:var(--green);">' + UI.fmtPts(totalBonus) + '</div><div class="kpi-sub">' + bonusPct + '% of season</div></div>' +
       '</div>';
   }
 
@@ -780,9 +780,9 @@ async function renderPointsBreakdown() {
         '<td class="font-mono" style="color:#34d399;">' + d.fielding + '</td>' +
         '<td class="font-mono" style="color:var(--accent);font-weight:700;border-right:2px solid var(--border);">' + d.squad_total + '</td>' +
         '<td class="font-mono" style="color:#fbbf24;">' + d.target + '</td>' +
-        '<td class="font-mono" style="color:#a78bfa;">' + d.winner + '</td>' +
+        '<td class="font-mono" style="color:var(--purple);">' + d.winner + '</td>' +
          '<td class="font-mono" style="color:var(--cyan);font-weight:700;border-right:2px solid var(--border);">' + d.pred_total + '</td>' +
-        '<td class="font-mono" style="color:#8b5cf6;">' + d.bonus + '</td>' +
+        '<td class="font-mono" style="color:var(--green);">' + d.bonus + '</td>' +
          '<td class="font-mono pts" style="color:var(--gold);font-weight:700;border-left:3px solid var(--accent);background:var(--accent-dim);">' + d.total + '</td>' +
       '</tr>';
     }).join('');
