@@ -21,9 +21,33 @@ const API = {
     if (!data) return [];
     const rows = Array.isArray(data) ? data : [data];
     const reps = await this.fetchActiveReplacements(teamId);
+
+    if (reps.length === 0) {
+      return rows.map(sp => ({ ...sp, replacement: null }));
+    }
+
+    // Batch fetch replacement player details
+    const repPlayerIds = reps.map(r => r.replacement_player_id).filter(Boolean);
+    let playersMap = {};
+    if (repPlayerIds.length) {
+      const { data: repPlayers } = await sb.from('players')
+        .select('id,name,role,ipl_team,image_url,availability_status,is_overseas')
+        .in('id', repPlayerIds);
+      playersMap = (repPlayers || []).reduce((m, p) => (m[p.id] = p, m), {});
+    }
+
     return rows.map(sp => {
       const rep = reps.find(r => r.original_player_id === sp.player?.id);
-      return { ...sp, replacement: rep || null };
+      if (!rep) return { ...sp, replacement: null };
+
+      return {
+        ...sp,
+        replacement: {
+          ...rep,
+          original: sp.player,
+          replacement: rep.replacement_player_id ? playersMap[rep.replacement_player_id] : null
+        }
+      };
     });
   },
 
@@ -96,41 +120,98 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   async fetchActiveReplacements(teamId) {
     const { data, error } = await sb.from('replacements')
-      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,image_url,availability_status),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team,image_url),start_match:matches!replacements_start_match_id_fkey(match_date),end_match:matches!replacements_end_match_id_fkey(match_date)')
+      .select('id,fantasy_team_id,original_player_id,replacement_player_id,start_match_id,end_match_id,is_active,status,created_at')
       .eq('fantasy_team_id', teamId).eq('is_active', true).eq('status', 'approved');
     if (error) throw error;
+    const reps = data || [];
+    if (reps.length === 0) return [];
+
+    // Batch fetch related matches for date filtering
+    const matchIds = [...new Set(reps.flatMap(function(r) {
+      return [r.start_match_id, r.end_match_id].filter(Boolean);
+    }))];
+    var matchesMap = {};
+    if (matchIds.length) {
+      const { data: matches } = await sb.from('matches').select('id,match_date').in('id', matchIds);
+      matchesMap = (matches || []).reduce(function(m, mch){ m[mch.id] = mch; return m; }, {});
+    }
+
     const now = new Date().toISOString();
-    return (data || []).filter(r => {
-      // If has start date and it's in the future, not active yet
-      if (r.start_match && r.start_match.match_date && new Date(r.start_match.match_date) > new Date(now)) return false;
-      // If has end date and it's in the past, no longer active
-      if (r.end_match && r.end_match.match_date && new Date(r.end_match.match_date) < new Date(now)) return false;
-      // No end date = permanent, or currently in range
+    return reps.filter(function(r) {
+      var startMatch = r.start_match_id ? matchesMap[r.start_match_id] : null;
+      var endMatch = r.end_match_id ? matchesMap[r.end_match_id] : null;
+      if (startMatch && startMatch.match_date && new Date(startMatch.match_date) > new Date(now)) return false;
+      if (endMatch && endMatch.match_date && new Date(endMatch.match_date) < new Date(now)) return false;
       return true;
     });
   },
 
   async fetchPendingReplacements(teamId) {
     const { data, error } = await sb.from('replacements')
-      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,image_url,availability_status),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team,image_url),team:fantasy_teams(team_name)')
-      .eq('fantasy_team_id', teamId).eq('status', 'pending');
+      .select('id,fantasy_team_id,original_player_id,replacement_player_id,start_match_id,end_match_id,status,reason,created_at')
+      .eq('fantasy_team_id', teamId).eq('status', 'pending')
+      .order('created_at', { ascending: false });
     if (error) {
       console.error('[fetchPendingReplacements] Error:', error);
       throw error;
     }
-    return data || [];
+    var reps = data || [];
+    if (reps.length === 0) return [];
+
+    // Batch fetch players and team
+    var playerIds = [...new Set(reps.flatMap(function(r) {
+      return [r.original_player_id, r.replacement_player_id].filter(Boolean);
+    }))];
+    var teamIds = reps.map(function(r){ return r.fantasy_team_id; }).filter(Boolean);
+    var [playersRes, teamsRes] = await Promise.all([
+      sb.from('players').select('id,name,role,ipl_team,image_url,availability_status,is_overseas').in('id', playerIds),
+      sb.from('fantasy_teams').select('id,team_name').in('id', teamIds)
+    ]);
+    var playersMap = (playersRes.data || []).reduce(function(m, p){ m[p.id] = p; return m; }, {});
+    var teamsMap = (teamsRes.data || []).reduce(function(m, t){ m[t.id] = t; return m; }, {});
+
+    return reps.map(function(r) {
+      return {
+        ...r,
+        original: playersMap[r.original_player_id] || null,
+        replacement: r.replacement_player_id ? playersMap[r.replacement_player_id] || null : null,
+        team: teamsMap[r.fantasy_team_id] || null
+      };
+    });
   },
 
   async fetchRejectedReplacements(teamId) {
     const { data, error } = await sb.from('replacements')
-      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,image_url,availability_status),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team,image_url),team:fantasy_teams(team_name)')
+      .select('id,fantasy_team_id,original_player_id,replacement_player_id,start_match_id,end_match_id,status,reason,admin_notes,created_at,updated_at')
       .eq('fantasy_team_id', teamId).eq('status', 'rejected')
       .order('updated_at', { ascending: false });
     if (error) {
       console.error('[fetchRejectedReplacements] Error:', error);
       throw error;
     }
-    return data || [];
+    var reps = data || [];
+    if (reps.length === 0) return [];
+
+    // Batch fetch players and team
+    var playerIds = [...new Set(reps.flatMap(function(r) {
+      return [r.original_player_id, r.replacement_player_id].filter(Boolean);
+    }))];
+    var teamIds = reps.map(function(r){ return r.fantasy_team_id; }).filter(Boolean);
+    var [playersRes, teamsRes] = await Promise.all([
+      sb.from('players').select('id,name,role,ipl_team,image_url,availability_status,availability_note,is_overseas').in('id', playerIds),
+      sb.from('fantasy_teams').select('id,team_name').in('id', teamIds)
+    ]);
+    var playersMap = (playersRes.data || []).reduce(function(m, p){ m[p.id] = p; return m; }, {});
+    var teamsMap = (teamsRes.data || []).reduce(function(m, t){ m[t.id] = t; return m; }, {});
+
+    return reps.map(function(r) {
+      return {
+        ...r,
+        original: playersMap[r.original_player_id] || null,
+        replacement: r.replacement_player_id ? playersMap[r.replacement_player_id] || null : null,
+        team: teamsMap[r.fantasy_team_id] || null
+      };
+    });
   },
 
   async updateReplacement(replacementId, updates, allowStatusChange = false) {
@@ -157,12 +238,29 @@ const API = {
 
   async fetchAllReplacements(teamId) {
     let q = sb.from('replacements')
-      .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team)')
+      .select('id,fantasy_team_id,original_player_id,replacement_player_id,start_match_id,end_match_id,is_active,status,reason,created_at')
       .order('created_at', { ascending: false });
     if (teamId) q = q.eq('fantasy_team_id', teamId);
     const { data, error } = await q;
     if (error) throw error;
-    return data || [];
+    var reps = data || [];
+
+    // Batch fetch players
+    var playerIds = [...new Set(reps.flatMap(function(r) {
+      return [r.original_player_id, r.replacement_player_id].filter(Boolean);
+    }))];
+    var { data: players } = await sb.from('players')
+      .select('id,name,role,ipl_team,is_overseas')
+      .in('id', playerIds);
+    var playersMap = (players || []).reduce(function(m, p){ m[p.id] = p; return m; }, {});
+
+    return reps.map(function(r) {
+      return {
+        ...r,
+        original: playersMap[r.original_player_id] || null,
+        replacement: r.replacement_player_id ? playersMap[r.replacement_player_id] || null : null
+      };
+    });
   },
 
   async createReplacement({ teamId, originalPlayerId, replacementPlayerId, startMatchId, endMatchId, reason, proofLinks, proofNotes }) {

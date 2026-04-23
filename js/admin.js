@@ -1370,22 +1370,47 @@ async function undoAdj(adjId) {
 /* ══════════════════════════════════════════════════════════════
    INJURIES & REPLACEMENTS
 ══════════════════════════════════════════════════════════════ */
-async function loadInjuries() {
-  var el=$id('injuries-list'); if(!el) return;
-  var filter=$id('rep-filter')?$id('rep-filter').value:'all';
-  var teamFilter=$id('rep-team-filter')?$id('rep-team-filter').value:'';
-  el.innerHTML='<div class="skel skel-row"></div>';
-  try {
-    var [repsRes, matchesRes] = await Promise.all([
-      sb.from('replacements')
-        .select('*,original:players!replacements_original_player_id_fkey(id,name,role,ipl_team,availability_status,availability_note),replacement:players!replacements_replacement_player_id_fkey(id,name,role,ipl_team),team:fantasy_teams(team_name)')
-        .order('created_at',{ascending:false}),
-      sb.from('matches').select('id,match_no,team1,team2')
+  async function loadInjuries() {
+    var el=$id('injuries-list'); if(!el) return;
+    var filter=$id('rep-filter')?$id('rep-filter').value:'all';
+    var teamFilter=$id('rep-team-filter')?$id('rep-team-filter').value:'';
+    el.innerHTML='<div class="skel skel-row"></div>';
+    try {
+      var [repsRes, matchesRes] = await Promise.all([
+        sb.from('replacements')
+          .select('id,fantasy_team_id,original_player_id,replacement_player_id,start_match_id,end_match_id,is_active,status,admin_notes,created_at')
+          .order('created_at',{ascending:false}),
+        sb.from('matches').select('id,match_no,team1,team2')
+      ]);
+      if (repsRes.error) throw repsRes.error;
+      var reps = repsRes.data || [];
+
+    // Batch-fetch all players and teams referenced
+    var playerIds = [...new Set(reps.flatMap(function(r) {
+        return [r.original_player_id, r.replacement_player_id].filter(Boolean);
+      }))];
+    var teamIds = [...new Set(reps.map(function(r) { return r.fantasy_team_id; }).filter(Boolean))];
+
+    var [playersRes, teamsRes] = await Promise.all([
+      playerIds.length ? sb.from('players').select('id,name,role,ipl_team,availability_status,availability_note,is_overseas').in('id', playerIds) : Promise.resolve({ data: [] }),
+      teamIds.length ? sb.from('fantasy_teams').select('id,team_name').in('id', teamIds) : Promise.resolve({ data: [] })
     ]);
-    if (repsRes.error) throw repsRes.error;
-    var data = repsRes.data || [];
-    var matchesMap = {};
-    (matchesRes.data||[]).forEach(function(m){matchesMap[m.id]=m;});
+
+      var playersMap = (playersRes.data || []).reduce(function(m, p){ m[p.id] = p; return m; }, {});
+      var teamsMap = (teamsRes.data || []).reduce(function(m, t){ m[t.id] = t; return m; }, {});
+
+      // Merge relationships
+      var data = reps.map(function(r) {
+        return {
+          ...r,
+          original: playersMap[r.original_player_id] || null,
+          replacement: r.replacement_player_id ? playersMap[r.replacement_player_id] || null : null,
+          team: teamsMap[r.fantasy_team_id] || null
+        };
+      });
+
+      var matchesMap = {};
+      (matchesRes.data||[]).forEach(function(m){matchesMap[m.id]=m;});
     if(teamFilter){
       data=data.filter(function(r){return r.fantasy_team_id===teamFilter;});
     }
