@@ -213,7 +213,7 @@ async function init() {
   var hr = now.getHours();
   var greet = hr<12?'Good Morning':hr<17?'Good Afternoon':'Good Evening';
   document.getElementById('hero-greeting').innerHTML = greet + ' · <span id="hero-date">'+now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})+'</span>';
-  document.getElementById('hero-name').innerHTML = 'Whistle Podu, ' + UI.championName(_myTeam.team_name) + ' <img src="images/ipl/whistle.png" style="vertical-align:text-bottom;height:40px;width:40px;object-fit:contain;"></span>';
+  document.getElementById('hero-name').innerHTML = 'Welcome Back, ' + UI.championName(_myTeam.team_name) + ' 👋🏻';
 
   await Promise.all([loadStats(), loadNextMatch(), loadImpact(), loadPerformers(), loadRecent(), loadMiniLB()]);
   await API.checkAndAwardBadges(_myTeamId);
