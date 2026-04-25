@@ -883,9 +883,19 @@ body:has(.login-wrap) #toast-container {
 .match-tab-strip::-webkit-scrollbar-track { background:transparent; }
 .match-tab-strip::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 .match-tab-strip::-webkit-scrollbar-thumb:hover { background:var(--text3); }
-.match-tab { flex-shrink:0; padding:7px 14px; background:var(--bg2); border:1px solid var(--border); border-radius:22px; font-family:var(--f-ui); font-size:13px; font-weight:700; color:var(--text2); cursor:pointer; transition:all .2s; white-space:nowrap; }
+.match-tab { flex-shrink:0; padding:7px 14px; background:var(--bg2); border:1px solid var(--border); border-radius:22px; font-family:var(--f-ui); font-size:13px; font-weight:700; color:var(--text2); cursor:pointer; transition:all .2s; white-space:nowrap; position:relative; }
 .match-tab:hover  { border-color:var(--border2); color:var(--text); }
-.match-tab.active { background:var(--accent-dim); border-color:rgba(200,241,53,.35); color:var(--accent); }
+.match-tab.active { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); box-shadow: 0 4px 12px rgba(200,241,53,0.15); }
+.match-tab.active::before {
+  content:''; position:absolute; top:0; left:0; width:0; height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation:tab-sweep 2.5s ease-in-out infinite; z-index:1; pointer-events:none;
+}
+@keyframes tab-sweep {
+  0% { width:0; left:0; }
+  50% { width:100%; left:0; }
+  100% { width:0; left:100%; }
+}
 .match-tab.done   { background:rgba(56,217,245,.06); border-color:rgba(56,217,245,.2); color:var(--cyan); }
 .match-tab.locked-tab { background:var(--red-dim); border-color:rgba(255,77,109,.2); color:var(--red); }
 .match-tab.abandoned-tab { background:rgba(138,43,226,.12); border-color:rgba(138,43,226,.25); color: #8a2be2; }
