@@ -302,7 +302,7 @@ async function init() {
     _lockPoll = setInterval(async function() {
       try {
         await API.serverAutoLock();
-        var fresh = safeArr(await API.fetchMatches({ limit: 40 }));
+        var fresh = safeArr(await API.fetchMatches({ limit: 74 }));
         _matches = fresh;
         renderMatchTabs();
         // Refresh current match area if lock state may have changed
@@ -329,10 +329,10 @@ async function loadImpactStats() {
 }
 
 async function loadMatches() {
-  try {
-    var raw = safeArr(await API.fetchMatches({ limit: 40 }));
-    _matches = raw;
-  } catch(e) {
+    try {
+      var raw = safeArr(await API.fetchMatches({ limit: 74 }));
+      _matches = raw;
+    } catch(e) {
     _matches = [];
     showArea('<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-text">Could not load matches: ' + UI.esc(e.message) + '</div></div>');
     return;

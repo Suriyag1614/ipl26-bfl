@@ -878,8 +878,11 @@ body:has(.login-wrap) #toast-container {
 .usage-pip.filled            { background:var(--accent); border-color:var(--accent); animation:pip-fill .3s cubic-bezier(.34,1.56,.64,1) both; }
 .usage-pip.filled.low        { background:#f59e0b; border-color:#f59e0b; }
 .usage-pip.filled.gone       { background:var(--red); border-color:var(--red); }
-.match-tab-strip { display:flex; gap:6px; overflow-x:auto; padding-bottom:5px; scrollbar-width:none; margin-bottom:20px; }
-.match-tab-strip::-webkit-scrollbar { display:none; }
+.match-tab-strip { display:flex; gap:6px; overflow-x:auto; padding-bottom:5px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; margin-bottom:20px; -webkit-overflow-scrolling:touch; }
+.match-tab-strip::-webkit-scrollbar { height:6px; }
+.match-tab-strip::-webkit-scrollbar-track { background:transparent; }
+.match-tab-strip::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+.match-tab-strip::-webkit-scrollbar-thumb:hover { background:var(--text3); }
 .match-tab { flex-shrink:0; padding:7px 14px; background:var(--bg2); border:1px solid var(--border); border-radius:22px; font-family:var(--f-ui); font-size:13px; font-weight:700; color:var(--text2); cursor:pointer; transition:all .2s; white-space:nowrap; }
 .match-tab:hover  { border-color:var(--border2); color:var(--text); }
 .match-tab.active { background:var(--accent-dim); border-color:rgba(200,241,53,.35); color:var(--accent); }

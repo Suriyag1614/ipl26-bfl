@@ -488,11 +488,36 @@ function renderPredSummary(mc) {
   if (t2ct) barHtml += '<div class="winner-bar-seg" style="flex:'+t2ct+';background:#f59e0b;color:#000;">'+Math.round((t2ct/total)*100)+'%</div>';
   if (oth)  barHtml += '<div class="winner-bar-seg" style="flex:'+oth+';background:var(--bg3);color:var(--text3);">'+Math.round((oth/total)*100)+'%</div>';
 
+  // Compute most picked winner from winner_counts (fixes incorrect API data)
+  var maxCount = 0, maxTeam = null, tie = false;
+  for (var team in wc) {
+    if (wc.hasOwnProperty(team)) {
+      var cnt = wc[team];
+      if (cnt > maxCount) {
+        maxCount = cnt; maxTeam = team; tie = false;
+      } else if (cnt === maxCount && cnt > 0) {
+        tie = true;
+      }
+    }
+  }
+  var mostPickedDisplay;
+  if (!maxTeam) {
+    mostPickedDisplay = '—';
+  } else if (tie) {
+    var tiedTeams = [];
+    for (var t in wc) {
+      if (wc.hasOwnProperty(t) && wc[t] === maxCount) tiedTeams.push(UI.tShort(t));
+    }
+    mostPickedDisplay = 'TIED: ' + tiedTeams.join('/');
+  } else {
+    mostPickedDisplay = UI.tShort(maxTeam);
+  }
+
   wrap.innerHTML =
     '<div class="metric-row"><span class="metric-label">Total Predictions</span><span class="metric-val">'+s.total_preds+'</span></div>' +
     '<div class="metric-row"><span class="metric-label">Avg Predicted Target</span><span class="metric-val" style="color:var(--accent);">'+(s.avg_target||'—')+'</span></div>' +
     (m.actual_target?'<div class="metric-row"><span class="metric-label">Actual Target</span><span class="metric-val" style="color:var(--gold);">'+m.actual_target+'</span></div>':'') +
-    '<div class="metric-row"><span class="metric-label">Most Picked Winner</span><span class="metric-val">'+(s.most_picked && s.most_picked.startsWith('TIED:') ? UI.esc(s.most_picked) : UI.esc(UI.tShort(s.most_picked)||'—'))+'</span></div>' +
+    '<div class="metric-row"><span class="metric-label">Most Picked Winner</span><span class="metric-val">'+UI.esc(mostPickedDisplay)+'</span></div>' +
     '<div style="margin-top:12px;"><div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-family:var(--f-ui);font-weight:600;text-transform:uppercase;letter-spacing:1px;">Winner Distribution</div>' +
     '<div class="winner-bar">'+barHtml+'</div>' +
     '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--text2);">' +
