@@ -49,12 +49,12 @@
     .match-pill.selected:hover { transform: translateX(4px); }
     .match-pill-priority { border-left: 3px solid var(--accent); }
     .match-pill:hover { border-color: var(--border-h); background: var(--bg3); transform: translateX(4px); }
-    .match-pill.selected { border-color: var(--accent); background: var(--accent-dim); box-shadow: 0 4px 12px rgba(200, 241, 53, 0.15); }
+    .match-pill.selected { border-color: var(--accent); background: var(--accent-dim); box-shadow: 0 4px 12px rgba(200, 241, 53, 0.15); overflow: clip; }
     .match-pill.selected::before {
       content: ''; position: absolute; top: 0; left: 0; width: 0; height: 100%;
       background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
       animation: pill-sweep 2.5s ease-in-out infinite;
-      z-index: 1; pointer-events: none;
+      z-index: -1; pointer-events: none;
     }
     @keyframes pill-sweep {
       0% { width: 0; left: 0; }
