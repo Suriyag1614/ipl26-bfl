@@ -144,8 +144,8 @@
        padding: 10px 8px;
        vertical-align: middle;
      }
-     .team-insights-table .th-sortable { cursor: pointer; user-select: none; }
-     .team-insights-table .th-sortable:hover { color: var(--accent); }
+     .th-sortable { cursor: pointer; user-select: none; }
+     .th-sortable:hover { color: var(--accent); }
      .team-insights-table .ti-team { font-weight: 800; min-width: 100px; color: var(--purple); }
      .team-insights-table .ti-num { font-family: var(--f-mono); font-weight: 700; }
      .team-insights-table .ti-low { color: var(--red); }
@@ -201,7 +201,7 @@
        vertical-align: middle;
      }
      .team-stats-card .data-table td:first-child { text-align: left; font-weight: 600; }
-     .team-stats-card .data-table .ti-team-col { font-weight: 800; color: var(--purple); min-width: 90px; }
+     .team-stats-card .data-table .ti-team-col { font-weight: 800; color: var(--purple); }
      .team-stats-card .data-table .stat-num { font-family: var(--f-mono); font-weight: 700; }
      .team-stats-card .data-table .stat-num.high { color: var(--green); }
      .team-stats-card .data-table .stat-num.low { color: var(--red); }
@@ -1757,7 +1757,7 @@ async function renderTeamStatsCards(teamDataMap, tableType) {
       updateBattingHeaders(batSort);
       if (batTbody) batTbody.innerHTML = sortedBatting.map(function(t) {
         return '<tr><td class="ti-team-col">' + UI.esc(t.team_short) + '</td><td class="stat-num' + (t.batting.runs > 0 ? ' high' : '') + '">' + UI.fmtPts(t.batting.runs) + '</td><td class="stat-num">' + UI.fmtPts(t.batting.balls_faced) + '</td><td>' + UI.fmtPts(t.batting.fours) + '</td><td>' + UI.fmtPts(t.batting.sixes) + '</td><td class="stat-num">' + t.batting.sr + '</td><td class="stat-num">' + t.batting.avg + '</td><td><span class="ti-badge ti-badge-gold">' + t.batting.fifties + '</span></td><td><span class="ti-badge ti-badge-cyan">' + t.batting.hundreds + '</span></td></tr>';
-      }).join('') + '<tr class="total-row"><td>Totals</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.batting.runs,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.batting.balls_faced,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.batting.fours,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.batting.sixes,0)) + '</td><td>—</td><td>—</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.batting.fifties,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.batting.hundreds,0)) + '</td></tr>';
+       }).join('') + '<tr class="total-row"><td>Totals</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.batting.runs,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.batting.balls_faced,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.batting.fours,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.batting.sixes,0)) + '</td><td class="stat-num">' + (teamStatsList.length ? Math.round(teamStatsList.reduce((s,t) => s + t.batting.sr,0) / teamStatsList.length * 10) / 10 : 0) + '</td><td class="stat-num">' + (teamStatsList.length ? Math.round(teamStatsList.reduce((s,t) => s + t.batting.avg,0) / teamStatsList.length * 10) / 10 : 0) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.batting.fifties,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.batting.hundreds,0)) + '</td></tr>';
     }
 
     // Bowling
@@ -1771,7 +1771,7 @@ async function renderTeamStatsCards(teamDataMap, tableType) {
       updateBowlingHeaders(bowlSort);
       if (bowlTbody) bowlTbody.innerHTML = sortedBowling.map(function(t) {
         return '<tr><td class="ti-team-col">' + UI.esc(t.team_short) + '</td><td class="stat-num' + (t.bowling.wickets > 0 ? ' high' : '') + '">' + UI.fmtPts(t.bowling.wickets) + '</td><td>' + UI.fmtPts(t.bowling.maidens) + '</td><td class="stat-num">' + UI.fmtPts(t.bowling.runs_conceded) + '</td><td class="stat-num">' + t.bowling.avg + '</td><td class="stat-num">' + t.bowling.economy + '</td><td><span class="ti-badge ti-badge-gold">' + t.bowling.three_fers + '</span></td><td><span class="ti-badge ti-badge-cyan">' + t.bowling.five_fers + '</span></td></tr>';
-      }).join('') + '<tr class="total-row"><td>Totals</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.wickets,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.maidens,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.runs_conceded,0)) + '</td><td>—</td><td>—</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.three_fers,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.five_fers,0)) + '</td></tr>';
+       }).join('') + '<tr class="total-row"><td>Totals</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.wickets,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.maidens,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.runs_conceded,0)) + '</td><td class="stat-num">' + (teamStatsList.length ? Math.round(teamStatsList.reduce((s,t) => s + t.bowling.avg,0) / teamStatsList.length * 10) / 10 : 0) + '</td><td class="stat-num">' + (teamStatsList.length ? Math.round(teamStatsList.reduce((s,t) => s + t.bowling.economy,0) / teamStatsList.length * 10) / 10 : 0) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.three_fers,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.five_fers,0)) + '</td></tr>';
     }
 
     // Fielding
