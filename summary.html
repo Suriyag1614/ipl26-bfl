@@ -144,7 +144,7 @@
        padding: 10px 8px;
        vertical-align: middle;
      }
-     .th-sortable { cursor: pointer; user-select: none; }
+     .th-sortable { cursor: pointer;}
      .th-sortable:hover { color: var(--accent); }
      .team-insights-table .ti-team { font-weight: 800; min-width: 100px; color: var(--purple); }
      .team-insights-table .ti-num { font-family: var(--f-mono); font-weight: 700; }
@@ -425,6 +425,7 @@
                   <tr>
                     <th class="th-sortable" onclick="_sortBowling('team_short')">Team <span class="ti-sort-arrow"></span></th>
                     <th class="th-sortable" onclick="_sortBowling('wickets')">Wkts <span class="ti-sort-arrow"></span></th>
+                    <th class="th-sortable" onclick="_sortBowling('overs')">Overs <span class="ti-sort-arrow"></span></th>
                     <th class="th-sortable" onclick="_sortBowling('maidens')">Maid <span class="ti-sort-arrow"></span></th>
                     <th class="th-sortable" onclick="_sortBowling('runs_conceded')">Runs <span class="ti-sort-arrow"></span></th>
                     <th class="th-sortable" onclick="_sortBowling('avg')">Avg <span class="ti-sort-arrow"></span></th>
@@ -433,7 +434,7 @@
                     <th class="th-sortable" onclick="_sortBowling('five_fers')">5-F <span class="ti-sort-arrow"></span></th>
                   </tr>
                 </thead>
-               <tbody id="bowling-stats-tbody"><tr><td colspan="8" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+                <tbody id="bowling-stats-tbody"><tr><td colspan="9" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
              </table>
            </div>
            </div>
@@ -1623,7 +1624,7 @@ async function renderTeamStatsCards(teamDataMap, tableType) {
       if (batTbody) batTbody.innerHTML = '<tr><td colspan="9" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
     }
     if (!tableType || tableType === 'bowling') {
-      if (bowlTbody) bowlTbody.innerHTML = '<tr><td colspan="8" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
+       if (bowlTbody) bowlTbody.innerHTML = '<tr><td colspan="9" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
     }
     if (!tableType || tableType === 'fielding') {
       if (fieldTbody) fieldTbody.innerHTML = '<tr><td colspan="4" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
@@ -1664,23 +1665,42 @@ async function renderTeamStatsCards(teamDataMap, tableType) {
         end: endNo
       });
     });
-    Object.keys(assignments).forEach(function(pid) {
-      assignments[pid].sort(function(a, b) { return a.start - b.start; });
-    });
-
-    // Initialize aggregates
-    var aggregates = {};
-    Object.keys(teamDataMap).forEach(function(tid) {
-      aggregates[tid] = {
-        team_name: teamDataMap[tid].team_name,
-        team_short: teamDataMap[tid].team_short,
-        runs: 0, balls_faced: 0, fours: 0, sixes: 0, fifties: 0, hundreds: 0, not_outs: 0, innings: 0,
-        wickets: 0, maidens: 0, runs_conceded: 0, overs: 0, three_fers: 0, five_fers: 0,
-        catches: 0, run_outs: 0, stumpings: 0
-      };
-    });
-
-    function findTeam(playerId, matchIdStr) {
+     Object.keys(assignments).forEach(function(pid) {
+       assignments[pid].sort(function(a, b) { return a.start - b.start; });
+     });
+   
+     // Helper: convert overs notation (e.g., 18.2) to total balls
+     function oversToBalls(overs) {
+       if (overs === null || overs === undefined) return 0;
+       var n = Number(overs);
+       if (isNaN(n)) return 0;
+       var whole = Math.floor(n);
+       var balls = Math.round((n - whole) * 10);
+       return whole * 6 + balls;
+     }
+     // Helper: convert total balls to overs notation string (e.g., 110 -> "18.2")
+     function formatOvers(balls) {
+       var overs = Math.floor(balls / 6);
+       var rem = balls % 6;
+       return overs + '.' + rem;
+     }
+   
+     // Initialize aggregates
+     var aggregates = {};
+     Object.keys(teamDataMap).forEach(function(tid) {
+       aggregates[tid] = {
+         team_name: teamDataMap[tid].team_name,
+         team_short: teamDataMap[tid].team_short,
+         // Batting
+         runs: 0, balls_faced: 0, fours: 0, sixes: 0, fifties: 0, hundreds: 0, not_outs: 0, innings: 0,
+         // Bowling — overs stored as total balls for precise summation
+         wickets: 0, maidens: 0, runs_conceded: 0, overs_balls: 0, three_fers: 0, five_fers: 0,
+         // Fielding
+         catches: 0, run_outs: 0, stumpings: 0
+       };
+      });
+    
+     function findTeam(playerId, matchIdStr) {
       var list = assignments[playerId];
       if (!list) return null;
       var matchNo = matchIdToNo[matchIdStr];
@@ -1710,11 +1730,11 @@ async function renderTeamStatsCards(teamDataMap, tableType) {
       if (runs >= 50 && runs < 100) agg.fifties++;
       if (runs >= 100) agg.hundreds++;
 
-      var wickets = Number(ps.wickets || 0);
-      agg.wickets += wickets; agg.maidens += Number(ps.maidens || 0);
-      agg.runs_conceded += Number(ps.runs_conceded || 0);
-      agg.overs += API.getTrueOvers(ps.overs_bowled);
-      if (wickets >= 3 && wickets < 5) agg.three_fers++;
+       var wickets = Number(ps.wickets || 0);
+       agg.wickets += wickets; agg.maidens += Number(ps.maidens || 0);
+       agg.runs_conceded += Number(ps.runs_conceded || 0);
+       agg.overs_balls += oversToBalls(ps.overs_bowled);
+       if (wickets >= 3 && wickets < 5) agg.three_fers++;
       if (wickets >= 5) agg.five_fers++;
 
       agg.catches += Number(ps.catches || 0);
@@ -1723,18 +1743,20 @@ async function renderTeamStatsCards(teamDataMap, tableType) {
     });
 
     // Build list
-    var teamStatsList = Object.values(aggregates).map(function(t) {
-      var sr = t.balls_faced > 0 ? Math.round((t.runs / t.balls_faced) * 100 * 10) / 10 : 0;
-      var avg = (t.innings - t.not_outs) > 0 ? Math.round((t.runs / (t.innings - t.not_outs)) * 10) / 10 : (t.runs > 0 ? t.runs : 0);
-      var bowlAvg = t.wickets > 0 ? Math.round((t.runs_conceded / t.wickets) * 10) / 10 : 0;
-      var eco = t.overs > 0 ? Math.round((t.runs_conceded / t.overs) * 10) / 10 : 0;
-      return {
-        team_name: t.team_name, team_short: t.team_short,
-        batting: { runs: t.runs, balls_faced: t.balls_faced, fours: t.fours, sixes: t.sixes, sr: sr, avg: avg, fifties: t.fifties, hundreds: t.hundreds },
-        bowling: { wickets: t.wickets, maidens: t.maidens, runs_conceded: t.runs_conceded, avg: bowlAvg, economy: eco, three_fers: t.three_fers, five_fers: t.five_fers },
-        fielding: { catches: t.catches, run_outs: t.run_outs, stumpings: t.stumpings }
-      };
-    });
+     var teamStatsList = Object.values(aggregates).map(function(t) {
+       var sr = t.balls_faced > 0 ? Math.round((t.runs / t.balls_faced) * 100 * 10) / 10 : 0;
+       var avg = (t.innings - t.not_outs) > 0 ? Math.round((t.runs / (t.innings - t.not_outs)) * 10) / 10 : (t.runs > 0 ? t.runs : 0);
+       var bowlAvg = t.wickets > 0 ? Math.round((t.runs_conceded / t.wickets) * 10) / 10 : 0;
+       var oversBalls = t.overs_balls || 0;
+       var eco = oversBalls > 0 ? Math.round((t.runs_conceded * 6 / oversBalls) * 10) / 10 : 0;
+       var oversDisp = formatOvers(oversBalls);
+       return {
+         team_name: t.team_name, team_short: t.team_short,
+         batting: { runs: t.runs, balls_faced: t.balls_faced, fours: t.fours, sixes: t.sixes, sr: sr, avg: avg, fifties: t.fifties, hundreds: t.hundreds },
+         bowling: { wickets: t.wickets, overs: oversBalls, overs_display: oversDisp, maidens: t.maidens, runs_conceded: t.runs_conceded, avg: bowlAvg, economy: eco, three_fers: t.three_fers, five_fers: t.five_fers },
+         fielding: { catches: t.catches, run_outs: t.run_outs, stumpings: t.stumpings }
+       };
+     });
 
     // Determine which table to render based on tableType or global sort state
     var sortStates = {
@@ -1769,9 +1791,9 @@ async function renderTeamStatsCards(teamDataMap, tableType) {
         return bowlSort.asc ? av - bv : bv - av;
       });
       updateBowlingHeaders(bowlSort);
-      if (bowlTbody) bowlTbody.innerHTML = sortedBowling.map(function(t) {
-        return '<tr><td class="ti-team-col">' + UI.esc(t.team_short) + '</td><td class="stat-num' + (t.bowling.wickets > 0 ? ' high' : '') + '">' + UI.fmtPts(t.bowling.wickets) + '</td><td>' + UI.fmtPts(t.bowling.maidens) + '</td><td class="stat-num">' + UI.fmtPts(t.bowling.runs_conceded) + '</td><td class="stat-num">' + t.bowling.avg + '</td><td class="stat-num">' + t.bowling.economy + '</td><td><span class="ti-badge ti-badge-gold">' + t.bowling.three_fers + '</span></td><td><span class="ti-badge ti-badge-cyan">' + t.bowling.five_fers + '</span></td></tr>';
-       }).join('') + '<tr class="total-row"><td>Totals</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.wickets,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.maidens,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.runs_conceded,0)) + '</td><td class="stat-num">' + (teamStatsList.length ? Math.round(teamStatsList.reduce((s,t) => s + t.bowling.avg,0) / teamStatsList.length * 10) / 10 : 0) + '</td><td class="stat-num">' + (teamStatsList.length ? Math.round(teamStatsList.reduce((s,t) => s + t.bowling.economy,0) / teamStatsList.length * 10) / 10 : 0) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.three_fers,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.five_fers,0)) + '</td></tr>';
+        if (bowlTbody) bowlTbody.innerHTML = sortedBowling.map(function(t) {
+          return '<tr><td class="ti-team-col">' + UI.esc(t.team_short) + '</td><td class="stat-num' + (t.bowling.wickets > 0 ? ' high' : '') + '">' + UI.fmtPts(t.bowling.wickets) + '</td><td class="stat-num">' + t.bowling.overs_display + '</td><td>' + UI.fmtPts(t.bowling.maidens) + '</td><td class="stat-num">' + UI.fmtPts(t.bowling.runs_conceded) + '</td><td class="stat-num">' + t.bowling.avg + '</td><td class="stat-num">' + t.bowling.economy + '</td><td><span class="ti-badge ti-badge-gold">' + t.bowling.three_fers + '</span></td><td><span class="ti-badge ti-badge-cyan">' + t.bowling.five_fers + '</span></td></tr>';
+        }).join('') + '<tr class="total-row"><td>Totals</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.wickets,0)) + '</td><td class="stat-num">' + formatOvers(teamStatsList.reduce((s,t) => s + t.bowling.overs,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.maidens,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.runs_conceded,0)) + '</td><td class="stat-num">—</td><td class="stat-num">—</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.three_fers,0)) + '</td><td>' + UI.fmtPts(teamStatsList.reduce((s,t) => s + t.bowling.five_fers,0)) + '</td></tr>';
     }
 
     // Fielding
@@ -1794,7 +1816,7 @@ async function renderTeamStatsCards(teamDataMap, tableType) {
     var bowl = document.getElementById('bowling-stats-tbody');
     var field = document.getElementById('fielding-stats-tbody');
     if (bat) bat.innerHTML = '<tr><td colspan="9" class="empty-state">Error loading</td></tr>';
-    if (bowl) bowl.innerHTML = '<tr><td colspan="8" class="empty-state">Error loading</td></tr>';
+    if (bowl) bowl.innerHTML = '<tr><td colspan="9" class="empty-state">Error loading</td></tr>';
     if (field) field.innerHTML = '<tr><td colspan="4" class="empty-state">Error loading</td></tr>';
   }
 }
@@ -1815,20 +1837,21 @@ function updateBattingHeaders(sort) {
   h.cells[7].innerHTML = '50s' + arrow('fifties');
   h.cells[8].innerHTML = '100s' + arrow('hundreds');
 }
-function updateBowlingHeaders(sort) {
-  var thead = document.querySelector('#bowling-stats-tbody').previousElementSibling;
-  if (!thead || !thead.rows || !thead.rows[0]) return;
-  var arrow = function(c) { return sort.col === c ? (sort.asc ? ' ▲' : ' ▼') : ''; };
-  var h = thead.rows[0];
-  h.cells[0].innerHTML = 'Team' + arrow('team_short');
-  h.cells[1].innerHTML = 'Wkts' + arrow('wickets');
-  h.cells[2].innerHTML = 'Maid' + arrow('maidens');
-  h.cells[3].innerHTML = 'Runs' + arrow('runs_conceded');
-  h.cells[4].innerHTML = 'Avg' + arrow('avg');
-  h.cells[5].innerHTML = 'Eco' + arrow('economy');
-  h.cells[6].innerHTML = '3-F' + arrow('three_fers');
-  h.cells[7].innerHTML = '5-F' + arrow('five_fers');
-}
+ function updateBowlingHeaders(sort) {
+   var thead = document.querySelector('#bowling-stats-tbody').previousElementSibling;
+   if (!thead || !thead.rows || !thead.rows[0]) return;
+   var arrow = function(c) { return sort.col === c ? (sort.asc ? ' ▲' : ' ▼') : ''; };
+   var h = thead.rows[0];
+   h.cells[0].innerHTML = 'Team' + arrow('team_short');
+   h.cells[1].innerHTML = 'Wkts' + arrow('wickets');
+   h.cells[2].innerHTML = 'Overs' + arrow('overs');
+   h.cells[3].innerHTML = 'Maid' + arrow('maidens');
+   h.cells[4].innerHTML = 'Runs' + arrow('runs_conceded');
+   h.cells[5].innerHTML = 'Avg' + arrow('avg');
+   h.cells[6].innerHTML = 'Eco' + arrow('economy');
+   h.cells[7].innerHTML = '3-F' + arrow('three_fers');
+   h.cells[8].innerHTML = '5-F' + arrow('five_fers');
+ }
 function updateFieldingHeaders(sort) {
   var thead = document.querySelector('#fielding-stats-tbody').previousElementSibling;
   if (!thead || !thead.rows || !thead.rows[0]) return;
