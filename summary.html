@@ -322,33 +322,34 @@
      </div>
    </div>
 
-   <!-- TEAM INSIGHTS -->
-   <div class="tab-panel" id="tab-team-insights">
-     <div class="card" style="padding:0;overflow:auto;">
-       <div class="table-wrap table-scroller">
-         <table class="data-table team-insights-table">
-           <thead id="ti-thead">
-             <tr>
-               <th class="th-sortable" onclick="_tiSortBy('team_name')">Team <span class="ti-sort-arrow"></span></th>
-               <th class="th-sortable" onclick="_tiSortBy('matches')">MP <span class="ti-sort-arrow"></span></th>
-               <th class="th-sortable" onclick="_tiSortBy('squad')">Squad <span class="ti-sort-arrow"></span></th>
-               <th class="th-sortable" onclick="_tiSortBy('pred')">Pred <span class="ti-sort-arrow"></span></th>
-               <th class="th-sortable" onclick="_tiSortBy('bonus')">Bonus <span class="ti-sort-arrow"></span></th>
-               <th class="th-sortable ti-total" onclick="_tiSortBy('total')">Total <span class="ti-sort-arrow"></span></th>
-               <th class="th-sortable" onclick="_tiSortBy('avg')">Avg <span class="ti-sort-arrow"></span></th>
-               <th class="th-sortable" onclick="_tiSortBy('lowest')">Lowest <span class="ti-sort-arrow"></span></th>
-               <th class="th-sortable" onclick="_tiSortBy('highest')">Highest <span class="ti-sort-arrow"></span></th>
-               <th class="th-sortable" onclick="_tiSortBy('below25')">&lt;25 <span class="ti-sort-arrow"></span></th>
-               <th class="th-sortable" onclick="_tiSortBy('over250')">250+ <span class="ti-sort-arrow"></span></th>
-               <th class="th-sortable" onclick="_tiSortBy('over500')">500+ <span class="ti-sort-arrow"></span></th>
-               <th class="th-sortable" onclick="_tiSortBy('over1000')">1000+ <span class="ti-sort-arrow"></span></th>
-             </tr>
-           </thead>
-           <tbody id="ti-tbody"><tr><td colspan="13" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
-         </table>
-       </div>
-     </div>
-   </div>
+    <!-- TEAM INSIGHTS -->
+    <div class="tab-panel" id="tab-team-insights">
+      <div class="card" style="overflow:auto;">
+        <div class="card-title">Teams Points Summary</div>
+        <div class="table-wrap table-scroller">
+          <table class="data-table team-insights-table">
+            <thead id="ti-thead">
+              <tr>
+                <th class="th-sortable" onclick="_tiSortBy('team_name')">Team <span class="ti-sort-arrow"></span></th>
+                <th class="th-sortable" onclick="_tiSortBy('matches')" title="Matches Played">MP <span class="ti-sort-arrow"></span></th>
+                <th class="th-sortable" onclick="_tiSortBy('squad')" title="Total Squad Points (Batting + Bowling + Fielding)">Squad <span class="ti-sort-arrow"></span></th>
+                <th class="th-sortable" onclick="_tiSortBy('pred')" title="Prediction Points (Target + Winner)">Pred <span class="ti-sort-arrow"></span></th>
+                <th class="th-sortable" onclick="_tiSortBy('bonus')" title="Bonus Points">Bonus <span class="ti-sort-arrow"></span></th>
+                <th class="th-sortable ti-total" onclick="_tiSortBy('total')" title="Total Points (Squad + Pred + Bonus)">Total <span class="ti-sort-arrow"></span></th>
+                <th class="th-sortable" onclick="_tiSortBy('avg')" title="Average Points Per Match">Avg <span class="ti-sort-arrow"></span></th>
+                <th class="th-sortable" onclick="_tiSortBy('lowest')" title="Lowest Match Score">Lowest <span class="ti-sort-arrow"></span></th>
+                <th class="th-sortable" onclick="_tiSortBy('highest')" title="Highest Match Score">Highest <span class="ti-sort-arrow"></span></th>
+                <th class="th-sortable" onclick="_tiSortBy('below25')" title="Matches Below 25 Points">&lt;25 <span class="ti-sort-arrow"></span></th>
+                <th class="th-sortable" onclick="_tiSortBy('over250')" title="Matches Over 250 Points">250+ <span class="ti-sort-arrow"></span></th>
+                <th class="th-sortable" onclick="_tiSortBy('over500')" title="Matches Over 500 Points">500+ <span class="ti-sort-arrow"></span></th>
+                <th class="th-sortable" onclick="_tiSortBy('over1000')" title="Matches Over 1000 Points">1000+ <span class="ti-sort-arrow"></span></th>
+              </tr>
+            </thead>
+            <tbody id="ti-tbody"><tr><td colspan="13" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
    <!-- POINTS SUMMARY -->
    <div class="tab-panel" id="tab-points-summary">
@@ -416,29 +417,31 @@
     </div>
   </div>
 
-  <!-- USER TEAMS OVERVIEW -->
-  <div class="tab-panel" id="tab-user-teams">
-    <div class="card" style="padding:0;overflow:auto;">
-      <div class="table-wrap table-scroller" style="max-height:700px;">
-        <table class="data-table" style="min-width:600px;">
-          <thead><tr><th>User</th><th>Team Name</th><th>Captain</th><th>Vice-Captain</th><th>Impact</th><th>Roster</th></tr></thead>
-          <tbody id="user-teams-tbody"></tbody>
-        </table>
+    <!-- USER TEAMS OVERVIEW -->
+    <div class="tab-panel" id="tab-user-teams">
+      <div class="card" style="overflow:auto;">
+        <div class="card-title">User Teams — Roster Composition &amp; Leadership</div>
+        <div class="table-wrap table-scroller" style="max-height:700px;">
+          <table class="data-table" style="min-width:600px;">
+            <thead><tr><th>User</th><th>Team Name</th><th>Captain</th><th>Vice-Captain</th><th>Impact</th><th>Roster</th></tr></thead>
+            <tbody id="user-teams-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- POWER RANKINGS -->
-  <div class="tab-panel" id="tab-power-rankings">
-    <div class="card" style="padding:0;overflow:auto;">
-      <div class="table-wrap table-scroller">
-        <table class="data-table">
-          <thead><tr><th>Rank</th><th>Team</th><th>Pred Accuracy</th><th>Fantasy Points</th><th>BFL Score</th></tr></thead>
-          <tbody id="power-rankings-tbody"></tbody>
-        </table>
+    <!-- POWER RANKINGS -->
+    <div class="tab-panel" id="tab-power-rankings">
+      <div class="card" style="overflow:auto;">
+        <div class="card-title">Power Rankings — Combined Prediction Accuracy &amp; Fantasy Performance</div>
+        <div class="table-wrap table-scroller">
+          <table class="data-table">
+            <thead><tr><th>Rank</th><th>Team</th><th>Pred Accuracy</th><th>Fantasy Points</th><th>BFL Score</th></tr></thead>
+            <tbody id="power-rankings-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
-  </div>
 
 </div>
 </main>
