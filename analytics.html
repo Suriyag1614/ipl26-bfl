@@ -48,10 +48,22 @@
       border-radius: 2px;
     }
 
-    .data-table th,
-    .data-table td { text-align: center; }
-    .data-table th:first-child,
-    .data-table td:first-child { text-align: left; }
+     .data-table th,
+     .data-table td { text-align: center; }
+     .data-table th:first-child,
+     .data-table td:first-child { text-align: left; }
+     .data-table .group-header {
+       font-family: var(--f-ui);
+       font-size: 11px;
+       font-weight: 800;
+       text-transform: uppercase;
+       letter-spacing: 0.8px;
+       color: var(--text2);
+       background: var(--bg3);
+       padding: 8px 4px;
+     }
+     .inter-squad-table th { white-space: nowrap; font-size: 11px; padding: 8px 6px; }
+     .inter-squad-table td { font-size: 13px; padding: 8px 6px; }
 
     @media(max-width:700px){
       .metrics-row{grid-template-columns:repeat(2,1fr);}
@@ -214,10 +226,52 @@
         <div id="worst-players-list"><div class="skel skel-row"></div></div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-title">All Players — Season Points</div>
-      <div class="chart-wrap"><canvas id="chart-all-players" style="height:200px;"></canvas></div>
-    </div>
+     <div class="card">
+       <div class="card-title">Inter-Squad Insights</div>
+       <div class="table-wrap table-scroller">
+         <table class="data-table inter-squad-table" id="inter-squad-table" style="min-width:1600px;">
+           <thead>
+             <tr>
+               <th rowspan="2" class="th-sortable" onclick="_psSortBy('name')">Player</th>
+               <th colspan="11" class="group-header">Batting</th>
+               <th colspan="11" class="group-header">Bowling</th>
+               <th colspan="3" class="group-header">Fielding</th>
+             </tr>
+             <tr>
+               <!-- Batting -->
+               <th class="th-sortable" onclick="_psSortBy('matches')">Matches</th>
+               <th class="th-sortable" onclick="_psSortBy('innings')">Inns</th>
+               <th class="th-sortable" onclick="_psSortBy('runs')">Runs</th>
+               <th class="th-sortable" onclick="_psSortBy('bat_avg')">Avg</th>
+               <th class="th-sortable" onclick="_psSortBy('sr')">SR</th>
+               <th class="th-sortable" onclick="_psSortBy('not_outs')">NO</th>
+               <th class="th-sortable" onclick="_psSortBy('fours')">4s</th>
+               <th class="th-sortable" onclick="_psSortBy('sixes')">6s</th>
+               <th class="th-sortable" onclick="_psSortBy('fifties')">50s</th>
+               <th class="th-sortable" onclick="_psSortBy('hundreds')">100s</th>
+               <th class="th-sortable" onclick="_psSortBy('high_score')">H.S</th>
+               <!-- Bowling -->
+               <th class="th-sortable" onclick="_psSortBy('bowl_matches')">Matches</th>
+               <th class="th-sortable" onclick="_psSortBy('overs')">Overs</th>
+               <th class="th-sortable" onclick="_psSortBy('balls')">Balls</th>
+               <th class="th-sortable" onclick="_psSortBy('wickets')">Wkts</th>
+               <th class="th-sortable" onclick="_psSortBy('maidens')">Maidens</th>
+               <th class="th-sortable" onclick="_psSortBy('economy')">Econ</th>
+               <th class="th-sortable" onclick="_psSortBy('runs_conceded')">Runs</th>
+               <th class="th-sortable" onclick="_psSortBy('bowl_avg')">Avg</th>
+               <th class="th-sortable" onclick="_psSortBy('three_fers')">4-F</th>
+               <th class="th-sortable" onclick="_psSortBy('five_fers')">5-F</th>
+               <th class="th-sortable" onclick="_psSortBy('bbi')">BBI</th>
+               <!-- Fielding -->
+               <th class="th-sortable" onclick="_psSortBy('catches')">Catches</th>
+               <th class="th-sortable" onclick="_psSortBy('run_outs')">Runouts</th>
+               <th class="th-sortable" onclick="_psSortBy('stumpings')">Stumpings</th>
+             </tr>
+           </thead>
+           <tbody id="inter-squad-tbody"><tr><td colspan="26" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+         </table>
+       </div>
+     </div>
   </div>
 
   <!-- PREDICTIONS -->
@@ -337,6 +391,7 @@
 'use strict';
 var _myTeamId = null, _analytics = null, _matches = [], _teams = [], _playerSquadMap = {};
 var _bdSort = { col: 'match', asc: false }; // Sort state for breakdown table
+var _psSort = { col: 'runs', asc: false }; // Sort state for player stats table
 function $id(i){return document.getElementById(i);}
 function safeArr(a){return Array.isArray(a)?a:[];}
 
@@ -347,7 +402,241 @@ function _bdSortBy(col) {
     _bdSort.col = col;
     _bdSort.asc = false; // Default descending for numeric columns
   }
-  renderPointsBreakdown();
+   renderPointsBreakdown();
+}
+
+// Player Stats table helpers
+function oversToBalls(overs) {
+  if (overs === null || overs === undefined) return 0;
+  var n = Number(overs);
+  if (isNaN(n)) return 0;
+  var whole = Math.floor(n);
+  var balls = Math.round((n - whole) * 10);
+  return whole * 6 + balls;
+}
+function formatOvers(balls) {
+  var overs = Math.floor(balls / 6);
+  var rem = balls % 6;
+  return overs + '.' + rem;
+}
+
+// Player Stats table sort state & handler
+var _psSort = { col: 'runs', asc: false };
+function _psSortBy(col) {
+  if (_psSort.col === col) {
+    _psSort.asc = !_psSort.asc;
+  } else {
+    _psSort.col = col;
+    _psSort.asc = true;
+  }
+  renderPlayerStatsTable();
+}
+
+function updatePSHeaders(sort) {
+  var thead = document.querySelector('#inter-squad-table thead tr:nth-child(2)');
+  if (!thead) return;
+  var arrow = function(c) { return sort.col === c ? (sort.asc ? ' ▲' : ' ▼') : ''; };
+  // Batting (cells 0-10)
+  thead.cells[0].innerHTML = 'Matches' + arrow('matches');
+  thead.cells[1].innerHTML = 'Inns' + arrow('innings');
+  thead.cells[2].innerHTML = 'Runs' + arrow('runs');
+  thead.cells[3].innerHTML = 'Avg' + arrow('bat_avg');
+  thead.cells[4].innerHTML = 'SR' + arrow('sr');
+  thead.cells[5].innerHTML = 'NO' + arrow('not_outs');
+  thead.cells[6].innerHTML = '4s' + arrow('fours');
+  thead.cells[7].innerHTML = '6s' + arrow('sixes');
+  thead.cells[8].innerHTML = '50s' + arrow('fifties');
+  thead.cells[9].innerHTML = '100s' + arrow('hundreds');
+  thead.cells[10].innerHTML = 'H.S' + arrow('high_score');
+  // Bowling (cells 11-21)
+  thead.cells[11].innerHTML = 'Matches' + arrow('bowl_matches');
+  thead.cells[12].innerHTML = 'Overs' + arrow('overs');
+  thead.cells[13].innerHTML = 'Balls' + arrow('balls');
+  thead.cells[14].innerHTML = 'Wkts' + arrow('wickets');
+  thead.cells[15].innerHTML = 'Maidens' + arrow('maidens');
+  thead.cells[16].innerHTML = 'Econ' + arrow('economy');
+  thead.cells[17].innerHTML = 'Runs' + arrow('runs_conceded');
+  thead.cells[18].innerHTML = 'Avg' + arrow('bowl_avg');
+  thead.cells[19].innerHTML = '4-F' + arrow('three_fers');
+  thead.cells[20].innerHTML = '5-F' + arrow('five_fers');
+  thead.cells[21].innerHTML = 'BBI' + arrow('bbi');
+  // Fielding (cells 22-24)
+  thead.cells[22].innerHTML = 'Catches' + arrow('catches');
+  thead.cells[23].innerHTML = 'Runouts' + arrow('run_outs');
+  thead.cells[24].innerHTML = 'Stumpings' + arrow('stumpings');
+}
+
+// Render Inter-Squad Player Stats Table
+async function renderPlayerStatsTable() {
+  var tbody = document.getElementById('inter-squad-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="26" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
+
+  try {
+    var allStats = safeArr(await API.fetchAllPlayerStats());
+    var playersList = safeArr(await API.fetchAllPlayers());
+
+    // Build player lookup
+    var playerMap = {};
+    playersList.forEach(function(p) {
+      playerMap[p.id] = { name: p.name, ipl_team: p.ipl_team };
+    });
+
+    // Aggregate per player
+    var agg = {};
+    allStats.forEach(function(ps) {
+      var pid = ps.player_id;
+      if (!pid) return;
+      if (!agg[pid]) {
+        agg[pid] = {
+          name: playerMap[pid]?.name || 'Unknown',
+          ipl_team: playerMap[pid]?.ipl_team || '',
+          matches: 0,
+          innings: 0,
+          runs: 0, balls_faced: 0, fours: 0, sixes: 0, not_outs: 0,
+          fifties: 0, hundreds: 0, high_score: 0,
+          bowl_matches: 0,
+          overs_balls: 0,
+          wickets: 0, maidens: 0, runs_conceded: 0,
+          three_fers: 0, five_fers: 0,
+          best_wickets: 0, best_runs: 99999,
+          catches: 0, run_outs: 0, stumpings: 0
+        };
+      }
+      var a = agg[pid];
+      a.matches = (a.matches || 0) + 1;
+
+      // Batting
+      var runs = Number(ps.runs || 0);
+      var balls = Number(ps.balls_faced || 0);
+      a.runs += runs;
+      a.balls_faced += balls;
+      a.fours += Number(ps.fours || 0);
+      a.sixes += Number(ps.sixes || 0);
+      if (runs > 0 || balls > 0) a.innings = (a.innings || 0) + 1;
+      if (ps.not_out) a.not_outs = (a.not_outs || 0) + 1;
+      if (runs >= 50 && runs < 100) a.fifties = (a.fifties || 0) + 1;
+      if (runs >= 100) a.hundreds = (a.hundreds || 0) + 1;
+      if (runs > a.high_score) a.high_score = runs;
+
+      // Bowling
+      var oversVal = ps.overs_bowled;
+      if (oversVal !== null && oversVal !== undefined && !isNaN(Number(oversVal))) {
+        a.bowl_matches = (a.bowl_matches || 0) + 1;
+        a.overs_balls += oversToBalls(oversVal);
+      }
+      var wickets = Number(ps.wickets || 0);
+      a.wickets += wickets;
+      a.maidens += Number(ps.maidens || 0);
+      a.runs_conceded += Number(ps.runs_conceded || 0);
+      if (wickets >= 3 && wickets < 5) a.three_fers = (a.three_fers || 0) + 1;
+      if (wickets >= 5) a.five_fers = (a.five_fers || 0) + 1;
+      if (wickets > 0) {
+        var rc = Number(ps.runs_conceded || 0);
+        if (wickets > a.best_wickets || (wickets === a.best_wickets && rc < a.best_runs)) {
+          a.best_wickets = wickets;
+          a.best_runs = rc;
+        }
+      }
+
+      // Fielding
+      a.catches += Number(ps.catches || 0);
+      a.run_outs += Number(ps.run_outs || 0);
+      a.stumpings += Number(ps.stumpings || 0);
+    });
+
+    // Derived metrics
+    var playerList = Object.values(agg).map(function(p) {
+      var sr = p.balls_faced > 0 ? Math.round((p.runs / p.balls_faced) * 100 * 10) / 10 : 0;
+      var batAvg = (p.innings - p.not_outs) > 0 ? Math.round((p.runs / (p.innings - p.not_outs)) * 10) / 10 : (p.runs > 0 ? p.runs : 0);
+      var eco = p.overs_balls > 0 ? Math.round((p.runs_conceded * 6 / p.overs_balls) * 10) / 10 : 0;
+      var bowlAvg = p.wickets > 0 ? Math.round((p.runs_conceded / p.wickets) * 10) / 10 : 0;
+      var oversDisp = formatOvers(p.overs_balls);
+      var bbi = p.best_wickets > 0 ? p.best_wickets + '/' + p.best_runs : '—';
+
+      return {
+        name: p.name,
+        ipl_team: p.ipl_team,
+        matches: p.matches,
+        innings: p.innings,
+        runs: p.runs,
+        bat_avg: batAvg,
+        sr: sr,
+        not_outs: p.not_outs,
+        fours: p.fours,
+        sixes: p.sixes,
+        fifties: p.fifties,
+        hundreds: p.hundreds,
+        high_score: p.high_score,
+        bowl_matches: p.bowl_matches,
+        overs: p.overs_balls,
+        overs_display: oversDisp,
+        balls: p.overs_balls,
+        wickets: p.wickets,
+        maidens: p.maidens,
+        runs_conceded: p.runs_conceded,
+        bowl_avg: bowlAvg,
+        economy: eco,
+        three_fers: p.three_fers,
+        five_fers: p.five_fers,
+        bbi: bbi,
+        catches: p.catches,
+        run_outs: p.run_outs,
+        stumpings: p.stumpings
+      };
+    });
+
+    // Sort
+    var sort = _psSort;
+    playerList.sort(function(a, b) {
+      var av = a[sort.col], bv = b[sort.col];
+      if (sort.col === 'name' || sort.col === 'ipl_team' || sort.col === 'bbi') {
+        return sort.asc ? (av+'').localeCompare(bv+'') : (bv+'').localeCompare(av+'');
+      }
+      return sort.asc ? av - bv : bv - av;
+    });
+
+    // Render
+    tbody.innerHTML = playerList.map(function(p) {
+      return '<tr>' +
+        '<td style="font-weight:600;">' + UI.esc(p.name) + '</td>' +
+        // Batting
+        '<td class="stat-num">' + p.matches + '</td>' +
+        '<td class="stat-num">' + p.innings + '</td>' +
+        '<td class="stat-num">' + UI.fmtPts(p.runs) + '</td>' +
+        '<td class="stat-num">' + p.bat_avg + '</td>' +
+        '<td class="stat-num">' + p.sr + '</td>' +
+        '<td class="stat-num">' + (p.not_outs || 0) + '</td>' +
+        '<td class="stat-num">' + p.fours + '</td>' +
+        '<td class="stat-num">' + p.sixes + '</td>' +
+        '<td class="stat-num">' + (p.fifties || 0) + '</td>' +
+        '<td class="stat-num">' + (p.hundreds || 0) + '</td>' +
+        '<td class="stat-num">' + p.high_score + '</td>' +
+        // Bowling
+        '<td class="stat-num">' + p.bowl_matches + '</td>' +
+        '<td class="stat-num">' + p.overs_display + '</td>' +
+        '<td class="stat-num">' + p.balls + '</td>' +
+        '<td class="stat-num">' + p.wickets + '</td>' +
+        '<td class="stat-num">' + p.maidens + '</td>' +
+        '<td class="stat-num">' + p.economy + '</td>' +
+        '<td class="stat-num">' + UI.fmtPts(p.runs_conceded) + '</td>' +
+        '<td class="stat-num">' + p.bowl_avg + '</td>' +
+        '<td class="stat-num">' + (p.three_fers || 0) + '</td>' +
+        '<td class="stat-num">' + (p.five_fers || 0) + '</td>' +
+        '<td class="stat-num">' + p.bbi + '</td>' +
+        // Fielding
+        '<td class="stat-num">' + p.catches + '</td>' +
+        '<td class="stat-num">' + p.run_outs + '</td>' +
+        '<td class="stat-num">' + p.stumpings + '</td>' +
+      '</tr>';
+    }).join('');
+
+    updatePSHeaders(_psSort);
+
+  } catch(e) {
+    console.warn('Player stats error:', e);
+    tbody.innerHTML = '<tr><td colspan="26" class="empty-state">Error loading data</td></tr>';
+  }
 }
 
 // Fantasy Leaderboard State
@@ -407,11 +696,11 @@ async function loadAnalytics() {
       if(!Array.isArray(_analytics[k])) _analytics[k]=[];
     });
     renderMetrics(); renderCharts(); renderStreaks();
-    renderPlayers(); renderPredictions(); renderImpact(); renderBadges();
+    renderPlayerStatsTable(); renderPlayers(); renderPredictions(); renderImpact(); renderBadges();
   } catch(e) {
     _analytics = Object.assign({}, EMPTY_ANALYTICS);
     UI.toast('Analytics error: '+e.message,'error');
-    renderMetrics(); renderStreaks(); renderPlayers(); renderPredictions(); renderImpact();
+    renderMetrics(); renderStreaks(); renderPlayerStatsTable(); renderPlayers(); renderPredictions(); renderImpact();
   }
 }
 
