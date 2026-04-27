@@ -302,6 +302,18 @@
       .fl-name strong { font-size: 16px; }
       .fl-rating { font-size: 20px; }
     }
+    .intra-squad-table th { white-space: nowrap; font-size: 11px; padding: 8px 6px; }
+    .intra-squad-table td { font-size: 13px; padding: 8px 6px; }
+    .intra-squad-table .group-header {
+      font-family: var(--f-ui);
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text2);
+      background: var(--bg3);
+      padding: 8px 4px;
+    }
   </style>
 </head>
 <body>
@@ -335,6 +347,7 @@
      <button class="tab-btn" onclick="switchTab('points-summary')">Points Summary</button>
      <button class="tab-btn" onclick="switchTab('team-insights')">Team Insights</button>
      <button class="tab-btn" onclick="switchTab('fantasy-players')">Fantasy Players</button>
+     <button class="tab-btn" onclick="switchTab('player-stats')">Player Stats</button>
      <button class="tab-btn" onclick="switchTab('user-teams')">User Teams</button>
      <button class="tab-btn" onclick="switchTab('power-rankings')">Power Rankings</button>
    </div>
@@ -550,6 +563,69 @@
     </div>
   </div>
 
+   <!-- PLAYER STATS (Full Player Stats) -->
+   <div class="tab-panel" id="tab-player-stats">
+    <div class="card mb-12">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <div style="position:relative;flex:1;min-width:180px;">
+          <input class="form-input" id="ps-search" placeholder="Search player..." oninput="filterPlayerStats()" style="padding-left:12px;">
+        </div>
+        <select class="form-select" id="ps-ipl-team" onchange="filterPlayerStats()" style="width:130px;font-size:12px;"><option value="">All IPL Teams</option></select>
+        <select class="form-select" id="ps-role" onchange="filterPlayerStats()" style="width:110px;font-size:12px;">
+          <option value="">Roles</option><option value="BAT">Batter</option><option value="BOW">Bowler</option><option value="AR">AR</option><option value="WK">WK</option>
+        </select>
+        <select class="form-select" id="ps-bfl-team" onchange="filterPlayerStats()" style="width:130px;font-size:12px;"><option value="">All BFL Teams</option></select>
+        <button class="btn btn-ghost btn-sm" onclick="resetPlayerStats()">✕</button>
+      </div>
+    </div>
+    <div class="card">
+       <div class="card-title">Player Statistics</div>
+       <div class="table-wrap table-scroller">
+         <table class="data-table intra-squad-table" id="player-stats-table" style="min-width:1600px;">
+           <thead>
+             <tr>
+               <th rowspan="2" class="th-sortable" onclick="_psSortBy('name')">Player</th>
+               <th colspan="11" class="group-header">Batting</th>
+               <th colspan="11" class="group-header">Bowling</th>
+               <th colspan="3" class="group-header">Fielding</th>
+             </tr>
+             <tr>
+               <!-- Batting -->
+               <th class="th-sortable" style="text-align: center;" onclick="_psSortBy('matches')">Matches</th>
+               <th class="th-sortable" onclick="_psSortBy('innings')">Inns</th>
+               <th class="th-sortable" onclick="_psSortBy('runs')">Runs</th>
+               <th class="th-sortable" onclick="_psSortBy('bat_avg')">Avg</th>
+               <th class="th-sortable" onclick="_psSortBy('sr')">SR</th>
+               <th class="th-sortable" onclick="_psSortBy('not_outs')">NO</th>
+               <th class="th-sortable" onclick="_psSortBy('fours')">4s</th>
+               <th class="th-sortable" onclick="_psSortBy('sixes')">6s</th>
+               <th class="th-sortable" onclick="_psSortBy('fifties')">50s</th>
+               <th class="th-sortable" onclick="_psSortBy('hundreds')">100s</th>
+               <th class="th-sortable" onclick="_psSortBy('high_score')">H.S</th>
+               <!-- Bowling -->
+               <th class="th-sortable" onclick="_psSortBy('bowl_matches')">Matches</th>
+               <th class="th-sortable" onclick="_psSortBy('overs')">Overs</th>
+               <th class="th-sortable" onclick="_psSortBy('balls')">Balls</th>
+               <th class="th-sortable" onclick="_psSortBy('wickets')">Wkts</th>
+               <th class="th-sortable" onclick="_psSortBy('maidens')">Maidens</th>
+               <th class="th-sortable" onclick="_psSortBy('economy')">Econ</th>
+               <th class="th-sortable" onclick="_psSortBy('runs_conceded')">Runs</th>
+               <th class="th-sortable" onclick="_psSortBy('bowl_avg')">Avg</th>
+               <th class="th-sortable" onclick="_psSortBy('three_fers')">3-F</th>
+               <th class="th-sortable" onclick="_psSortBy('five_fers')">5-F</th>
+               <th class="th-sortable" onclick="_psSortBy('bbi')">BBI</th>
+               <!-- Fielding -->
+               <th class="th-sortable" onclick="_psSortBy('catches')">Catches</th>
+               <th class="th-sortable" onclick="_psSortBy('run_outs')">Runouts</th>
+               <th class="th-sortable" onclick="_psSortBy('stumpings')">Stumpings</th>
+             </tr>
+           </thead>
+           <tbody id="player-stats-tbody"><tr><td colspan="26" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+         </table>
+       </div>
+     </div>
+  </div>
+
     <!-- USER TEAMS OVERVIEW -->
     <div class="tab-panel" id="tab-user-teams">
       <div class="card" style="overflow:auto;">
@@ -595,6 +671,7 @@ var _tiSort = { col: 'total', asc: false }; // Sort state for Team Insights tabl
 var _battingSort = { col: 'runs', asc: false };    // Batting card sort
 var _bowlingSort = { col: 'wickets', asc: false }; // Bowling card sort
 var _fieldingSort = { col: 'catches', asc: false }; // Fielding card sort
+var _psSort = { col: 'runs', asc: false }, _psData = [], _psFiltered = []; // Player Stats state
 
 function _ptsSortBy(table, col) {
   var sort = table === 'squad' ? _ptsSortSquad : _ptsSortPred;
@@ -640,6 +717,22 @@ function _sortFielding(col) {
 
 function $id(i){return document.getElementById(i);}
 function safeArr(a){return Array.isArray(a)?a:[];}
+
+// Helper: convert overs notation (e.g., 18.2) to total balls
+function oversToBalls(overs) {
+  if (overs === null || overs === undefined) return 0;
+  var n = Number(overs);
+  if (isNaN(n)) return 0;
+  var whole = Math.floor(n);
+  var balls = Math.round((n - whole) * 10);
+  return whole * 6 + balls;
+}
+// Helper: convert total balls to overs notation string (e.g., 110 -> "18.2")
+function formatOvers(balls) {
+  var overs = Math.floor(balls / 6);
+  var rem = balls % 6;
+  return overs + '.' + rem;
+}
 </script>
 </div>
 <footer class="site-footer">
@@ -1669,21 +1762,7 @@ async function renderTeamStatsCards(teamDataMap, tableType) {
        assignments[pid].sort(function(a, b) { return a.start - b.start; });
      });
    
-     // Helper: convert overs notation (e.g., 18.2) to total balls
-     function oversToBalls(overs) {
-       if (overs === null || overs === undefined) return 0;
-       var n = Number(overs);
-       if (isNaN(n)) return 0;
-       var whole = Math.floor(n);
-       var balls = Math.round((n - whole) * 10);
-       return whole * 6 + balls;
-     }
-     // Helper: convert total balls to overs notation string (e.g., 110 -> "18.2")
-     function formatOvers(balls) {
-       var overs = Math.floor(balls / 6);
-       var rem = balls % 6;
-       return overs + '.' + rem;
-     }
+
    
      // Initialize aggregates
      var aggregates = {};
@@ -1863,6 +1942,159 @@ function updateFieldingHeaders(sort) {
   h.cells[3].innerHTML = 'Stumpings' + arrow('stumpings');
 }
 
+// Player Stats logic
+function _psSortBy(col) {
+  if (_psSort.col === col) _psSort.asc = !_psSort.asc;
+  else { _psSort.col = col; _psSort.asc = (col === 'name'); }
+  renderPlayerStats();
+}
+
+async function loadPlayerStats() {
+  var tbody = $id('player-stats-tbody');
+  if (!tbody) return;
+  
+  if (!_psData.length) {
+    try {
+      var allStats = safeArr(await API.fetchAllPlayerStats());
+      var playersList = safeArr(await API.fetchAllPlayers());
+      var squadPlayers = safeArr(await API.fetchSquadPlayersAll());
+      
+      var playerMap = {};
+      playersList.forEach(p => playerMap[p.id] = p);
+      
+      var playerBflMap = {};
+      squadPlayers.forEach(sp => {
+        if (!sp.is_released) playerBflMap[sp.player_id] = sp.fantasy_team?.team_name;
+      });
+
+      var agg = {};
+      allStats.forEach(ps => {
+        var pid = ps.player_id;
+        if (!pid) return;
+        if (!agg[pid]) {
+          var p = playerMap[pid] || {};
+          agg[pid] = {
+            id: pid, name: p.name || 'Unknown', ipl_team: p.ipl_team || '', role: p.role || '',
+            bfl_team: playerBflMap[pid] || 'Unsold',
+            matches: 0, innings: 0, runs: 0, balls: 0, fours: 0, sixes: 0, not_outs: 0, fifties: 0, hundreds: 0, high_score: 0,
+            bowl_matches: 0, overs_balls: 0, wickets: 0, maidens: 0, runs_conceded: 0, three_fers: 0, five_fers: 0,
+            best_wickets: 0, best_runs: 99999, catches: 0, run_outs: 0, stumpings: 0
+          };
+        }
+        var a = agg[pid];
+        a.matches++;
+        // Batting
+        var r = Number(ps.runs || 0); var b = Number(ps.balls_faced || 0);
+        a.runs += r; a.balls += b; a.fours += Number(ps.fours || 0); a.sixes += Number(ps.sixes || 0);
+        if (r > 0 || b > 0) a.innings++;
+        if (ps.not_out) a.not_outs++;
+        if (r >= 50 && r < 100) a.fifties++;
+        if (r >= 100) a.hundreds++;
+        if (r > a.high_score) a.high_score = r;
+        // Bowling
+        if (ps.overs_bowled != null) {
+          a.bowl_matches++;
+          a.overs_balls += oversToBalls(ps.overs_bowled);
+        }
+        var w = Number(ps.wickets || 0); a.wickets += w; a.maidens += Number(ps.maidens || 0);
+        a.runs_conceded += Number(ps.runs_conceded || 0);
+        if (w >= 3 && w < 5) a.three_fers++;
+        if (w >= 5) a.five_fers++;
+        if (w > a.best_wickets || (w === a.best_wickets && Number(ps.runs_conceded||0) < a.best_runs)) {
+          a.best_wickets = w; a.best_runs = Number(ps.runs_conceded || 0);
+        }
+        // Fielding
+        a.catches += Number(ps.catches || 0); a.run_outs += Number(ps.run_outs || 0); a.stumpings += Number(ps.stumpings || 0);
+      });
+
+      _psData = Object.values(agg).map(p => {
+        var sr = p.balls > 0 ? Math.round((p.runs / p.balls) * 100 * 10) / 10 : 0;
+        var batAvg = (p.innings - p.not_outs) > 0 ? Math.round((p.runs / (p.innings - p.not_outs)) * 10) / 10 : (p.runs > 0 ? p.runs : 0);
+        var eco = p.overs_balls > 0 ? Math.round((p.runs_conceded * 6 / p.overs_balls) * 10) / 10 : 0;
+        var bowlAvg = p.wickets > 0 ? Math.round((p.runs_conceded / p.wickets) * 10) / 10 : 0;
+        return {
+          ...p, sr, bat_avg: batAvg, economy: eco, bowl_avg: bowlAvg,
+          overs_display: formatOvers(p.overs_balls),
+          bbi: p.best_wickets > 0 ? p.best_wickets + '/' + p.best_runs : '—'
+        };
+      });
+      _psFiltered = _psData.slice();
+      
+      // Populate filters
+      var iplTeams = [...new Set(_psData.map(p => p.ipl_team))].sort();
+      var bflTeams = [...new Set(_psData.map(p => p.bfl_team))].sort();
+      $id('ps-ipl-team').innerHTML = '<option value="">All IPL Teams</option>' + iplTeams.map(t => `<option value="${t}">${t}</option>`).join('');
+      $id('ps-bfl-team').innerHTML = '<option value="">All BFL Teams</option>' + bflTeams.map(t => `<option value="${t}">${t}</option>`).join('');
+      
+    } catch(e) { console.warn('Player stats load error:', e); }
+  }
+  renderPlayerStats();
+}
+
+function filterPlayerStats() {
+  var s = $id('ps-search').value.toLowerCase();
+  var ipl = $id('ps-ipl-team').value;
+  var bfl = $id('ps-bfl-team').value;
+  var role = $id('ps-role').value;
+  
+  _psFiltered = _psData.filter(p => {
+    if (s && !p.name.toLowerCase().includes(s)) return false;
+    if (ipl && p.ipl_team !== ipl) return false;
+    if (bfl && p.bfl_team !== bfl) return false;
+    if (role && !p.role.toUpperCase().includes(role)) return false;
+    return true;
+  });
+  renderPlayerStats();
+}
+
+function resetPlayerStats() {
+  $id('ps-search').value = ''; $id('ps-ipl-team').value = ''; $id('ps-bfl-team').value = ''; $id('ps-role').value = '';
+  _psFiltered = _psData.slice();
+  renderPlayerStats();
+}
+
+function renderPlayerStats() {
+  var tbody = $id('player-stats-tbody');
+  if (!tbody) return;
+  
+  var sort = _psSort;
+  var list = _psFiltered.slice().sort((a,b) => {
+    if (sort.col === 'bbi') {
+      var aw = a.best_wickets || 0, bw = b.best_wickets || 0;
+      var ar = a.best_runs || 0, br = b.best_runs || 0;
+      if (aw !== bw) return sort.asc ? aw - bw : bw - aw;
+      // Wickets same: lower runs is better (comes first in desc sort)
+      return sort.asc ? br - ar : ar - br;
+    }
+    var av = a[sort.col], bv = b[sort.col];
+    if (typeof av === 'string') return sort.asc ? av.localeCompare(bv) : bv.localeCompare(av);
+    return sort.asc ? av - bv : bv - av;
+  });
+  
+  tbody.innerHTML = list.map(p => `
+    <tr>
+      <td style="text-align:left;"><div style="font-weight:700;">${UI.esc(p.name)}</div><div style="font-size:10px;opacity:0.7;">${p.ipl_team} · ${p.bfl_team}</div></td>
+      <td>${p.matches}</td><td>${p.innings}</td><td>${UI.fmtPts(p.runs)}</td><td>${p.bat_avg}</td><td>${p.sr}</td><td>${p.not_outs}</td><td>${p.fours}</td><td>${p.sixes}</td><td>${p.fifties}</td><td>${p.hundreds}</td><td>${p.high_score}</td>
+      <td>${p.bowl_matches}</td><td>${p.overs_display}</td><td>${p.overs_balls}</td><td>${p.wickets}</td><td>${p.maidens}</td><td>${p.economy}</td><td>${UI.fmtPts(p.runs_conceded)}</td><td>${p.bowl_avg}</td><td>${p.three_fers}</td><td>${p.five_fers}</td><td>${p.bbi}</td>
+      <td>${p.catches}</td><td>${p.run_outs}</td><td>${p.stumpings}</td>
+    </tr>
+  `).join('');
+  
+  // Update headers
+  var arrow = function(c) { return sort.col === c ? (sort.asc ? ' ▲' : ' ▼') : ''; };
+  var tr2 = document.querySelector('#player-stats-table thead tr:nth-child(2)');
+  if (tr2) {
+    var cols = ['matches','innings','runs','bat_avg','sr','not_outs','fours','sixes','fifties','hundreds','high_score','bowl_matches','overs','balls','wickets','maidens','economy','runs_conceded','bowl_avg','three_fers','five_fers','bbi','catches','run_outs','stumpings'];
+    cols.forEach((c, i) => {
+      var cell = tr2.cells[i];
+      if (cell) {
+        var label = cell.textContent.replace(/[▲▼]/g, '').trim();
+        cell.innerHTML = label + arrow(c);
+      }
+    });
+  }
+}
+
 async function switchTab(tab) {
   var prevPanel = document.querySelector('.tab-panel.active');
   if (prevPanel && prevPanel.id !== 'tab-' + tab) {
@@ -1871,7 +2103,7 @@ async function switchTab(tab) {
     prevPanel.classList.remove('active', 'leaving');
   }
 
-   var tabs=['pred-summary','accuracy','match-preds','points-summary','team-insights','fantasy-players','user-teams','power-rankings'];
+   var tabs=['pred-summary','accuracy','match-preds','points-summary','team-insights','fantasy-players','player-stats','user-teams','power-rankings'];
   document.querySelectorAll('.tab-btn').forEach(function(b){
     var id = b.getAttribute('onclick').match(/'([^']+)'/)[1];
     b.classList.toggle('active', id === tab);
@@ -1895,6 +2127,7 @@ async function switchTab(tab) {
    if(tab==='points-summary') renderPointsSummary();
    if(tab==='team-insights') renderTeamInsights();
    if(tab==='fantasy-players') loadFantasyLeaderboard();
+   if(tab==='player-stats') loadPlayerStats();
    if(tab==='user-teams') loadUserTeams();
    if(tab==='power-rankings') loadPowerRankings();
 }

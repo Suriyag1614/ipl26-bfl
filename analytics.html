@@ -64,8 +64,8 @@
      }
       .th-sortable { cursor: pointer; user-select: none;}
      .th-sortable:hover { color: var(--accent); }
-     .inter-squad-table th { white-space: nowrap; font-size: 11px; padding: 8px 6px; }
-     .inter-squad-table td { font-size: 13px; padding: 8px 6px; }
+      .intra-squad-table th { white-space: nowrap; font-size: 11px; padding: 8px 6px; }
+      .intra-squad-table td { font-size: 13px; padding: 8px 6px; }
 
     @media(max-width:700px){
       .metrics-row{grid-template-columns:repeat(2,1fr);}
@@ -229,9 +229,9 @@
       </div>
     </div>
      <div class="card">
-       <div class="card-title">Inter-Squad Insights</div>
+       <div class="card-title">Intra-Squad Insights</div>
        <div class="table-wrap table-scroller">
-         <table class="data-table inter-squad-table" id="inter-squad-table" style="min-width:1600px;">
+         <table class="data-table intra-squad-table" id="intra-squad-table" style="min-width:1600px;">
            <thead>
              <tr>
                <th rowspan="2" class="th-sortable" onclick="_psSortBy('name')">Player</th>
@@ -270,7 +270,7 @@
                <th class="th-sortable" onclick="_psSortBy('stumpings')">Stumpings</th>
              </tr>
            </thead>
-           <tbody id="inter-squad-tbody"><tr><td colspan="26" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
+           <tbody id="intra-squad-tbody"><tr><td colspan="26" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr></tbody>
          </table>
        </div>
      </div>
@@ -422,7 +422,7 @@ function _psSortBy(col) {
 }
 
 function updatePSHeaders(sort) {
-  var thead = document.querySelector('#inter-squad-table thead tr:nth-child(2)');
+  var thead = document.querySelector('#intra-squad-table thead tr:nth-child(2)');
   if (!thead) return;
   var arrow = function(c) { return sort.col === c ? (sort.asc ? ' ▲' : ' ▼') : ''; };
   // Batting (cells 0-10)
@@ -455,15 +455,17 @@ function updatePSHeaders(sort) {
   thead.cells[24].innerHTML = 'Stumpings' + arrow('stumpings');
 }
 
-// Render Inter-Squad Player Stats Table
+// Render Intra-Squad Player Stats Table
 async function renderPlayerStatsTable() {
-  var tbody = document.getElementById('inter-squad-tbody');
+  var tbody = document.getElementById('intra-squad-tbody');
   if (!tbody) return;
   tbody.innerHTML = '<tr><td colspan="26" class="empty-state" style="padding:40px;"><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
 
   try {
     var allStats = safeArr(await API.fetchAllPlayerStats());
     var playersList = safeArr(await API.fetchAllPlayers());
+    var mySquad = safeArr(await API.fetchSquad(_myTeamId));
+    var myPlayerIds = new Set(mySquad.map(function(s){ return s.player?.id; }).filter(Boolean));
 
     // Build player lookup
     var playerMap = {};
@@ -475,7 +477,7 @@ async function renderPlayerStatsTable() {
     var agg = {};
     allStats.forEach(function(ps) {
       var pid = ps.player_id;
-      if (!pid) return;
+      if (!pid || !myPlayerIds.has(pid)) return;
       if (!agg[pid]) {
         agg[pid] = {
           name: playerMap[pid]?.name || 'Unknown',
