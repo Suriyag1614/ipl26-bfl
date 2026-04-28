@@ -191,8 +191,9 @@ body { display:flex; flex-direction:column; }
 }
 [data-theme="light"] .navbar,
 [data-theme="light"] #navbar {
-  background:rgba(255,255,255,.97);
-  border-bottom:1px solid rgba(0,0,0,0.08);
+  background:rgba(255,255,255,.94);
+  border-bottom:1px solid rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
 }
 .topbar {
   height:var(--topbar-h); display:flex; align-items:center; gap:10px;
@@ -985,9 +986,13 @@ body:has(.login-wrap) #toast-container {
   --border:rgba(0,0,0,0.08);
   --border-h:rgba(0,0,0,0.15);
   --text:#1e293b;
-  --text2:#475569;
-  --text3:#94a3b8;
+  --text2:#4a5568;
+  --text3:#718096;
   --bg-gradient: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+  --footer-grad: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.03) 100%);
+}
+:root {
+  --footer-grad: linear-gradient(to bottom, rgba(10, 12, 16, 0) 0%, rgba(10, 12, 16, 0.7) 100%);
 }
 [data-theme="light"] .navbar  { background:rgba(255,255,255,.95); }
 [data-theme="light"] .bg-orbs .orb { opacity:.03; }
@@ -1087,6 +1092,8 @@ body:has(.login-wrap) #toast-container {
 
 /* Light mode sidebar */
 [data-theme="light"] .sidebar { background:#fff; border-color:rgba(0,0,0,0.06); }
+[data-theme="light"] .sidebar .sb-link:hover { background: rgba(0,0,0,0.03); color: var(--text); }
+[data-theme="light"] .sidebar .sb-section-lbl { color: var(--text3); opacity: 0.8; }
 [data-theme="light"] .topbar  { background:rgba(255,255,255,.95); }
 
 /* ── Predictions: class aliases for backwards compatibility ── */
@@ -1186,11 +1193,6 @@ input:focus + .slider { box-shadow: 0 0 1px var(--cyan); }
   align-items: center;
   gap: 14px;
   padding: 22px 24px 20px;
-  background: linear-gradient(
-    to bottom,
-    rgba(10, 12, 16, 0) 0%,
-    rgba(10, 12, 16, 0.7) 100%
-  );
 }
 
 .footer-logos {
@@ -1202,7 +1204,7 @@ input:focus + .slider { box-shadow: 0 0 1px var(--cyan); }
 .footer-logo {
   display: block;
   object-fit: contain;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,1.5));
 }
 
 .footer-logo-bfl {
