@@ -781,8 +781,9 @@ function renderCharts() {
       var el=document.getElementById(id); if(el){var p=el.parentNode;if(p)p.innerHTML='<div class="empty-state" style="padding:24px;"><div class="empty-state-text">No data yet</div></div>';}
     }); return;
   }
-  setTimeout(function(){UI.drawBarChart('chart-pts-per-match',rh.map(function(r){return{label:r.label,value:r.pts};}),{height:170});},100);
-  setTimeout(function(){UI.drawLineChart('chart-cumulative',rh.map(function(r){return{label:r.label,value:r.cumPts};}),{height:170,color:'#38d9f5'});},120);
+  var last10 = rh.slice(-10);
+  setTimeout(function(){UI.drawBarChart('chart-pts-per-match',last10.map(function(r){return{label:r.label,value:r.pts};}),{height:170});},100);
+  setTimeout(function(){UI.drawLineChart('chart-cumulative',last10.map(function(r){return{label:r.label,value:r.cumPts};}),{height:170,color:'#38d9f5'});},120);
 
   var bd=Array.isArray(a.breakdown)?a.breakdown:[];
   var totBat=0,totBowl=0,totFld=0,totPred=0;
@@ -840,7 +841,8 @@ function renderPredictions() {
       '<div class="metric-row"><span class="metric-label">Exact Targets</span><span class="metric-val" style="color:var(--accent);">'+ps.exact+'</span></div>'+
       '<div class="metric-row"><span class="metric-label">Avg Target Diff</span><span class="metric-val">±'+ps.avg_diff+'</span></div>'+
       '<div class="metric-row"><span class="metric-label">Best Streak</span><span class="metric-val" style="color:var(--gold);">'+ps.best_streak+'</span></div>';
-  if(preds.length) setTimeout(function(){UI.drawBarChart('chart-pred-diff',preds.map(function(p){return{label:(p.match.team1||'').substring(0,3),value:Math.abs((p.target_score||0)-(p.match.actual_target||0))};}),{height:170,color:'#38d9f5'});},160);
+  var last10Preds = preds.slice(-10);
+  if(last10Preds.length) setTimeout(function(){UI.drawBarChart('chart-pred-diff',last10Preds.map(function(p){return{label:'M'+(p.match.match_no||'?'),value:Math.abs((p.target_score||0)-(p.match.actual_target||0))};}),{height:170,color:'#38d9f5'});},160);
   var tbody=document.getElementById('pred-history-tbody'); if(!tbody) return;
   var allPreds=Array.isArray(_analytics.predictions)?_analytics.predictions:[];
   if(!allPreds.length){tbody.innerHTML='<tr><td colspan="7" class="empty-state">No predictions yet</td></tr>';return;}
