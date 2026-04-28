@@ -67,7 +67,7 @@ function cLog(msg, type) {
 function ctrlMsg(msg, type) {
   var el = $id('ctrl-log'); if (!el) return;
   var col = type==='ok'?'var(--green)':type==='err'?'var(--red)':'var(--text2)';
-  el.innerHTML = '<div style="'+col+';font-size:13px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;">'+UI.esc(msg)+'</div>';
+  el.innerHTML = '<div style="color:'+col+';font-size:13px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;">'+UI.esc(msg)+'</div>';
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -156,12 +156,8 @@ function showPanel(id) {
     injuries:       loadInjuries,
     squads:         function() {},
     audit:          loadAuditLog,
-    'pred-summary': loadPredictionsSummary,
     'fantasy-leaderboard': loadFantasyLeaderboard,
-    'user-teams':   loadUserTeams,
-    'pred-accuracy': loadPredictionAccuracy,
     'match-preds':  loadMatchPredictionsPanel,
-    'power-rankings': loadPowerRankings,
     'team-activity': loadTeamActivityDashboard,
   };
   if (loaders[id]) loaders[id]();
@@ -400,8 +396,8 @@ async function loadDashboard() {
     ];
     $id('kpi-grid').innerHTML = kpis.map(function(k,i) {
       return '<div class="kpi-card" style="--kc:'+k.c+';animation-delay:'+(i*.07)+'s">'+
-        '<div class="kpi-val">'+k.val+'</div>'+
         '<div class="kpi-lbl">'+k.lbl+'</div>'+
+        '<div class="kpi-val">'+k.val+'</div>'+
         (k.sub?'<div class="kpi-sub">'+k.sub+'</div>':'')+
       '</div>';
     }).join('');
@@ -507,20 +503,20 @@ async function loadTeamActivityDashboard() {
     if (kpis) {
       kpis.innerHTML =
         '<div class="kpi-card" style="--kc:var(--accent);">'+
-          '<div class="kpi-val">'+totalTeams+'</div>'+
           '<div class="kpi-lbl">Total Teams</div>'+
+          '<div class="kpi-val">'+totalTeams+'</div>'+
         '</div>'+
         '<div class="kpi-card" style="--kc:var(--green);">'+
-          '<div class="kpi-val">'+onlineCount+'</div>'+
           '<div class="kpi-lbl">Online Now</div>'+
+          '<div class="kpi-val">'+onlineCount+'</div>'+
         '</div>'+
         '<div class="kpi-card" style="--kc:var(--gold);">'+
-          '<div class="kpi-val">'+activeCount+'</div>'+
           '<div class="kpi-lbl">Active</div>'+
+          '<div class="kpi-val">'+activeCount+'</div>'+
         '</div>'+
         '<div class="kpi-card" style="--kc:var(--red);">'+
-          '<div class="kpi-val">'+idleCount+'</div>'+
           '<div class="kpi-lbl">Idle (7d)</div>'+
+          '<div class="kpi-val">'+idleCount+'</div>'+
         '</div>';
     }
 
@@ -997,6 +993,8 @@ async function onStatsMatchChange() {
   populateStatsPlayerSelect();
 
   $id('stats-saved-label').textContent = tShort(m.team1)+' vs '+tShort(m.team2);
+  var countEl = $id('stats-saved-count');
+  if (countEl) countEl.textContent = '';
   await loadSavedStats();
 }
 
@@ -1154,6 +1152,11 @@ async function loadSavedStats() {
   card.style.display=''; list.innerHTML='<div class="skel skel-row"></div>';
   try {
     var stats = safeArr(await API.fetchPlayerStats(_statsMatchId));
+    var countEl = $id('stats-saved-count');
+    if (countEl) {
+      countEl.textContent = stats.length > 0 ? '(' + stats.length + ' entries)' : '(no entries)';
+      countEl.style.color = stats.length >= 22 ? 'var(--green)' : 'var(--text3)';
+    }
     if (!stats.length) { list.innerHTML='<div style="color:var(--text3);font-size:13px;padding:12px;">No stats entered yet.</div>'; return; }
     list.innerHTML = stats.map(function(s){
       var p=s.player||{};
@@ -1748,9 +1751,9 @@ async function loadSquadAdmin() {
         '<td><div style="font-family:var(--f-ui);font-weight:700;">'+UI.esc(p.name||'—')+'</div>'+(statusIcon?'<div style="font-size:10px;color:var(--red);">'+statusIcon+(p.availability_note?' — '+UI.esc(p.availability_note):'')+'</div>':'')+'</td>'+
         '<td>'+UI.roleBadge(p.role)+'</td>'+
         '<td style="font-size:12px;color:var(--text2);">'+UI.esc(p.ipl_team||'—')+'</td>'+
-        '<td><input type="radio" name="cap-'+teamId+'" value="'+p.id+'" '+(sp.is_captain?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'captain\',\''+p.id+'\')"></td>'+
-        '<td><input type="radio" name="vc-'+teamId+'"  value="'+p.id+'" '+(sp.is_vc?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'vc\',\''+p.id+'\')"></td>'+
-        '<td><input type="radio" name="ip-'+teamId+'"  value="'+p.id+'" '+(sp.is_impact?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'impact\',\''+p.id+'\')"></td>'+
+        '<td><label class="radio-toggle"><input type="radio" name="cap-'+teamId+'" value="'+p.id+'" '+(sp.is_captain?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'captain\',\''+p.id+'\')"><span class="radio-slider"></span></label></td>'+
+        '<td><label class="radio-toggle"><input type="radio" name="vc-'+teamId+'"  value="'+p.id+'" '+(sp.is_vc?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'vc\',\''+p.id+'\')"><span class="radio-slider"></span></label></td>'+
+        '<td><label class="radio-toggle"><input type="radio" name="ip-'+teamId+'"  value="'+p.id+'" '+(sp.is_impact?'checked':'')+' onchange="sqEdit(\''+teamId+'\',\'impact\',\''+p.id+'\')"><span class="radio-slider"></span></label></td>'+
         '<td style="font-size:13px;">'+(p.is_overseas?'<img src="images/ipl/teams-foreign-player-icon.svg" style="width:14px;vertical-align:middle;transform:rotate(45deg);">':'—')+'</td>'+
         '<td style="font-size:13px;">'+(p.availability_status!=='available'?statusIcon:'—')+'</td>'+
       '</tr>';
@@ -2471,7 +2474,7 @@ function renderFlTable(list) {
       '<td style="font-weight:700;text-align:center;' + (rank<=3?'color:var(--gold);':'') + '">' + rank + '</td>' +
       '<td style="text-align:center;">' + iplLogo + '</td>' +
       '<td style="font-weight:600;">' + UI.esc(p.name) + ' ' + UI.roleBadge(p.role) + '</td>' +
-      '<td style="text-align:center;"><span class="clickable-team" style="background:var(--bg3);padding:2px 8px;border-radius:3px;font-size:10px;cursor:pointer;color:var(--accent);" onclick="jumpToUserTeams(\'' + UI.esc(p.bfl_team || '') + '\')">' + UI.esc(bflTeam) + '</span></td>' +
+      '<td style="text-align:center;"><span style="background:var(--bg3);padding:2px 8px;border-radius:3px;font-size:10px;color:var(--accent);">' + UI.esc(bflTeam) + '</span></td>' +
       '<td style="font-weight:700;color:var(--accent);text-align:center;">' + p.points + '</td>' +
       '<td style="text-align:center;">' + p.matches + '</td>' +
       '<td style="text-align:center;">' + avg + '</td>' +
@@ -2785,10 +2788,6 @@ async function doLogout() { await Auth.signOut(); }
 /* ══════════════════════════════════════════════════════════════
    NAVIGATION HELPERS
    ══════════════════════════════════════════════════════════════ */
-function jumpToUserTeams(teamName) {
-  if (!teamName) return;
-  showPanel('user-teams');
-}
 function jumpToSquadManagement(teamId) {
   if (!teamId) return;
   showPanel('squads');

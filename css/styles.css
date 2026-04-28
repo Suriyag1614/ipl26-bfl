@@ -365,7 +365,6 @@ body { display:flex; flex-direction:column; }
   border-radius:var(--radius-lg);
   padding:22px; 
   position:relative; 
-  max-height: 525px;
   overflow:auto;
   transition:border-color var(--t), box-shadow var(--t), transform var(--t);
   animation:fade-up .4s ease both;
