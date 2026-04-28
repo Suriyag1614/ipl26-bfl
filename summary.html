@@ -615,8 +615,8 @@
            <thead>
              <tr>
                <th rowspan="2" class="th-sortable" onclick="_psSortBy('name')">Player</th>
-               <th colspan="11" class="group-header">Batting</th>
-               <th colspan="11" class="group-header">Bowling</th>
+               <th colspan="12" class="group-header">Batting</th>
+               <th colspan="10" class="group-header">Bowling</th>
                <th colspan="3" class="group-header">Fielding</th>
              </tr>
              <tr>
@@ -624,6 +624,7 @@
                <th class="th-sortable" style="text-align: center;" onclick="_psSortBy('matches')">Matches</th>
                <th class="th-sortable" onclick="_psSortBy('innings')">Inns</th>
                <th class="th-sortable" onclick="_psSortBy('runs')">Runs</th>
+               <th class="th-sortable" onclick="_psSortBy('balls')">BF</th>
                <th class="th-sortable" onclick="_psSortBy('bat_avg')">Avg</th>
                <th class="th-sortable" onclick="_psSortBy('sr')">SR</th>
                <th class="th-sortable" onclick="_psSortBy('not_outs')">NO</th>
@@ -634,8 +635,7 @@
                <th class="th-sortable" onclick="_psSortBy('high_score')">H.S</th>
                <!-- Bowling -->
                <th class="th-sortable" onclick="_psSortBy('bowl_matches')">Matches</th>
-               <th class="th-sortable" onclick="_psSortBy('overs')">Overs</th>
-               <th class="th-sortable" onclick="_psSortBy('balls')">Balls</th>
+               <th class="th-sortable" onclick="_psSortBy('overs_balls')">Overs</th>
                <th class="th-sortable" onclick="_psSortBy('wickets')">Wkts</th>
                <th class="th-sortable" onclick="_psSortBy('maidens')">Maidens</th>
                <th class="th-sortable" onclick="_psSortBy('economy')">Econ</th>
@@ -2006,7 +2006,7 @@ async function loadPlayerStats() {
           agg[pid] = {
             id: pid, name: p.name || 'Unknown', ipl_team: p.ipl_team || '', role: p.role || '',
             bfl_team: playerBflMap[pid] || 'Unsold',
-            matches: 0, innings: 0, runs: 0, balls: 0, fours: 0, sixes: 0, not_outs: 0, fifties: 0, hundreds: 0, high_score: 0,
+            matches: 0, innings: 0, runs: 0, balls: 0, fours: 0, sixes: 0, not_outs: 0, fifties: 0, hundreds: 0, high_score: 0, hs_not_out: false,
             bowl_matches: 0, overs_balls: 0, wickets: 0, maidens: 0, runs_conceded: 0, three_fers: 0, five_fers: 0,
             best_wickets: 0, best_runs: 99999, catches: 0, run_outs: 0, stumpings: 0
           };
@@ -2020,7 +2020,12 @@ async function loadPlayerStats() {
         if (ps.not_out) a.not_outs++;
         if (r >= 50 && r < 100) a.fifties++;
         if (r >= 100) a.hundreds++;
-        if (r > a.high_score) a.high_score = r;
+        if (r > a.high_score) {
+          a.high_score = r;
+          a.hs_not_out = !!ps.not_out;
+        } else if (r === a.high_score && ps.not_out && !a.hs_not_out) {
+          a.hs_not_out = true;
+        }
         // Bowling
         if (ps.overs_bowled != null) {
           a.bowl_matches++;
@@ -2104,8 +2109,8 @@ function renderPlayerStats() {
   tbody.innerHTML = list.map(p => `
     <tr>
       <td style="text-align:left;"><div style="display:flex;align-items:center;gap:6px;"><div style="font-weight:700;">${UI.esc(p.name)}</div>${UI.roleBadge(p.role)}</div><div style="font-size:10px;opacity:0.7;">${p.ipl_team} · ${p.bfl_team}</div></td>
-      <td>${p.matches}</td><td>${p.innings}</td><td>${UI.fmtPts(p.runs)}</td><td>${p.bat_avg}</td><td>${p.sr}</td><td>${p.not_outs}</td><td>${p.fours}</td><td>${p.sixes}</td><td>${p.fifties}</td><td>${p.hundreds}</td><td>${p.high_score}</td>
-      <td>${p.bowl_matches}</td><td>${p.overs_display}</td><td>${p.overs_balls}</td><td>${p.wickets}</td><td>${p.maidens}</td><td>${p.economy}</td><td>${UI.fmtPts(p.runs_conceded)}</td><td>${p.bowl_avg}</td><td>${p.three_fers}</td><td>${p.five_fers}</td><td>${p.bbi}</td>
+      <td>${p.matches}</td><td>${p.innings}</td><td>${UI.fmtPts(p.runs)}</td><td>${p.balls}</td><td>${p.bat_avg}</td><td>${p.sr}</td><td>${p.not_outs}</td><td>${p.fours}</td><td>${p.sixes}</td><td>${p.fifties}</td><td>${p.hundreds}</td><td>${p.high_score}${p.high_score > 0 && p.hs_not_out ? '*' : ''}</td>
+      <td>${p.bowl_matches}</td><td>${p.overs_display}</td><td>${p.wickets}</td><td>${p.maidens}</td><td>${p.economy}</td><td>${UI.fmtPts(p.runs_conceded)}</td><td>${p.bowl_avg}</td><td>${p.three_fers}</td><td>${p.five_fers}</td><td>${p.bbi}</td>
       <td>${p.catches}</td><td>${p.run_outs}</td><td>${p.stumpings}</td>
     </tr>
   `).join('');
@@ -2114,7 +2119,7 @@ function renderPlayerStats() {
   var arrow = function(c) { return sort.col === c ? (sort.asc ? ' ▲' : ' ▼') : ''; };
   var tr2 = document.querySelector('#player-stats-table thead tr:nth-child(2)');
   if (tr2) {
-    var cols = ['matches','innings','runs','bat_avg','sr','not_outs','fours','sixes','fifties','hundreds','high_score','bowl_matches','overs','balls','wickets','maidens','economy','runs_conceded','bowl_avg','three_fers','five_fers','bbi','catches','run_outs','stumpings'];
+    var cols = ['matches','innings','runs','balls','bat_avg','sr','not_outs','fours','sixes','fifties','hundreds','high_score','bowl_matches','overs_balls','wickets','maidens','economy','runs_conceded','bowl_avg','three_fers','five_fers','bbi','catches','run_outs','stumpings'];
     cols.forEach((c, i) => {
       var cell = tr2.cells[i];
       if (cell) {

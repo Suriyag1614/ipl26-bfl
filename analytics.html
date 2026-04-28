@@ -235,8 +235,8 @@
            <thead>
              <tr>
                <th rowspan="2" class="th-sortable" onclick="_psSortBy('name')">Player</th>
-               <th colspan="11" class="group-header">Batting</th>
-               <th colspan="11" class="group-header">Bowling</th>
+               <th colspan="12" class="group-header">Batting</th>
+               <th colspan="10" class="group-header">Bowling</th>
                <th colspan="3" class="group-header">Fielding</th>
              </tr>
              <tr>
@@ -244,6 +244,7 @@
                <th class="th-sortable" style="text-align: center;" onclick="_psSortBy('matches')">Matches</th>
                <th class="th-sortable" onclick="_psSortBy('innings')">Inns</th>
                <th class="th-sortable" onclick="_psSortBy('runs')">Runs</th>
+               <th class="th-sortable" onclick="_psSortBy('balls_faced')">BF</th>
                <th class="th-sortable" onclick="_psSortBy('bat_avg')">Avg</th>
                <th class="th-sortable" onclick="_psSortBy('sr')">SR</th>
                <th class="th-sortable" onclick="_psSortBy('not_outs')">NO</th>
@@ -254,8 +255,7 @@
                <th class="th-sortable" onclick="_psSortBy('high_score')">H.S</th>
                <!-- Bowling -->
                <th class="th-sortable" onclick="_psSortBy('bowl_matches')">Matches</th>
-               <th class="th-sortable" onclick="_psSortBy('overs')">Overs</th>
-               <th class="th-sortable" onclick="_psSortBy('balls')">Balls</th>
+               <th class="th-sortable" onclick="_psSortBy('overs_balls')">Overs</th>
                <th class="th-sortable" onclick="_psSortBy('wickets')">Wkts</th>
                <th class="th-sortable" onclick="_psSortBy('maidens')">Maidens</th>
                <th class="th-sortable" onclick="_psSortBy('economy')">Econ</th>
@@ -425,28 +425,28 @@ function updatePSHeaders(sort) {
   var thead = document.querySelector('#intra-squad-table thead tr:nth-child(2)');
   if (!thead) return;
   var arrow = function(c) { return sort.col === c ? (sort.asc ? ' ▲' : ' ▼') : ''; };
-  // Batting (cells 0-10)
+  // Batting (cells 0-11)
   thead.cells[0].innerHTML = 'Matches' + arrow('matches');
   thead.cells[1].innerHTML = 'Inns' + arrow('innings');
   thead.cells[2].innerHTML = 'Runs' + arrow('runs');
-  thead.cells[3].innerHTML = 'Avg' + arrow('bat_avg');
-  thead.cells[4].innerHTML = 'SR' + arrow('sr');
-  thead.cells[5].innerHTML = 'NO' + arrow('not_outs');
-  thead.cells[6].innerHTML = '4s' + arrow('fours');
-  thead.cells[7].innerHTML = '6s' + arrow('sixes');
-  thead.cells[8].innerHTML = '50s' + arrow('fifties');
-  thead.cells[9].innerHTML = '100s' + arrow('hundreds');
-  thead.cells[10].innerHTML = 'H.S' + arrow('high_score');
-  // Bowling (cells 11-21)
-  thead.cells[11].innerHTML = 'Matches' + arrow('bowl_matches');
-  thead.cells[12].innerHTML = 'Overs' + arrow('overs');
-  thead.cells[13].innerHTML = 'Balls' + arrow('balls');
+  thead.cells[3].innerHTML = 'BF' + arrow('balls_faced');
+  thead.cells[4].innerHTML = 'Avg' + arrow('bat_avg');
+  thead.cells[5].innerHTML = 'SR' + arrow('sr');
+  thead.cells[6].innerHTML = 'NO' + arrow('not_outs');
+  thead.cells[7].innerHTML = '4s' + arrow('fours');
+  thead.cells[8].innerHTML = '6s' + arrow('sixes');
+  thead.cells[9].innerHTML = '50s' + arrow('fifties');
+  thead.cells[10].innerHTML = '100s' + arrow('hundreds');
+  thead.cells[11].innerHTML = 'H.S' + arrow('high_score');
+  // Bowling (cells 12-21)
+  thead.cells[12].innerHTML = 'Matches' + arrow('bowl_matches');
+  thead.cells[13].innerHTML = 'Overs' + arrow('overs_balls');
   thead.cells[14].innerHTML = 'Wkts' + arrow('wickets');
   thead.cells[15].innerHTML = 'Maidens' + arrow('maidens');
   thead.cells[16].innerHTML = 'Econ' + arrow('economy');
   thead.cells[17].innerHTML = 'Runs' + arrow('runs_conceded');
   thead.cells[18].innerHTML = 'Avg' + arrow('bowl_avg');
-  thead.cells[19].innerHTML = '4-F' + arrow('three_fers');
+  thead.cells[19].innerHTML = '3-F' + arrow('three_fers');
   thead.cells[20].innerHTML = '5-F' + arrow('five_fers');
   thead.cells[21].innerHTML = 'BBI' + arrow('bbi');
   // Fielding (cells 22-24)
@@ -486,7 +486,7 @@ async function renderPlayerStatsTable() {
           matches: 0,
           innings: 0,
           runs: 0, balls_faced: 0, fours: 0, sixes: 0, not_outs: 0,
-          fifties: 0, hundreds: 0, high_score: 0,
+          fifties: 0, hundreds: 0, high_score: 0, hs_not_out: false,
           bowl_matches: 0,
           overs_balls: 0,
           wickets: 0, maidens: 0, runs_conceded: 0,
@@ -509,7 +509,12 @@ async function renderPlayerStatsTable() {
       if (ps.not_out) a.not_outs = (a.not_outs || 0) + 1;
       if (runs >= 50 && runs < 100) a.fifties = (a.fifties || 0) + 1;
       if (runs >= 100) a.hundreds = (a.hundreds || 0) + 1;
-      if (runs > a.high_score) a.high_score = runs;
+      if (runs > a.high_score) {
+        a.high_score = runs;
+        a.hs_not_out = !!ps.not_out;
+      } else if (runs === a.high_score && ps.not_out && !a.hs_not_out) {
+        a.hs_not_out = true;
+      }
 
       // Bowling
       var oversVal = ps.overs_bowled;
@@ -553,6 +558,7 @@ async function renderPlayerStatsTable() {
         matches: p.matches,
         innings: p.innings,
         runs: p.runs,
+        balls_faced: p.balls_faced,
         bat_avg: batAvg,
         sr: sr,
         not_outs: p.not_outs,
@@ -561,6 +567,7 @@ async function renderPlayerStatsTable() {
         fifties: p.fifties,
         hundreds: p.hundreds,
         high_score: p.high_score,
+        hs_not_out: p.hs_not_out,
         bowl_matches: p.bowl_matches,
         overs: p.overs_balls,
         overs_display: oversDisp,
@@ -597,6 +604,7 @@ async function renderPlayerStatsTable() {
         '<td class="stat-num">' + p.matches + '</td>' +
         '<td class="stat-num">' + p.innings + '</td>' +
         '<td class="stat-num">' + UI.fmtPts(p.runs) + '</td>' +
+        '<td class="stat-num">' + p.balls_faced + '</td>' +
         '<td class="stat-num">' + p.bat_avg + '</td>' +
         '<td class="stat-num">' + p.sr + '</td>' +
         '<td class="stat-num">' + (p.not_outs || 0) + '</td>' +
@@ -604,11 +612,10 @@ async function renderPlayerStatsTable() {
         '<td class="stat-num">' + p.sixes + '</td>' +
         '<td class="stat-num">' + (p.fifties || 0) + '</td>' +
         '<td class="stat-num">' + (p.hundreds || 0) + '</td>' +
-        '<td class="stat-num">' + p.high_score + '</td>' +
+        '<td class="stat-num">' + p.high_score + (p.high_score > 0 && p.hs_not_out ? '*' : '') + '</td>' +
         // Bowling
         '<td class="stat-num">' + p.bowl_matches + '</td>' +
         '<td class="stat-num">' + p.overs_display + '</td>' +
-        '<td class="stat-num">' + p.balls + '</td>' +
         '<td class="stat-num">' + p.wickets + '</td>' +
         '<td class="stat-num">' + p.maidens + '</td>' +
         '<td class="stat-num">' + p.economy + '</td>' +
