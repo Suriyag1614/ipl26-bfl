@@ -201,7 +201,7 @@
        vertical-align: middle;
      }
      .team-stats-card .data-table td:first-child { text-align: left; font-weight: 600; }
-     .team-stats-card .data-table .ti-team-col { font-weight: 800; color: var(--purple); }
+     .team-stats-card .data-table .ti-team-col { font-weight: 800; color: var(--accent-bright); }
      .team-stats-card .data-table .stat-num { font-family: var(--f-mono); font-weight: 700; }
      .team-stats-card .data-table .stat-num.high { color: var(--green); }
      .team-stats-card .data-table .stat-num.low { color: var(--red); }
@@ -386,12 +386,16 @@
   <div class="tab-panel active" id="tab-pred-summary">
     <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;">
       <div class="card">
-        <div class="card-title">Team Win Predictions</div>
+        <div class="card-title">Predicted Match Winner Distribution</div>
         <div id="pred-team-wins"><div class="skel skel-row"></div></div>
       </div>
       <div class="card">
-        <div class="card-title">Target Score Distribution</div>
+        <div class="card-title">Predicted Target Score Distribution</div>
         <div id="pred-target-dist"><div class="skel skel-row"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Actual Target Score Distribution</div>
+        <div id="actual-target-dist"><div class="skel skel-row"></div></div>
       </div>
     </div>
   </div>
@@ -400,13 +404,13 @@
   <div class="tab-panel" id="tab-accuracy">
     <div class="analytics-chart-row" style="display:grid;grid-template-columns:1fr 280px;gap:16px;">
       <div class="card" style="overflow:hidden">
-        <div class="card-title">Accuracy by Match</div>
+        <div class="card-title">Matchwise Accuracy</div>
         <div id="accuracy-by-match" style="max-height:500px;overflow-y:auto;padding-right:8px;"><div class="skel skel-row"></div></div>
       </div>
       <div style="display:flex;flex-direction:column;gap:16px;">
         <div class="card" id="accuracy-overall"></div>
         <div class="card">
-          <div class="card-title">Team Leaderboard</div>
+          <div class="card-title">Team-wise Accuracy</div>
           <div id="accuracy-team-leaderboard"><div class="skel skel-row"></div></div>
         </div>
       </div>
@@ -808,14 +812,18 @@ async function init() {
 async function loadPredictionsSummary() {
   var teamWins = $id('pred-team-wins');
   var targetDist = $id('pred-target-dist');
+  var actualDist = $id('actual-target-dist');
   if (!teamWins || !targetDist) return;
   teamWins.innerHTML = '<div class="skel skel-row"></div>';
   targetDist.innerHTML = '<div class="skel skel-row"></div>';
+  if (actualDist) actualDist.innerHTML = '<div class="skel skel-row"></div>';
+
   try {
     var preds = safeArr(await API.fetchAllPredictionsAllMatches());
     var completedMatches = _matches.filter(function(m) { return (m.status === 'completed' || m.status === 'processed') && !m.is_abandoned; });
     var teamCounts = {};
     var targetScores = [];
+    var actualScores = [];
     var validPredsCount = 0;
 
     preds.forEach(function(p) {
@@ -831,6 +839,10 @@ async function loadPredictionsSummary() {
       }
     });
 
+    completedMatches.forEach(function(m) {
+      if (m.actual_target) actualScores.push(m.actual_target);
+    });
+
     var teamList = Object.keys(teamCounts).sort(function(a,b) { return teamCounts[b] - teamCounts[a]; });
     if (teamList.length === 0) {
       teamWins.innerHTML = '<div class="empty-state" style="padding:20px;">No completed matches with predictions yet.</div>';
@@ -838,18 +850,21 @@ async function loadPredictionsSummary() {
       teamWins.innerHTML = '<div style="display:flex;flex-direction:column;gap:10px;">' + teamList.map(function(t) {
         var cnt = teamCounts[t];
         var pct = Math.round(cnt / validPredsCount * 100);
-        return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:50px;font-weight:800;font-family:var(--f-ui);font-size:12px;">' + UI.tShort(t) + '</span><div style="flex:1;background:var(--bg3);height:20px;border-radius:4px;overflow:hidden;"><div style="width:' + pct + '%;background:var(--accent);height:100%;"></div></div><span style="width:60px;text-align:right;color:var(--text2);font-size:11px;">' + cnt + ' (' + pct + '%)</span></div>';
+        return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:50px;font-weight:700;font-family:var(--f-ui);font-size:16px;">' + UI.tShort(t) + '</span><div style="flex:1;background:var(--bg3);height:20px;border-radius:4px;overflow:hidden;"><div style="width:' + pct + '%;background:var(--accent);height:100%;"></div></div><span style="width:60px;text-align:right;color:var(--text2);font-size:12px;">' + cnt + ' (' + pct + '%)</span></div>';
       }).join('') + '</div>';
     }
 
-    if (targetScores.length === 0) {
-      targetDist.innerHTML = '<div class="empty-state" style="padding:20px;">No target score predictions yet.</div>';
-    } else {
+    var renderDist = function(scores, container, color, emptyMsg) {
+      if (!container) return;
+      if (scores.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:20px;">' + emptyMsg + '</div>';
+        return;
+      }
       var ranges = {
         '<100': 0, '100-120': 0, '121-140': 0, '141-160': 0, '161-180': 0,
         '181-190': 0, '191-200': 0, '201-210': 0, '211-220': 0, '221-230': 0, '231-250': 0, '250+': 0
       };
-      targetScores.forEach(function(s) {
+      scores.forEach(function(s) {
         if (s < 100) ranges['<100']++;
         else if (s <= 120) ranges['100-120']++;
         else if (s <= 140) ranges['121-140']++;
@@ -863,13 +878,20 @@ async function loadPredictionsSummary() {
         else if (s <= 250) ranges['231-250']++;
         else ranges['250+']++;
       });
-      targetDist.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' + Object.keys(ranges).map(function(r) {
+      container.innerHTML = '<div style="display:flex;flex-direction:column;gap:6px;">' + Object.keys(ranges).map(function(r) {
         var cnt = ranges[r];
-        var pct = Math.round(cnt / targetScores.length * 100);
-        return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:70px;font-size:12px;">' + r + '</span><div style="flex:1;background:var(--bg3);height:14px;border-radius:3px;overflow:hidden;"><div style="width:' + pct + '%;background:var(--purple);height:100%;"></div></div><span style="width:40px;text-align:right;color:var(--text2);font-size:11px;">' + cnt + '</span></div>';
+        var pct = Math.round(cnt / scores.length * 100);
+        return '<div style="display:flex;align-items:center;gap:10px;"><span style="width:70px;font-size:15px;">' + r + '</span><div style="flex:1;background:var(--bg3);height:14px;border-radius:3px;overflow:hidden;"><div style="width:' + pct + '%;background:' + color + ';height:100%;"></div></div><span style="width:40px;text-align:right;color:var(--text2);font-size:12px;">' + cnt + '</span></div>';
       }).join('') + '</div>';
-    }
-  } catch(e) { teamWins.innerHTML = '<div style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</div>'; }
+    };
+
+    renderDist(targetScores, targetDist, 'var(--cyan)', 'No target score predictions yet.');
+    renderDist(actualScores, actualDist, 'var(--purple)', 'No actual target scores yet.');
+
+  } catch(e) { 
+    console.warn('Predictions Summary Error:', e);
+    if (teamWins) teamWins.innerHTML = '<div style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</div>'; 
+  }
 }
 
 async function loadPredictionAccuracy() {
