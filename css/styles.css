@@ -351,7 +351,7 @@ body { display:flex; flex-direction:column; }
   line-height:1.1; text-align:center;
   -webkit-tap-highlight-color: transparent;
 }
-.bnav-link span { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; word-break:break-word; }
+.bnav-link span { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; line-clamp:2; overflow:hidden; word-break:break-word; }
 .bnav-link svg { width:clamp(18px, 5vw, 20px); height:clamp(18px, 5vw, 20px); stroke:currentColor; flex-shrink:0; }
 .bnav-link.active { color:var(--accent); }
 .bnav-link:active { transform: scale(0.92); }
