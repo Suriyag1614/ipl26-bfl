@@ -878,29 +878,31 @@ body:has(.login-wrap) #toast-container {
 .usage-pip.filled            { background:var(--accent); border-color:var(--accent); animation:pip-fill .3s cubic-bezier(.34,1.56,.64,1) both; }
 .usage-pip.filled.low        { background:#f59e0b; border-color:#f59e0b; }
 .usage-pip.filled.gone       { background:var(--red); border-color:var(--red); }
-.match-tab-strip { display:flex; gap:6px; overflow-x:auto; padding-bottom:5px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; margin-bottom:20px; -webkit-overflow-scrolling:touch; }
+.match-tab-strip { display:flex; gap:6px; overflow-x:auto; padding:10px 4px 6px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; margin-bottom:14px; -webkit-overflow-scrolling:touch; }
 .match-tab-strip::-webkit-scrollbar { height:6px; }
 .match-tab-strip::-webkit-scrollbar-track { background:transparent; }
 .match-tab-strip::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 .match-tab-strip::-webkit-scrollbar-thumb:hover { background:var(--text3); }
 .match-tab { flex-shrink:0; padding:7px 14px; background:var(--bg2); border:1px solid var(--border); border-radius:22px; font-family:var(--f-ui); font-size:13px; font-weight:700; color:var(--text2); cursor:pointer; transition:all .2s; white-space:nowrap; position:relative; }
 .match-tab:hover  { border-color:var(--border2); color:var(--text); }
-.match-tab.active { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); box-shadow: 0 4px 12px rgba(200,241,53,0.15); overflow:clip; }
+.match-tab.active { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); box-shadow: 0 4px 12px rgba(200,241,53,0.15); }
 .match-tab.active::before {
-  content:''; position:absolute; top:0; left:0; width:0; height:100%;
+  content:''; position:absolute; inset:0;
   background:linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background-repeat: no-repeat;
   animation:tab-sweep 2.5s ease-in-out infinite; z-index:1; pointer-events:none;
+  border-radius: inherit;
 }
 @keyframes tab-sweep {
-  0% { width:0; left:0; }
-  50% { width:100%; left:0; }
-  100% { width:0; left:100%; }
+  0%   { background-size: 0% 100%; background-position: 0% 0; }
+  50%  { background-size: 100% 100%; background-position: 0% 0; }
+  100% { background-size: 0% 100%; background-position: 100% 0; }
 }
 .match-tab.done   { background:rgba(56,217,245,.06); border-color:rgba(56,217,245,.2); color:var(--cyan); }
 .match-tab.locked-tab { background:var(--red-dim); border-color:rgba(255,77,109,.2); color:var(--red); }
 .match-tab.abandoned-tab { background:rgba(138,43,226,.12); border-color:rgba(138,43,226,.25); color: #8a2be2; }
 .match-tab.has-impact { position:relative; }
-.match-tab.has-impact::after { content:'⚡'; position:absolute; top:-6px; right:-6px; font-size:11px; background:var(--bg); border-radius:50%; width:17px; height:17px; display:flex; align-items:center; justify-content:center; }
+.match-tab.has-impact::after { content:'⚡'; position:absolute; top:-6px; right:-6px; font-size:11px; background:var(--bg); border-radius:50%; width:17px; height:17px; display:flex; align-items:center; justify-content:center; z-index: 2; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
 .pred-card { background:var(--bg1); border:1px solid var(--border); border-radius:var(--radius-xl); overflow:hidden; animation:fade-up .35s ease both; }
 .pred-card-header { padding:18px 22px 16px; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap; }
 .pred-match-name { font-family:var(--f-display); font-size:18px; font-weight:800; line-height:1.2; }
