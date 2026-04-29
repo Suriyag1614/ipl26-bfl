@@ -1136,20 +1136,18 @@ const API = {
   // ══════════════════════════════════════════════════════════════════
   _badgeDefs: [
     { id: 'centurion',      name: 'Centurion',         description: 'Had a player score 100+ runs in a match', icon: '💯', color: '#f59e0b' },
-    { id: 'super-centurion', name: 'Super Centurion',  description: 'Had a player score 200+ runs in a match', icon: '🌟', color: '#f43f5e' },
-    { id: 'perfect-pick',   name: 'Perfect Pick',      description: 'Predicted the exact target score', icon: '🔮', color: '#a855f7' },
     { id: 'prediction-pro', name: 'Prediction Pro',    description: 'Correct winner with target within 5 runs', icon: '🧠', color: '#06b6d4' },
-    { id: 'high-flyer',     name: 'High Flyer',        description: 'Scored 500+ points in a single match', icon: '🦅', color: '#ef4444' },
+    { id: 'high-flyer',     name: 'High Flyer',        description: 'Scored 250+ points in a single match', icon: '🦅', color: '#ef4444' },
     { id: 'super-flyer',    name: 'Super Flyer',       description: 'Scored 1000+ points in a single match', icon: '🚀', color: '#ec4899' },
     { id: 'mega-flyer',     name: 'Mega Flyer',        description: 'Scored 1500+ points in a single match', icon: '💎', color: '#8b5cf6' },
-    { id: '5000-points',    name: 'Elite 5000',        description: 'Reached 5000 career points', icon: '👑', color: '#fbbf24' },
+    { id: '5000-points',    name: 'Elite 5000',        description: 'Reached 5000 career points', icon: '⚓', color: '#fbbf24' },
     { id: '7500-points',    name: 'Super Elite',       description: 'Reached 7500 career points', icon: '💍', color: '#f472b6' },
-    { id: '10000-points',   name: 'Legend',            description: 'Reached 10000 career points', icon: '🏆', color: '#fbbf24' },
+    { id: '10000-points',   name: 'Legend',            description: 'Reached 10000 career points', icon: '🧨', color: '#fbbf24' },
     { id: '12500-points',   name: 'Grandmaster',       description: 'Reached 12500 career points', icon: '🎖️', color: '#d4d4d8' },
     { id: '15000-points',   name: 'Immortal',          description: 'Reached 15000 career points', icon: '🌈', color: '#a855f7' },
     { id: 'rank-1',         name: 'Champion',          description: 'Reached #1 on the leaderboard', icon: '🥇', color: '#fbbf24' },
     { id: 'top-3',          name: 'Podium Finish',     description: 'Reached top 3 on the leaderboard', icon: '🥉', color: '#d97706' },
-    { id: 'top-5',          name: 'Top 5',             description: 'Reached top 5 on the leaderboard', icon: '🏅', color: '#6b7280' },
+    { id: 'top-5',          name: 'Top 5',             description: 'Reached top 5 on the leaderboard', icon: '5️⃣', color: '#6b7280' },
     { id: 'early_bird',     name: 'Early Bird',        description: 'First to submit prediction for a match', icon: '🌅', color: '#38d9f5' },
     { id: 'first_blood',    name: 'First Blood',       description: 'First prediction submitted in the season', icon: '🩸', color: '#f87171' },
     { id: 'first_win',      name: 'First Win',         description: 'Ranked 1st in a match', icon: '🏆', color: '#f5c842' },
@@ -1165,9 +1163,13 @@ const API = {
     { id: 'impact_master',  name: 'Impact Master',     description: 'Impact Player scored 300+ points', icon: '⚡', color: '#38d9f5' },
     { id: 'impact_legend',  name: 'Impact Legend',     description: 'Impact Player scored 400+ points', icon: '💥', color: '#f43f5e' },
     { id: 'perfect_pred',   name: 'Perfect Predictor', description: 'Predicted exact target score', icon: '🎯', color: '#c8f135' },
-    { id: 'victory-veteran', name: 'Victory Veteran',  description: 'Won 10 matches', icon: '⚔️', color: '#22c55e' },
-    { id: 'match-king',     name: 'Match King',        description: 'Won 25 matches', icon: '👑', color: '#eab308' },
-    { id: 'dominator',      name: 'Dominator',         description: 'Won 50 matches', icon: '🏹', color: '#dc2626' },
+    { id: '1000-points',    name: 'Millennium Club',   description: 'Reached 1000 career points', icon: '⚜️', color: '#f97316' },
+    { id: '3000-points',    name: 'Triple Threat',     description: 'Reached 3000 career points', icon: '💪🏻', color: '#eab308' },
+    { id: 'fifer',          name: 'Fifer Magic',       description: 'Had a player take 5+ wickets in a single match', icon: '🪄', color: '#0ea5e9' },
+    { id: 'comeback_kid',   name: 'Comeback Kid',      description: 'Jumped 3 or more ranks on the leaderboard in a single match', icon: '📈', color: '#10b981' },
+    { id: 'iron_predictor', name: 'Iron Predictor',    description: 'Submitted a prediction for 10 consecutive matches', icon: '🛡️', color: '#94a3b8' },
+    { id: 'flawless_captain', name: 'Flawless Captain', description: 'Your chosen Captain was awarded Player of the Match', icon: '🦸‍♂️', color: '#8b5cf6' },
+    { id: 'heartbreak',     name: 'Heartbreak',        description: 'Predicted the exact target score, but got the winner wrong', icon: '💔', color: '#f43f5e' },
   ],
 
   async ensureBadgeDefinitions() {
@@ -1192,13 +1194,14 @@ const API = {
 
       // 1. Fetch data (match-specific + history for streaks/consistency)
 
-      const [matchRes, logsRes, predsRes, lb, allPredsRes, allLogsRes] = await Promise.all([
+      const [matchRes, logsRes, predsRes, lb, allPredsRes, allLogsRes, matchStatsRes] = await Promise.all([
         this.fetchMatch(matchId),
         sb.from('points_log').select('*').eq('match_id', matchId),
         sb.from('predictions').select('*').eq('match_id', matchId).order('submitted_at', { ascending: true }),
         this.fetchLeaderboard(),
-        sb.from('predictions').select('*,match:matches(id,match_date,winner,actual_target,status)').order('submitted_at', { ascending: true }),
+        sb.from('predictions').select('*,match:matches(id,match_no,match_date,winner,actual_target,status)').order('submitted_at', { ascending: true }),
         sb.from('points_log').select('*,match:matches(id,match_date,status)').order('created_at', { ascending: true }),
+        sb.from('player_match_stats').select('player_id,wickets,player:players(name)').eq('match_id', matchId),
       ]);
       const match = matchRes;
       const logs = logsRes.data || [];
@@ -1226,6 +1229,9 @@ const API = {
     // 4. Check if any prediction exists before this match (for first_blood)
     const matchDate = match.match_date;
     const hasPriorPredictions = allPreds.some(p => p.match && p.match.match_date && p.match.match_date < matchDate);
+    
+    // 5. Pre-calculate Fifer players
+    const fiferNames = new Set((matchStatsRes?.data || []).filter(s => s.wickets >= 5).map(s => s.player?.name));
 
     const newBadges = [];
     for (const log of logs) {
@@ -1249,13 +1255,17 @@ const API = {
 
       // Centurion (100+ batting pts by any player, unmultiplied)
       if (players.some(p => (p.bat / (p.multiplier || 1)) >= 100)) give('centurion');
-      // Super Centurion (200+ batting pts)
-      if (players.some(p => (p.bat / (p.multiplier || 1)) >= 200)) give('super-centurion');
 
-      // Perfect Pick / Perfect Predictor (exact target match)
+      // Fifer Magic (5+ wickets)
+      if (players.some(p => fiferNames.has(p.effective_name) || fiferNames.has(p.name))) give('fifer');
+
+      // Perfect Predictor (exact target match)
       if (pred && match.actual_target && Math.abs(pred.target_score - match.actual_target) === 0) {
-        give('perfect-pick');
-        give('perfect_pred');
+        if (pred.predicted_winner === match.winner) {
+          give('perfect_pred');
+        } else {
+          give('heartbreak'); // Heartbreak (exact target match, wrong winner)
+        }
       }
 
       // Prediction Pro (correct winner + diff <= 5)
@@ -1263,8 +1273,8 @@ const API = {
         give('prediction-pro');
       }
 
-      // High Flyer (match total >= 500)
-      if (log.total_points >= 500) give('high-flyer');
+      // High Flyer (match total >= 250)
+      if (log.total_points >= 250) give('high-flyer');
       // Super Flyer (1000+ points)
       if (log.total_points >= 1000) give('super-flyer');
       // Mega Flyer (1500+ points)
@@ -1291,6 +1301,8 @@ const API = {
       if (captain && (captain.final || 0) >= 200) give('captain_king');
       // Captain Legend (captain scored 300+ final points)
       if (captain && (captain.final || 0) >= 300) give('captain_legend');
+      // Flawless Captain (captain was PoM)
+      if (captain && captain.isPom) give('flawless_captain');
 
       // Impact Master (impact player scored 300+ final points)
       const impact = players.find(p => p.isImpact && p.isImpactActive);
@@ -1300,7 +1312,9 @@ const API = {
 
       // ── Career Milestones ──
 
-      // Point milestones (74 matches, ~200 avg = ~14800 max)
+      // Point milestones
+      if (totalPoints >= 1000) give('1000-points');
+      if (totalPoints >= 3000) give('3000-points');
       if (totalPoints >= 5000) give('5000-points');
       if (totalPoints >= 7500) give('7500-points');
       if (totalPoints >= 10000) give('10000-points');
@@ -1311,6 +1325,11 @@ const API = {
       if (rank === 1) give('rank-1');
       if (rank <= 3)  give('top-3');
       if (rank <= 5)  give('top-5');
+
+      // Comeback Kid (Jumped 3+ ranks)
+      if (lbRow && lbRow.prev_rank && (lbRow.prev_rank - lbRow.rank) >= 3) {
+        give('comeback_kid');
+      }
 
       // ── Streak Badges (from prediction history) ──
       const teamPreds = allPreds.filter(p => p.fantasy_team_id === teamId && p.match?.actual_target && p.match?.winner);
@@ -1333,11 +1352,22 @@ const API = {
         if (maxStreak >= 10) give('streak_10');
       }
 
-      // ── Match Win Badges ──
-      const matchWins = (allLogs || []).filter(l => l.fantasy_team_id === teamId && l.match && l.match.status === 'completed').length;
-      if (matchWins >= 10) give('victory-veteran');
-      if (matchWins >= 25) give('match-king');
-      if (matchWins >= 50) give('dominator');
+      // Iron Predictor (10 consecutive matches predicted)
+      const teamPredsForIron = allPreds.filter(p => p.fantasy_team_id === teamId && p.match && p.match.match_no).sort((a, b) => a.match.match_no - b.match.match_no);
+      if (teamPredsForIron.length >= 10) {
+        let maxIronStreak = 1;
+        let curIronStreak = 1;
+        for (let i = 1; i < teamPredsForIron.length; i++) {
+          if (teamPredsForIron[i].match.match_no === teamPredsForIron[i-1].match.match_no + 1) {
+            curIronStreak++;
+            maxIronStreak = Math.max(maxIronStreak, curIronStreak);
+          } else if (teamPredsForIron[i].match.match_no !== teamPredsForIron[i-1].match.match_no) {
+            curIronStreak = 1; // reset streak if gap, ignoring duplicates just in case
+          }
+        }
+        if (maxIronStreak >= 10) give('iron_predictor');
+      }
+
 
       // ── Consistent Performer (top 3 in 3 consecutive completed matches) ──
       const teamLogs = allLogs.filter(l => l.fantasy_team_id === teamId && l.match && ['completed', 'processed'].includes(l.match.status));
@@ -1603,88 +1633,7 @@ const API = {
     };
   },
 
-  // ══════════════════════════════════════════════════════════════════
-  //  BLOGS  — draft / review / published flow + AI generation
-  // ══════════════════════════════════════════════════════════════════
-  async fetchBlogs({ limit = 20, category = null, publishedOnly = true, status = null } = {}) {
-    let q = sb.from('blogs')
-      .select('id,title,slug,excerpt,category,cover_image,views,created_at,author_name,is_published,status,ai_generated')
-      .order('created_at', { ascending: false }).limit(limit);
-    if (publishedOnly) q = q.eq('status', 'published');
-    else if (status)   q = q.eq('status', status);
-    if (category) q = q.eq('category', category);
-    const { data, error } = await q;
-    if (error) throw error;
-    return data || [];
-  },
-
-  async fetchBlog(slugOrId, isAdmin) {
-    const { data, error } = await sb.from('blogs').select('*')
-      .or('slug.eq.' + slugOrId + ',id.eq.' + slugOrId).maybeSingle();
-    if (error) throw error;
-    if (data && !isAdmin) {
-      await sb.from('blogs').update({ views: (data.views || 0) + 1 }).eq('id', data.id).then(() => {});
-    }
-    return data;
-  },
-
-  async upsertBlog(blog) {
-    const { data: before } = blog.id
-      ? await sb.from('blogs').select('*').eq('id', blog.id).maybeSingle()
-      : { data: null };
-    const { data, error } = await sb.from('blogs').upsert(blog, { onConflict: 'id' }).select().single();
-    if (error) throw error;
-    await this._log('blog_edit', 'blog', data.id, before, data);
-    return data;
-  },
-
-  async publishBlog(blogId, reviewerName) {
-    const { data: before } = await sb.from('blogs').select('*').eq('id', blogId).maybeSingle();
-    const { data, error } = await sb.from('blogs').update({
-      status: 'published', is_published: true,
-      reviewed_by: reviewerName || 'admin', reviewed_at: new Date().toISOString(),
-    }).eq('id', blogId).select().single();
-    if (error) throw error;
-    await this._log('blog_published', 'blog', blogId, before, data);
-    return data;
-  },
-
-  async unpublishBlog(blogId) {
-    const { error } = await sb.from('blogs').update({ status: 'draft', is_published: false }).eq('id', blogId);
-    if (error) throw error;
-  },
-
-  async generateAIBlog({ title, category, context }) {
-    const { data: { session } } = await sb.auth.getSession();
-    const resp = await fetch('https://zptzdqswmarqhotnnlrk.supabase.co/functions/v1/generate-blog', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + (session?.access_token || ''),
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpwdHpkcXN3bWFycWhvdG5ubHJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNDc2OTgsImV4cCI6MjA4OTcyMzY5OH0.BLuSuFem2sX08CleGxhfjhBXHmaWxDUfdzTwGaOwIYQ',
-      },
-      body: JSON.stringify({ title, category, context }),
-    });
-    const result = await resp.json();
-    if (!resp.ok) throw new Error(result.error || 'AI generation failed');
-    const content = result.content || 'Could not generate content.';
-    const { data: blog, error: insertErr } = await sb.from('blogs').insert({
-      title, category: category || 'general', content,
-      status: 'draft', is_published: false, ai_generated: true,
-      author_name: 'AI Assistant', excerpt: content.substring(0, 120) + '...',
-    }).select().single();
-    if (insertErr) throw insertErr;
-    return blog;
-  },
-
-  async deleteBlog(blogId) {
-    const { data: before } = await sb.from('blogs').select('*').eq('id', blogId).maybeSingle();
-    const { error } = await sb.from('blogs').delete().eq('id', blogId);
-    if (error) throw error;
-    await this._log('blog_deleted', 'blog', blogId, before, null);
-  },
-
-  // ══════════════════════════════════════════════════════════════════
+   // ══════════════════════════════════════════════════════════════════
   //  BADGES
   // ══════════════════════════════════════════════════════════════════
   async fetchUserBadges(teamId) {
