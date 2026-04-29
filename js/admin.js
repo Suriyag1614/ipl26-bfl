@@ -656,8 +656,8 @@ async function saveFixture() {
   var no=parseInt($id('fx-no').value||0)||null;
   var venue=$id('fx-venue').value, status=$id('fx-status').value;
   var matchDate = date ? new Date(date+'T'+time+':00+05:30').toISOString() : null;
-  var deadline  = matchDate; // Auto-lock is now exact start time
-  var lockTime  = deadline;  // Strict locking at start time
+  var deadline  = matchDate ? new Date(new Date(matchDate).getTime() - 30 * 60 * 1000).toISOString() : null; // Predictions close 30 minutes before match start
+  var lockTime  = deadline;  // Strict locking at deadline time
   var match = { match_no:no, team1, team2, venue, status, match_date:matchDate,
     deadline_time:deadline, lock_time:lockTime,
     match_title:'Match '+(no||'?')+' · '+tShort(team1)+' vs '+tShort(team2),
@@ -712,10 +712,13 @@ async function loadIPLFixtures() {
       for (var f of schedule) {
         if (_fixtures.find(function(m){return m.match_no===f.no;})) { skipped++; continue; }
         try {
+          var matchDate = new Date(f.d+'T'+f.t+':00+05:30');
+          var deadline = new Date(matchDate.getTime() - 30 * 60 * 1000).toISOString();
           await API.upsertMatch({
             match_no:f.no, team1:f.h, team2:f.a, venue:f.v, status:'upcoming',
             match_title:'Match '+f.no+' · '+tShort(f.h)+' vs '+tShort(f.a),
-            match_date:new Date(f.d+'T'+f.t+':00+05:30').toISOString(), is_locked:false
+            match_date:matchDate.toISOString(),
+            deadline_time:deadline, lock_time:deadline, is_locked:false
           }); loaded++;
         } catch(e){ console.warn(e); }
       }
