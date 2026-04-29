@@ -235,10 +235,19 @@ function renderProjectedPodium(projectedLb) {
 function renderSeasonTable() {
   var medals={1:'🥇',2:'🥈',3:'🥉'};
   if(!_lb.length){document.getElementById('season-lb').innerHTML='<div class="empty-state" style="padding:24px;"><div class="empty-state-text">No results yet</div></div>';return;}
-  document.getElementById('season-lb').innerHTML=_lb.map(function(r){
+  document.getElementById('season-lb').innerHTML=_lb.map(function(r, i){
     var isMe=r.fantasy_team_id===_myTeamId;
     var avg=r.matches_played?(r.total_points/r.matches_played).toFixed(1):'—';
     var rCls=r.rank<=3?'rank-'+r.rank:'rank-n';
+    
+    var leadStr = '';
+    if (i < _lb.length - 1) {
+      var diff = r.total_points - _lb[i+1].total_points;
+      leadStr = '<div style="font-size:10px;color:var(--text3);margin-top:2px;">Lead: +'+UI.fmtPts(diff)+'</div>';
+    } else {
+      leadStr = '<div style="font-size:10px;color:transparent;margin-top:2px;">-</div>';
+    }
+
     return '<div class="lb-row'+(isMe?' me':'')+'">'+
       '<div style="display:flex;justify-content:center;align-items:center;flex-direction:column;gap:2px;">'+
         '<span class="rank-badge '+rCls+'">'+(medals[r.rank]||r.rank)+'</span>'+
@@ -246,7 +255,7 @@ function renderSeasonTable() {
       '</div>'+
       '<div><div class="lb-team">'+UI.championName(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
         '<div class="lb-sub">'+r.matches_played+' matches · avg '+avg+'</div></div>'+
-      '<div><div class="lb-pts">'+UI.fmtPts(r.total_points)+'</div><div class="lb-pts-label">pts</div></div>'+
+      '<div style="text-align:right;"><div class="lb-pts">'+UI.fmtPts(r.total_points)+'</div><div class="lb-pts-label">pts</div>'+leadStr+'</div>'+
     '</div>';
   }).join('');
 }
@@ -287,17 +296,26 @@ function renderProjectedTable() {
   renderProjectedPodium(projectedLb);
 
   var medals={1:'🥇',2:'🥈',3:'🥉'};
-  document.getElementById('projected-lb').innerHTML=projectedLb.map(function(r){
+  document.getElementById('projected-lb').innerHTML=projectedLb.map(function(r, i){
     var isMe=r.fantasy_team_id===_myTeamId;
     var avgStr=r.matches_played?r.avg.toFixed(1):'—';
     var rCls=r.proj_rank<=3?'rank-'+r.proj_rank:'rank-n';
+    
+    var leadStr = '';
+    if (i < projectedLb.length - 1) {
+      var diff = r.projected_pts - projectedLb[i+1].projected_pts;
+      leadStr = '<div style="font-size:10px;color:var(--text3);margin-top:2px;">Lead: +'+Math.round(diff)+'</div>';
+    } else {
+      leadStr = '<div style="font-size:10px;color:transparent;margin-top:2px;">-</div>';
+    }
+
     return '<div class="lb-row'+(isMe?' me':'')+'">'+
       '<div style="display:flex;justify-content:center;align-items:center;flex-direction:column;gap:2px;">'+
         '<span class="rank-badge '+rCls+'">'+(medals[r.proj_rank]||r.proj_rank)+'</span>'+
       '</div>'+
       '<div><div class="lb-team">'+UI.championName(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
         '<div class="lb-sub">Projecting '+M_rem_tourn+' matches @ '+avgStr+' avg</div></div>'+
-      '<div><div class="lb-pts">'+Math.round(r.projected_pts)+'</div><div class="lb-pts-label">proj. pts</div></div>'+
+      '<div style="text-align:right;"><div class="lb-pts">'+Math.round(r.projected_pts)+'</div><div class="lb-pts-label">proj. pts</div>'+leadStr+'</div>'+
     '</div>';
   }).join('');
   document.getElementById('proj-explainer').textContent = "Final standings estimated by projecting each team's average across the " + M_rem_tourn + " remaining tournament matches.";
@@ -323,14 +341,23 @@ async function loadMatchLB(matchId) {
     if(!lb.length){document.getElementById('mw-placeholder').style.display='';return;}
     document.getElementById('mw-lb-wrap').style.display='';
     var medals={1:'🥇',2:'🥈',3:'🥉'};
-    document.getElementById('mw-lb-inner').innerHTML=lb.map(function(r){
+    document.getElementById('mw-lb-inner').innerHTML=lb.map(function(r, i){
       var isMe=r.fantasy_team_id===_myTeamId;
       var rCls=r.match_rank<=3?'rank-'+(r.match_rank):'rank-n';
+      
+      var leadStr = '';
+      if (i < lb.length - 1) {
+        var diff = r.total_points - lb[i+1].total_points;
+        leadStr = '<div style="font-size:10px;color:var(--text3);margin-top:2px;">Lead: +'+diff+'</div>';
+      } else {
+        leadStr = '<div style="font-size:10px;color:transparent;margin-top:2px;">-</div>';
+      }
+
       return '<div class="lb-row'+(isMe?' me':'')+'">'+
         '<div style="display:flex;justify-content:center;"><span class="rank-badge '+rCls+'">'+(medals[r.match_rank]||r.match_rank)+'</span></div>'+
         '<div><div class="lb-team">'+UI.championName(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
           '<div class="lb-sub">Squad: '+r.squad_points+' · Pred: '+r.prediction_points+'</div></div>'+
-        '<div><div class="lb-pts">'+r.total_points+'</div><div class="lb-pts-label">pts</div></div>'+
+        '<div style="text-align:right;"><div class="lb-pts">'+r.total_points+'</div><div class="lb-pts-label">pts</div>'+leadStr+'</div>'+
       '</div>';
     }).join('');
   } catch(e){ UI.toast('Failed: '+e.message,'error'); }
