@@ -1,5 +1,5 @@
 // sw.js — BFL Fantasy IPL 2026
-const CACHE_NAME = 'bfl-cache-v1.14';
+const CACHE_NAME = 'bfl-cache-v1.15';
 const ASSETS = [
   '/',
   '/index.html',
@@ -46,7 +46,7 @@ self.addEventListener('fetch', (e) => {
           caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
         }
         return networkResponse;
-      }).catch(() => caches.match(e.request).then(r => r || new Response('Offline', {status: 408, headers: {'Content-Type':'text/plain'}})))
+      }).catch(() => caches.match(e.request, { ignoreSearch: true }).then(r => r || new Response('Offline', {status: 408, headers: {'Content-Type':'text/plain'}})))
     );
     return;
   }
