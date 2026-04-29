@@ -923,7 +923,7 @@ async function submitPrediction() {
 
       try {
         // Double-check still open before writing
-        var freshMatches = safeArr(await API.fetchMatches({ limit: 40 }));
+        var freshMatches = safeArr(await API.fetchMatches({ limit: 74 }));
         _matches = freshMatches;
         var freshMatch = _matches.find(function(m) { return m.id === _activeMatchId; });
         if (!freshMatch || !API.isPredOpen(freshMatch)) {
