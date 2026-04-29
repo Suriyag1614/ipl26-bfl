@@ -1311,6 +1311,44 @@ async function doRecalculate() {
   });
 }
 
+async function doRecalculateAll() {
+  var processed = _matches.filter(function(m){ return m.status === 'processed'; });
+  if (!processed.length) { UI.toast('No processed matches found','warn'); return; }
+  processed.sort(function(a,b){ return (a.match_no||0) - (b.match_no||0); });
+  UI.showConfirm({
+    icon:'🔄', title:'Recalculate ALL Processed Matches?',
+    msg: processed.length + ' matches will be deleted and recalculated in order (M' + (processed[0].match_no||'?') + ' → M' + (processed[processed.length-1].match_no||'?') + ').',
+    consequence:'This will take a while. All points_log entries will be deleted and recomputed. Badges will be re-evaluated.',
+    okLabel:'Recalculate All ' + processed.length, okClass:'btn-danger',
+    onOk: async function(){
+      var btn=$id('recalc-all-btn'); if(btn._busy)return; btn._busy=true; btn.disabled=true;
+      btn.innerHTML='<span class="btn-spin"></span> Running…';
+      $id('calc-log').innerHTML='';
+      cLog('🔄 Starting bulk recalculation of ' + processed.length + ' matches…','warn');
+      var success=0, fail=0;
+      for (var i=0; i<processed.length; i++) {
+        var m = processed[i];
+        var label = 'M'+(m.match_no||'?')+' '+tShort(m.team1)+' vs '+tShort(m.team2);
+        cLog('['+(i+1)+'/'+processed.length+'] ' + label + '…');
+        btn.innerHTML='<span class="btn-spin"></span> '+(i+1)+'/'+processed.length;
+        try {
+          var results = await API.recalculateMatch(m.id, function(msg,type){ cLog('  '+msg,type); });
+          cLog('  ✓ ' + label + ' — '+results.length+' teams','ok');
+          success++;
+        } catch(e) {
+          cLog('  ✗ ' + label + ' — '+e.message,'err');
+          fail++;
+        }
+      }
+      cLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      cLog('🏁 Bulk recalculation complete: ' + success + ' success, ' + fail + ' failed', fail?'err':'ok');
+      UI.toast('Done! ' + success + '/' + processed.length + ' matches recalculated', fail?'warn':'success');
+      btn._busy=false; btn.disabled=false; btn.innerHTML='🔄 Recalculate All Processed Matches';
+      await loadAllMatches(); loadCalcInfo();
+    }
+  });
+}
+
 /* ══════════════════════════════════════════════════════════════
    POINT OVERRIDES
 ══════════════════════════════════════════════════════════════ */
