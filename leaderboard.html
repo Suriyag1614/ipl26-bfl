@@ -108,7 +108,7 @@
     <div class="card" style="padding:0;overflow:auto;">
       <div style="padding:12px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:12px;color:var(--text2);display:flex;gap:8px;align-items:center;">
         <span style="font-size:16px;">🔮</span>
-        <span>Final standings are estimated by scaling current points to 74 matches (Current Total Points ÷ Season Past Matches × 74).</span>
+        <span id="proj-explainer">Final standings are estimated by projecting each team's per-match average across the remaining tournament matches.</span>
       </div>
       <div id="projected-lb"><div class="skel skel-row" style="margin:12px;"></div><div class="skel skel-row" style="margin:12px;"></div></div>
     </div>
@@ -256,19 +256,18 @@ function renderProjectedTable() {
   
   var TOTAL_MATCHES = 74;
   var M_past = _tournament_matches_played || 1;
+  var M_rem_tourn = Math.max(0, TOTAL_MATCHES - M_past);
   
   var projectedLb = _lb.map(function(r) {
     var played = r.matches_played || 0;
     var avg = played ? r.total_points / played : 0;
-    var tourn_avg = r.total_points / M_past;
-    var projected_pts = r.total_points * (TOTAL_MATCHES / M_past);
+    var projected_pts = r.total_points + (avg * M_rem_tourn);
     
     return {
       fantasy_team_id: r.fantasy_team_id,
       team: r.team,
       matches_played: played,
       avg: avg,
-      tourn_avg: tourn_avg,
       projected_pts: projected_pts
     };
   });
@@ -297,10 +296,11 @@ function renderProjectedTable() {
         '<span class="rank-badge '+rCls+'">'+(medals[r.proj_rank]||r.proj_rank)+'</span>'+
       '</div>'+
       '<div><div class="lb-team">'+UI.championName(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
-        '<div class="lb-sub">Season Avg: '+r.tourn_avg.toFixed(1)+' pts/m</div></div>'+
+        '<div class="lb-sub">Projecting '+M_rem_tourn+' matches @ '+avgStr+' avg</div></div>'+
       '<div><div class="lb-pts">'+Math.round(r.projected_pts)+'</div><div class="lb-pts-label">proj. pts</div></div>'+
     '</div>';
   }).join('');
+  document.getElementById('proj-explainer').textContent = "Final standings estimated by projecting each team's average across the " + M_rem_tourn + " remaining tournament matches.";
 }
 
 async function populateMatchSel() {
