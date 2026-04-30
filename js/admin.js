@@ -39,6 +39,7 @@ var _fixtureQ     = '';
 var _statsMatchId = null;
 var _statsPlayerId= null;
 var _statPlayers  = [];   // players filtered to current match teams
+var _savedStatPlayerIds = new Set(); // player_ids with saved stats for current match
 var _playerSquadMap = {}; // player_id → {team_id, team_name} (BFL team that picked this player)
 var _ctrlMatchId  = null;
 var _squadEdits   = {};   // teamId → {captainId,vcId,impactId}
@@ -991,7 +992,13 @@ async function onStatsMatchChange() {
     if (!m.team1 && !m.team2) return true;
     return pt===m.team1 || pt===m.team2 || pt===tCode(m.team1) || pt===tCode(m.team2) || pt===tShort(m.team1) || pt===tShort(m.team2);
   });
-  
+
+  // Load saved stat player ids
+  try {
+    var {data} = await sb.from('player_match_stats').select('player_id').eq('match_id', _statsMatchId);
+    _savedStatPlayerIds = new Set(data.map(s => s.player_id));
+  } catch(e) { _savedStatPlayerIds = new Set(); }
+
   // Populate the native select dropdown
   populateStatsPlayerSelect();
 
@@ -1015,12 +1022,15 @@ function filterStatPlayers() {
 function populateStatsPlayerSelect() {
   var sel = $id('stats-player-select');
   if (!sel) return;
-  sel.innerHTML = '<option value="">— Select player to enter stats —</option>' + 
+  sel.innerHTML = '<option value="">— Select player to enter stats —</option>' +
     _statPlayers.map(function(p){
       var squad = _playerSquadMap[p.id];
       var teamLabel = squad ? UI.tShort(squad.team_name) : null;
       var optionText = teamLabel ? UI.esc(p.name)+' ('+teamLabel+')' : UI.esc(p.name);
-      return '<option value="'+p.id+'">'+optionText+'</option>';
+      var hasStats = _savedStatPlayerIds.has(p.id);
+      var indicator = hasStats ? ' ✓' : '';
+      var style = hasStats ? 'color: var(--green);' : '';
+      return '<option value="'+p.id+'" style="'+style+'">'+optionText + indicator +'</option>';
     }).join('');
 }
 
@@ -1143,7 +1153,7 @@ async function saveStats() {
   UI.showConfirm({ icon:'📊', title:'Save Player Stats?', msg:'Est. points: '+est,
     consequence:'Overwrites any existing stats for this player+match.', okLabel:'Save', okClass:'btn-accent',
     onOk: async function(){
-      try { await API.upsertPlayerStats(s); UI.toast('Stats saved!','success'); await loadSavedStats(); }
+      try { await API.upsertPlayerStats(s); UI.toast('Stats saved!','success'); await loadSavedStats(); populateStatsPlayerSelect(); }
       catch(e){ UI.toast('Save failed: '+e.message,'error'); }
     }
   });
@@ -1208,6 +1218,7 @@ async function deleteSavedStat(playerId) {
         await API.deletePlayerStats(_statsMatchId, playerId);
         UI.toast('Stats deleted','success');
         await loadSavedStats();
+        populateStatsPlayerSelect();
       } catch(e){ UI.toast('Delete failed: '+e.message,'error'); }
     }
   });
@@ -1248,7 +1259,7 @@ async function processCSV(file) {
 }
 
 async function uploadCSV(rows) {
-  try { await API.bulkUpsertPlayerStats(rows); UI.toast('Uploaded '+rows.length+' rows!','success'); closeCSVModal(); await loadSavedStats(); }
+  try { await API.bulkUpsertPlayerStats(rows); UI.toast('Uploaded '+rows.length+' rows!','success'); closeCSVModal(); await loadSavedStats(); populateStatsPlayerSelect(); }
   catch(e){ UI.toast('Upload failed: '+e.message,'error'); }
 }
 
