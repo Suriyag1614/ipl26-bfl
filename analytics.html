@@ -706,7 +706,7 @@ async function loadAnalytics() {
 
 async function renderMetrics() {
   var a = _analytics;
-  var bd = Array.isArray(a.breakdown) ? a.breakdown : [];
+  var bd = Array.isArray(a.breakdown) ? a.breakdown.filter(l => l.match && l.match.status !== 'abandoned') : [];
   var total = bd.reduce(function(s, l) { return s + (l.total_points || 0); }, 0);
   var avg = bd.length ? (total / bd.length) : 0;
   var ps = a.predStats || EMPTY_ANALYTICS.predStats;
