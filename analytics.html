@@ -905,9 +905,31 @@ async function renderBadges() {
       '</div>';
     var grid=document.getElementById('badges-grid'); if(!grid) return;
     if(!allDefs.length){grid.innerHTML='<div class="empty-state"><div class="empty-state-text">No badges defined</div></div>';return;}
-    grid.innerHTML=allDefs.map(function(def){
-      var isEarned=earnedIds.has(def.id);
-      var earnRow=(Array.isArray(earned)?earned:[]).find(function(e){return e.badge_id===def.id;});
+
+    // Sort badges: first by recent match no (descending), then alphabetical by name
+    var sortedDefs = allDefs.map(function(def) {
+      var isEarned = earnedIds.has(def.id);
+      var earnRow = (Array.isArray(earned) ? earned : []).find(function(e) { return e.badge_id === def.id; });
+      var matchNo = (isEarned && earnRow && earnRow.match && earnRow.match.match_no) ? earnRow.match.match_no : null;
+      return { def: def, isEarned: isEarned, earnRow: earnRow, matchNo: matchNo };
+    }).sort(function(a, b) {
+      // First priority: recent match no (descending)
+      if (a.matchNo !== null && b.matchNo !== null) {
+        return b.matchNo - a.matchNo;
+      } else if (a.matchNo !== null) {
+        return -1; // a has match, b doesn't, a comes first
+      } else if (b.matchNo !== null) {
+        return 1; // b has match, a doesn't, b comes first
+      } else {
+        // Second priority: alphabetical by name
+        return a.def.name.localeCompare(b.def.name);
+      }
+    });
+
+    grid.innerHTML = sortedDefs.map(function(item) {
+      var def = item.def;
+      var isEarned = item.isEarned;
+      var earnRow = item.earnRow;
       var earnedLabel = '';
       if (isEarned && earnRow) {
         if (earnRow.match && earnRow.match.match_no) {
