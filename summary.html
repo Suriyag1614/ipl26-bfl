@@ -1582,19 +1582,28 @@ async function loadReportCard() {
     // Compute records
     var records = {
       batting: {
+        mostMatches: (() => { var maxTeam = Object.keys(teamData).reduce((maxId, id) => (teamData[id].logs.length > teamData[maxId].logs.length) ? id : maxId); return { team: teamData[maxTeam].team_short, val: teamData[maxTeam].logs.length }; })(),
+        mostInnings: teamStatsList.reduce((max, t) => t.batting.innings > max.val ? { team: t.team_short, val: t.batting.innings } : max, { team: '', val: 0 }),
         mostRuns: teamStatsList.reduce((max, t) => t.batting.runs > max.val ? { team: t.team_short, val: t.batting.runs } : max, { team: '', val: 0 }),
-        mostFours: teamStatsList.reduce((max, t) => t.batting.fours > max.val ? { team: t.team_short, val: t.batting.fours } : max, { team: '', val: 0 }),
-        mostSixes: teamStatsList.reduce((max, t) => t.batting.sixes > max.val ? { team: t.team_short, val: t.batting.sixes } : max, { team: '', val: 0 }),
+        mostBallsFaced: teamStatsList.reduce((max, t) => t.batting.balls_faced > max.val ? { team: t.team_short, val: t.batting.balls_faced } : max, { team: '', val: 0 }),
         bestAvg: teamStatsList.reduce((max, t) => t.batting.avg > max.val ? { team: t.team_short, val: t.batting.avg } : max, { team: '', val: 0 }),
         bestSR: teamStatsList.reduce((max, t) => t.batting.sr > max.val ? { team: t.team_short, val: t.batting.sr } : max, { team: '', val: 0 }),
-        highestScore: teamStatsList.reduce((max, t) => t.batting.highScore > max.val ? { team: t.team_short, val: t.batting.highScore } : max, { team: '', val: 0 }),
+        mostNotOuts: teamStatsList.reduce((max, t) => t.batting.not_outs > max.val ? { team: t.team_short, val: t.batting.not_outs } : max, { team: '', val: 0 }),
+        mostFours: teamStatsList.reduce((max, t) => t.batting.fours > max.val ? { team: t.team_short, val: t.batting.fours } : max, { team: '', val: 0 }),
+        mostSixes: teamStatsList.reduce((max, t) => t.batting.sixes > max.val ? { team: t.team_short, val: t.batting.sixes } : max, { team: '', val: 0 }),
         mostFifties: teamStatsList.reduce((max, t) => t.batting.fifties > max.val ? { team: t.team_short, val: t.batting.fifties } : max, { team: '', val: 0 }),
-        mostHundreds: teamStatsList.reduce((max, t) => t.batting.hundreds > max.val ? { team: t.team_short, val: t.batting.hundreds } : max, { team: '', val: 0 })
+        mostHundreds: teamStatsList.reduce((max, t) => t.batting.hundreds > max.val ? { team: t.team_short, val: t.batting.hundreds } : max, { team: '', val: 0 }),
+        highestScore: teamStatsList.reduce((max, t) => t.batting.highScore > max.val ? { team: t.team_short, val: t.batting.highScore } : max, { team: '', val: 0 })
       },
       bowling: {
+        mostOvers: teamStatsList.reduce((max, t) => t.bowling.overs > max.val ? { team: t.team_short, val: t.bowling.overs } : max, { team: '', val: 0 }),
         mostWickets: teamStatsList.reduce((max, t) => t.bowling.wickets > max.val ? { team: t.team_short, val: t.bowling.wickets } : max, { team: '', val: 0 }),
+        mostMaidens: teamStatsList.reduce((max, t) => t.bowling.maidens > max.val ? { team: t.team_short, val: t.bowling.maidens } : max, { team: '', val: 0 }),
         bestEco: teamStatsList.reduce((min, t) => t.bowling.economy > 0 && (t.bowling.economy < min.val || min.val === 0) ? { team: t.team_short, val: t.bowling.economy } : min, { team: '', val: 999 }),
+        mostRunsConceded: teamStatsList.reduce((max, t) => t.bowling.runs_conceded > max.val ? { team: t.team_short, val: t.bowling.runs_conceded } : max, { team: '', val: 0 }),
         bestAvg: teamStatsList.reduce((min, t) => t.bowling.avg > 0 && (t.bowling.avg < min.val || min.val === 0) ? { team: t.team_short, val: t.bowling.avg } : min, { team: '', val: 999 }),
+        mostThreeFers: teamStatsList.reduce((max, t) => t.bowling.three_fers > max.val ? { team: t.team_short, val: t.bowling.three_fers } : max, { team: '', val: 0 }),
+        mostFiveFers: teamStatsList.reduce((max, t) => t.bowling.five_fers > max.val ? { team: t.team_short, val: t.bowling.five_fers } : max, { team: '', val: 0 }),
         bestFigures: teamStatsList.reduce((best, t) => {
           var tFig = t.bowling.bestFigures;
           var bFig = best.val;
@@ -1602,10 +1611,7 @@ async function loadReportCard() {
             return { team: t.team_short, val: tFig };
           }
           return best;
-        }, { team: '', val: {wickets: 0, runs: 999} }),
-        mostMaidens: teamStatsList.reduce((max, t) => t.bowling.maidens > max.val ? { team: t.team_short, val: t.bowling.maidens } : max, { team: '', val: 0 }),
-        mostThreeFers: teamStatsList.reduce((max, t) => t.bowling.three_fers > max.val ? { team: t.team_short, val: t.bowling.three_fers } : max, { team: '', val: 0 }),
-        mostFiveFers: teamStatsList.reduce((max, t) => t.bowling.five_fers > max.val ? { team: t.team_short, val: t.bowling.five_fers } : max, { team: '', val: 0 })
+        }, { team: '', val: {wickets: 0, runs: 999} })
       },
       fielding: {
         mostCatches: teamStatsList.reduce((max, t) => t.fielding.catches > max.val ? { team: t.team_short, val: t.fielding.catches } : max, { team: '', val: 0 }),
@@ -1641,6 +1647,7 @@ async function loadReportCard() {
         if (statKey === 'bestAccuracy') displayVal += '%';
         else if (statKey === 'bestAvgDiff') displayVal = '±' + displayVal;
         else if (statKey === 'bestFigures') displayVal = stat.val.wickets + '/' + stat.val.runs;
+        else if (statKey === 'mostOvers') displayVal = formatOvers(stat.val);
         else displayVal = stat.val % 1 === 0 ? stat.val : stat.val.toFixed(1);
         var logo = UI.getTeamLogo(stat.team) || 'images/bfl/bfl-logo.png';
         html += '<div class="report-stat-card" style="animation: fade-up .3s ease ' + (idx * 0.05) + 's both;">' +
