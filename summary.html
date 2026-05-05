@@ -234,8 +234,31 @@
      .team-stats-card .total-row { font-weight: 800; background: var(--bg3); }
      .team-stats-card .total-row td { color: var(--accent); font-family: var(--f-mono); }
     @media(max-width:700px){
-      .team-insights-table { font-size: 11px; }
-      .team-insights-table th, .team-insights-table td { padding: 6px 4px; }
+      .points-summary-table { font-size: 12px; }
+      .points-summary-table th { font-size: 10px; padding: 8px 4px; }
+      .points-summary-table td { padding: 6px 3px; }
+      .points-summary-table .pts-value { font-size: 13px; }
+      .points-summary-table .pts-pct { font-size: 9px; }
+      .points-summary-table .total-cell .pts-value { font-size: 15px; }
+    }
+
+    /* Report Card Styles */
+    .report-card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+    .report-category-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; transition: all var(--t); animation: fade-up .4s ease both; }
+    .report-category-card:hover { border-color: var(--border-h); transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+    .report-category-card .card-header { padding: 16px 20px; font-family: var(--f-ui); font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--text); background: linear-gradient(135deg, var(--accent-dim), var(--bg3)); }
+    .report-category-card .card-body { padding: 20px; }
+    .report-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+    .report-stat-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; text-align: center; transition: all 0.2s; animation: fade-up .3s ease both; }
+    .report-stat-card:hover { border-color: var(--accent); transform: scale(1.02); }
+    .report-team-logo { width: 40px; height: 40px; object-fit: contain; margin-bottom: 8px; }
+    .report-stat-name { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text3); margin-bottom: 4px; }
+    .report-stat-val { font-family: var(--f-display); font-size: 24px; font-weight: 900; color: var(--accent); margin-bottom: 4px; }
+    .report-stat-team { font-size: 11px; font-weight: 600; color: var(--text2); }
+
+    @media(max-width: 850px) {
+      .report-card-grid { grid-template-columns: 1fr; }
+      .report-stats-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
     }
 
     /* ICC Style Leaderboard */
@@ -370,9 +393,10 @@
   </div>
 
    <!-- Tabs -->
-   <div class="tabs">
-     <button class="tab-btn active" onclick="switchTab('pred-summary')">Summary</button>
-     <button class="tab-btn" onclick="switchTab('accuracy')">Accuracy</button>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('report-card')">Report Card</button>
+      <button class="tab-btn" onclick="switchTab('pred-summary')">Summary</button>
+      <button class="tab-btn" onclick="switchTab('accuracy')">Accuracy</button>
      <button class="tab-btn" onclick="switchTab('match-preds')">Match Preds</button>
      <button class="tab-btn" onclick="switchTab('points-summary')">Points Summary</button>
      <button class="tab-btn" onclick="switchTab('team-insights')">Team Insights</button>
@@ -382,8 +406,15 @@
      <button class="tab-btn" onclick="switchTab('power-rankings')">Power Rankings</button>
    </div>
 
+  <!-- REPORT CARD -->
+  <div class="tab-panel active" id="tab-report-card">
+    <div id="report-card-container" class="report-card-grid">
+      <!-- Cards will be rendered here -->
+    </div>
+  </div>
+
   <!-- PREDICTIONS SUMMARY -->
-  <div class="tab-panel active" id="tab-pred-summary">
+  <div class="tab-panel" id="tab-pred-summary">
     <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px;">
       <div class="card">
         <div class="card-title">Predicted Match Winner Distribution</div>
@@ -790,7 +821,7 @@ async function init() {
 
   // Identify active tab from URL param
   var params = new URLSearchParams(window.location.search);
-  var activeTab = params.get('tab') || 'pred-summary';
+  var activeTab = params.get('tab') || 'report-card';
 
   await initNavbar('summary'); // Highlight the Season Analytics link in the sidebar
 
@@ -1366,6 +1397,266 @@ async function loadPowerRankings() {
       '</tr>';
     }).join('');
   } catch(e) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--red);padding:12px;">' + UI.esc(e.message) + '</td></tr>'; }
+}
+
+async function loadReportCard() {
+  var container = $id('report-card-container');
+  if (!container) return;
+  container.innerHTML = '<div class="skel skel-card" style="height:200px;margin-bottom:20px;"></div><div class="skel skel-card" style="height:200px;margin-bottom:20px;"></div>';
+  try {
+    // Fetch data similar to renderTeamInsights
+    var allLogs = safeArr(await API.fetchAllPointsLogAllTeams());
+    var allTeams = safeArr(await API.fetchAllTeamPoints());
+    var matches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
+
+    // Build team data
+    var teamData = {};
+    allTeams.forEach(function(t) {
+      teamData[t.id] = {
+        team_name: t.team_name,
+        team_short: UI.tShort(t.team_name),
+        logs: [],
+        total: t.total_points || 0
+      };
+    });
+
+    // Aggregate logs
+    allLogs.forEach(function(log) {
+      var teamId = log.fantasy_team_id;
+      var matchId = log.match_id;
+      if (!teamId || !matchId) return;
+      var match = matches.find(function(m) { return String(m.id) === String(matchId); });
+      if (!match) return;
+      if (match.status !== 'completed' && match.status !== 'processed') return;
+      if (!teamData[teamId]) return;
+      teamData[teamId].logs.push({
+        batting: log.batting_pts || 0,
+        bowling: log.bowling_pts || 0,
+        fielding: log.fielding_pts || 0,
+        squad: (log.batting_pts || 0) + (log.bowling_pts || 0) + (log.fielding_pts || 0),
+        pred: log.prediction_points || 0,
+        bonus: log.bonus_pts || 0,
+        total: log.total_points || 0
+      });
+    });
+
+    // Compute team stats from player stats
+    var allPlayerStats = safeArr(await API.fetchAllPlayerStats());
+    var squadData = safeArr(await API.fetchSquadPlayersAll());
+    var matchIdToNo = {};
+    _matches.forEach(function(m) {
+      if (m.id && m.match_no != null) {
+        matchIdToNo[String(m.id)] = Number(m.match_no);
+      }
+    });
+    var assignments = {};
+    squadData.forEach(function(sp) {
+      if (!sp.player_id || !sp.fantasy_team_id) return;
+      var pid = sp.player_id;
+      if (!assignments[pid]) assignments[pid] = [];
+      var startNo = sp.start_match_id ? (matchIdToNo[String(sp.start_match_id)] || 0) : 0;
+      var endNo = sp.end_match_id ? (matchIdToNo[String(sp.end_match_id)] || Infinity) : Infinity;
+      assignments[pid].push({
+        teamId: sp.fantasy_team_id,
+        start: startNo,
+        end: endNo
+      });
+    });
+    Object.keys(assignments).forEach(function(pid) {
+      assignments[pid].sort(function(a, b) { return a.start - b.start; });
+    });
+
+    var aggregates = {};
+    Object.keys(teamData).forEach(function(tid) {
+      aggregates[tid] = {
+        team_name: teamData[tid].team_name,
+        team_short: teamData[tid].team_short,
+        runs: 0, balls_faced: 0, fours: 0, sixes: 0, fifties: 0, hundreds: 0, not_outs: 0, innings: 0, highScore: 0,
+        wickets: 0, maidens: 0, runs_conceded: 0, overs_balls: 0, three_fers: 0, five_fers: 0, bestFigures: {wickets: 0, runs: 999},
+        catches: 0, run_outs: 0, stumpings: 0
+      };
+    });
+
+    function findTeam(playerId, matchIdStr) {
+      var list = assignments[playerId];
+      if (!list) return null;
+      var matchNo = matchIdToNo[matchIdStr];
+      if (matchNo === undefined) return null;
+      for (var i = 0; i < list.length; i++) {
+        var a = list[i];
+        if (matchNo >= a.start && matchNo <= a.end) return a.teamId;
+      }
+      return null;
+    }
+
+    allPlayerStats.forEach(function(ps) {
+      var matchId = ps.match_id;
+      if (!matchId) return;
+      var matchIdStr = String(matchId);
+      var playerId = ps.player_id;
+      var teamId = findTeam(playerId, matchIdStr);
+      if (!teamId || !aggregates[teamId]) return;
+      var agg = aggregates[teamId];
+
+      var runs = Number(ps.runs || 0);
+      var balls = Number(ps.balls_faced || 0);
+      agg.runs += runs; agg.balls_faced += balls; agg.fours += Number(ps.fours || 0); agg.sixes += Number(ps.sixes || 0);
+      if (runs > 0 || balls > 0) agg.innings++;
+      if (ps.not_out) agg.not_outs++;
+      if (runs >= 50 && runs < 100) agg.fifties++;
+      if (runs >= 100) agg.hundreds++;
+      var hs = Number(ps.high_score || 0);
+      if (hs > agg.highScore) agg.highScore = hs;
+
+      var wickets = Number(ps.wickets || 0);
+      var runsConc = Number(ps.runs_conceded || 0);
+      agg.wickets += wickets; agg.maidens += Number(ps.maidens || 0);
+      agg.runs_conceded += Number(ps.runs_conceded || 0);
+      agg.overs_balls += oversToBalls(ps.overs_bowled);
+      if (wickets >= 3 && wickets < 5) agg.three_fers++;
+      if (wickets >= 5) agg.five_fers++;
+      if (wickets > agg.bestFigures.wickets || (wickets === agg.bestFigures.wickets && runsConc < agg.bestFigures.runs)) {
+        agg.bestFigures = {wickets: wickets, runs: runsConc};
+      }
+
+      agg.catches += Number(ps.catches || 0);
+      agg.run_outs += Number(ps.run_outs || 0);
+      agg.stumpings += Number(ps.stumpings || 0);
+    });
+
+    var teamStatsList = Object.values(aggregates).map(function(t) {
+      var sr = t.balls_faced > 0 ? Math.round((t.runs / t.balls_faced) * 100 * 10) / 10 : 0;
+      var avg = (t.innings - t.not_outs) > 0 ? Math.round((t.runs / (t.innings - t.not_outs)) * 10) / 10 : (t.runs > 0 ? t.runs : 0);
+      var bowlAvg = t.wickets > 0 ? Math.round((t.runs_conceded / t.wickets) * 10) / 10 : 0;
+      var oversBalls = t.overs_balls || 0;
+      var eco = oversBalls > 0 ? Math.round((t.runs_conceded * 6 / oversBalls) * 10) / 10 : 0;
+      var oversDisp = formatOvers(oversBalls);
+      return {
+        team_name: t.team_name, team_short: t.team_short,
+        batting: { runs: t.runs, balls_faced: t.balls_faced, fours: t.fours, sixes: t.sixes, sr: sr, avg: avg, fifties: t.fifties, hundreds: t.hundreds, highScore: t.highScore },
+        bowling: { wickets: t.wickets, overs: oversBalls, overs_display: oversDisp, maidens: t.maidens, runs_conceded: t.runs_conceded, avg: bowlAvg, economy: eco, three_fers: t.three_fers, five_fers: t.five_fers, bestFigures: t.bestFigures },
+        fielding: { catches: t.catches, run_outs: t.run_outs, stumpings: t.stumpings }
+      };
+    });
+
+    // Compute prediction records
+    var predBreakdown = {};
+    var allPreds = safeArr(await API.fetchAllPredictionsAllMatches());
+    var completedMatches = _matches.filter(function(m) {
+      return (m.status === 'completed' || m.status === 'processed') && !m.is_abandoned;
+    });
+    var completedMatchIds = completedMatches.map(m => m.id);
+    allPreds.forEach(function(p) {
+      if (!p.fantasy_team_id || !completedMatchIds.includes(p.match_id)) return;
+      if (!predBreakdown[p.fantasy_team_id]) {
+        predBreakdown[p.fantasy_team_id] = { target: 0, winner: 0, correct: 0, total: 0, totalDiff: 0, diffCount: 0 };
+      }
+      var match = _matches.find(m => m.id === p.match_id);
+      if (match && match.winner && p.predicted_winner === match.winner) {
+        predBreakdown[p.fantasy_team_id].correct++;
+      }
+      predBreakdown[p.fantasy_team_id].total++;
+      if (match && match.actual_target && p.target_score) {
+        var diff = Math.abs(p.target_score - match.actual_target);
+        var tp = 0;
+        if (diff === 0) tp = 250;
+        else if (diff === 1) tp = 150;
+        else if (diff <= 5) tp = 100;
+        else if (diff <= 10) tp = 50;
+        predBreakdown[p.fantasy_team_id].target += tp;
+        predBreakdown[p.fantasy_team_id].totalDiff += diff;
+        predBreakdown[p.fantasy_team_id].diffCount++;
+      }
+      if (match && match.winner && p.predicted_winner === match.winner) {
+        predBreakdown[p.fantasy_team_id].winner += 25;
+      }
+    });
+    var predStats = Object.keys(predBreakdown).map(function(tid) {
+      var p = predBreakdown[tid];
+      var accuracy = p.total > 0 ? Math.round((p.correct / p.total) * 100) : 0;
+      var avgDiff = p.diffCount > 0 ? Math.round(p.totalDiff / p.diffCount) : 0;
+      var team = teamData[tid] ? teamData[tid].team_short : tid;
+      return { team: team, target: p.target, winner: p.winner, accuracy: accuracy, avgDiff: avgDiff };
+    });
+
+    // Compute records
+    var records = {
+      batting: {
+        mostRuns: teamStatsList.reduce((max, t) => t.batting.runs > max.val ? { team: t.team_short, val: t.batting.runs } : max, { team: '', val: 0 }),
+        mostFours: teamStatsList.reduce((max, t) => t.batting.fours > max.val ? { team: t.team_short, val: t.batting.fours } : max, { team: '', val: 0 }),
+        mostSixes: teamStatsList.reduce((max, t) => t.batting.sixes > max.val ? { team: t.team_short, val: t.batting.sixes } : max, { team: '', val: 0 }),
+        bestAvg: teamStatsList.reduce((max, t) => t.batting.avg > max.val ? { team: t.team_short, val: t.batting.avg } : max, { team: '', val: 0 }),
+        bestSR: teamStatsList.reduce((max, t) => t.batting.sr > max.val ? { team: t.team_short, val: t.batting.sr } : max, { team: '', val: 0 }),
+        highestScore: teamStatsList.reduce((max, t) => t.batting.highScore > max.val ? { team: t.team_short, val: t.batting.highScore } : max, { team: '', val: 0 }),
+        mostFifties: teamStatsList.reduce((max, t) => t.batting.fifties > max.val ? { team: t.team_short, val: t.batting.fifties } : max, { team: '', val: 0 }),
+        mostHundreds: teamStatsList.reduce((max, t) => t.batting.hundreds > max.val ? { team: t.team_short, val: t.batting.hundreds } : max, { team: '', val: 0 })
+      },
+      bowling: {
+        mostWickets: teamStatsList.reduce((max, t) => t.bowling.wickets > max.val ? { team: t.team_short, val: t.bowling.wickets } : max, { team: '', val: 0 }),
+        bestEco: teamStatsList.reduce((min, t) => t.bowling.economy > 0 && (t.bowling.economy < min.val || min.val === 0) ? { team: t.team_short, val: t.bowling.economy } : min, { team: '', val: 999 }),
+        bestAvg: teamStatsList.reduce((min, t) => t.bowling.avg > 0 && (t.bowling.avg < min.val || min.val === 0) ? { team: t.team_short, val: t.bowling.avg } : min, { team: '', val: 999 }),
+        bestFigures: teamStatsList.reduce((best, t) => {
+          var tFig = t.bowling.bestFigures;
+          var bFig = best.val;
+          if (tFig.wickets > bFig.wickets || (tFig.wickets === bFig.wickets && tFig.runs < bFig.runs)) {
+            return { team: t.team_short, val: tFig };
+          }
+          return best;
+        }, { team: '', val: {wickets: 0, runs: 999} }),
+        mostMaidens: teamStatsList.reduce((max, t) => t.bowling.maidens > max.val ? { team: t.team_short, val: t.bowling.maidens } : max, { team: '', val: 0 }),
+        mostThreeFers: teamStatsList.reduce((max, t) => t.bowling.three_fers > max.val ? { team: t.team_short, val: t.bowling.three_fers } : max, { team: '', val: 0 }),
+        mostFiveFers: teamStatsList.reduce((max, t) => t.bowling.five_fers > max.val ? { team: t.team_short, val: t.bowling.five_fers } : max, { team: '', val: 0 })
+      },
+      fielding: {
+        mostCatches: teamStatsList.reduce((max, t) => t.fielding.catches > max.val ? { team: t.team_short, val: t.fielding.catches } : max, { team: '', val: 0 }),
+        mostRunOuts: teamStatsList.reduce((max, t) => t.fielding.run_outs > max.val ? { team: t.team_short, val: t.fielding.run_outs } : max, { team: '', val: 0 }),
+        mostStumpings: teamStatsList.reduce((max, t) => t.fielding.stumpings > max.val ? { team: t.team_short, val: t.fielding.stumpings } : max, { team: '', val: 0 })
+      },
+      predictions: {
+        highestTargetPts: predStats.reduce((max, t) => t.target > max.val ? { team: t.team, val: t.target } : max, { team: '', val: 0 }),
+        highestWinnerPts: predStats.reduce((max, t) => t.winner > max.val ? { team: t.team, val: t.winner } : max, { team: '', val: 0 }),
+        bestAccuracy: predStats.reduce((max, t) => t.accuracy > max.val ? { team: t.team, val: t.accuracy } : max, { team: '', val: 0 }),
+        bestAvgDiff: predStats.reduce((min, t) => t.avgDiff > 0 && (t.avgDiff < min.val || min.val === 999) ? { team: t.team, val: t.avgDiff } : min, { team: '', val: 999 })
+      }
+    };
+
+    // Render cards
+    var html = '';
+    var categories = [
+      { name: 'Batting', stats: records.batting, icon: '🏏' },
+      { name: 'Bowling', stats: records.bowling, icon: '🎯' },
+      { name: 'Fielding', stats: records.fielding, icon: '🧤' },
+      { name: 'Predictions', stats: records.predictions, icon: '🔮' }
+    ];
+    categories.forEach(function(cat, catIdx) {
+      html += '<div class="report-category-card" style="animation: fade-up .4s ease ' + (catIdx * 0.1) + 's both;">' +
+        '<div class="card-header">' + cat.icon + ' ' + cat.name + ' Records</div>' +
+        '<div class="card-body">' +
+        '<div class="report-stats-grid">';
+      Object.keys(cat.stats).forEach(function(statKey, idx) {
+        var stat = cat.stats[statKey];
+        var statName = statKey.replace(/([A-Z])/g, ' $1').replace(/^./, function(str) { return str.toUpperCase(); });
+        if (stat.val === 0 || stat.val === 999) return; // Skip if no data
+        var displayVal = stat.val;
+        if (statKey === 'bestAccuracy') displayVal += '%';
+        else if (statKey === 'bestAvgDiff') displayVal = '±' + displayVal;
+        else if (statKey === 'bestFigures') displayVal = stat.val.wickets + '/' + stat.val.runs;
+        else displayVal = stat.val % 1 === 0 ? stat.val : stat.val.toFixed(1);
+        var logo = UI.getTeamLogo(stat.team) || 'images/bfl/bfl-logo.png';
+        html += '<div class="report-stat-card" style="animation: fade-up .3s ease ' + (idx * 0.05) + 's both;">' +
+          '<img src="' + logo + '" alt="' + stat.team + '" class="report-team-logo">' +
+          '<div class="report-stat-name">' + statName + '</div>' +
+          '<div class="report-stat-val">' + displayVal + '</div>' +
+          '<div class="report-stat-team">' + stat.team + '</div>' +
+        '</div>';
+      });
+      html += '</div></div></div>';
+    });
+    container.innerHTML = html;
+  } catch(e) {
+    console.warn('Report Card error:', e);
+    container.innerHTML = '<div style="color:var(--red);padding:24px;text-align:center;">Error loading report card</div>';
+  }
 }
 
 function resetFantasyLeaderboard(){
@@ -2160,7 +2451,7 @@ async function switchTab(tab) {
     prevPanel.classList.remove('active', 'leaving');
   }
 
-   var tabs=['pred-summary','accuracy','match-preds','points-summary','team-insights','fantasy-players','player-stats','user-teams','power-rankings'];
+    var tabs=['report-card','pred-summary','accuracy','match-preds','points-summary','team-insights','fantasy-players','player-stats','user-teams','power-rankings'];
   document.querySelectorAll('.tab-btn').forEach(function(b){
     var id = b.getAttribute('onclick').match(/'([^']+)'/)[1];
     b.classList.toggle('active', id === tab);
@@ -2177,8 +2468,9 @@ async function switchTab(tab) {
     }
   }
 
-   // Specific tab loads
-   if(tab==='pred-summary') loadPredictionsSummary();
+    // Specific tab loads
+    if(tab==='report-card') loadReportCard();
+    if(tab==='pred-summary') loadPredictionsSummary();
    if(tab==='accuracy') loadPredictionAccuracy();
    if(tab==='match-preds') loadMatchPredictionsPanel();
    if(tab==='points-summary') renderPointsSummary();
