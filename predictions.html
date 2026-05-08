@@ -265,19 +265,18 @@ function calcPredPts(pred, match) {
 function accuracyRingCls(diff) {
   if (diff === null) return '';
   if (diff === 0)  return 'exact';
-  if (diff === 1)  return 'close';
-  if (diff <= 5)   return 'good';
-  if (diff <= 10)  return 'near';
+  var d = Number(diff.toFixed(1));
+  if (d <= 1.1)  return 'close';
+  if (d <= 5.1)  return 'good';
+  if (d <= 10.1) return 'near';
   return 'miss';
 }
 
 function accuracyLabel(diff) {
   if (diff === null) return '?';
   if (diff === 0)  return 'Exact!';
-  if (diff === 1)  return '±1';
-  if (diff <= 5)   return '±' + diff;
-  if (diff <= 10)  return '±' + diff;
-  return '±' + diff;
+  var d = diff.toFixed(1);
+  return '±' + d;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -785,12 +784,15 @@ function buildImpactBanner(m) {
 function buildSubmittedBlock(pred, ia, m, pts) {
   var impact = _squad.find(function(s) { return s.is_impact; });
   var impactName = impact ? (impact.player && impact.player.name) || 'Assigned' : 'None';
-  var diff = (m && m.actual_target != null && pred) ? Math.abs((pred.target_score || 0) - m.actual_target) : null;
+  var baseOvers = Number(pred?.base_overs || 20);
+  var actualOvers = Number(m?.actual_overs || 20);
+  var scaledPred = (actualOvers !== baseOvers) ? (Number(pred.target_score) * (actualOvers / baseOvers)) : Number(pred.target_score);
+  var diff = (m && m.actual_target != null && pred) ? Math.abs(scaledPred - m.actual_target) : null;
   var corW = m && m.winner && pred ? pred.predicted_winner === m.winner : null;
   return '<div class="pred-submitted-block">' +
     '<div class="psb-row"><span class="psb-label">Target Predicted</span>' +
       '<span class="psb-value" style="font-family:var(--f-mono);">' + (pred.target_score || '—') +
-        (m && m.actual_overs && pred.base_overs && m.actual_overs !== pred.base_overs ? ' <span style="font-size:11px;color:var(--gold);">→ ' + Math.round(Number(pred.target_score) * (m.actual_overs / pred.base_overs)) + ' (scaled)</span>' : '') +
+        (m && m.actual_overs && pred.base_overs && m.actual_overs !== pred.base_overs ? ' <span style="font-size:11px;color:var(--gold);">→ ' + Math.round(Number(pred.target_score) * (m.actual_overs / pred.base_overs)) + ' (' + (m.actual_overs < pred.base_overs ? 'Scaled Down' : 'Scaled') + ')</span>' : '') +
         (diff !== null ? ' <span style="font-size:11px;color:' + (diff <= 5.1 ? 'var(--green)' : 'var(--text3)') + ';">diff ±' + diff.toFixed(1) + '</span>' : '') +
       '</span>' +
     '</div>' +
