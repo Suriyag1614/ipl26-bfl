@@ -639,6 +639,16 @@
         </label>
         <div class="form-error" id="res-error" style="min-height:16px;margin-bottom:8px;"></div>
         <button class="btn btn-accent" onclick="saveResult()">💾 Save Result</button>
+        <script>
+          // Visual feedback for DLS mode
+          document.getElementById('res-dls')?.addEventListener('change', function(e) {
+            const fields = [document.getElementById('res-target'), document.getElementById('res-overs')];
+            fields.forEach(f => {
+              if (f) f.style.background = e.target.checked ? 'rgba(245,200,66,0.1)' : '';
+              if (f) f.style.borderColor = e.target.checked ? 'var(--gold)' : '';
+            });
+          });
+        </script>
       </div>
     </div>
     <div class="card">

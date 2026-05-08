@@ -172,9 +172,16 @@
       <div class="match-tab-strip" id="match-tabs"></div>
 
       <!-- Main prediction area -->
-      <div id="match-area">
-        <div class="skel skel-card" style="height:420px;"></div>
-      </div>
+        <div id="match-area">
+          <div class="skel skel-card" style="height:420px;"></div>
+        </div>
+        <div id="rain-alert-banner" style="display:none;margin-top:12px;padding:12px 16px;background:rgba(245,200,66,0.1);border:1px solid var(--gold);border-radius:10px;color:var(--gold);font-size:13px;font-weight:700;display:flex;align-items:center;gap:10px;">
+          <span style="font-size:20px;">🌧️</span>
+          <div>
+            <div>Match Shortened</div>
+            <div style="font-weight:400;font-size:11px;opacity:0.9;">Predictions will be scaled to <span id="rain-alert-overs">20</span> overs for points calculation.</div>
+          </div>
+        </div>
     </div>
   </main>
 </div>
@@ -446,6 +453,17 @@ async function renderMatchArea(matchId) {
     try { pred = await API.fetchPrediction(matchId, _myTeamId); } catch(e) {}
 
     var ia = !!_impactMatchMap[matchId];
+
+    // Show/Hide Rain Alert
+    var alertBanner = document.getElementById('rain-alert-banner');
+    if (alertBanner) {
+      if (m.actual_overs < 20 || m.scheduled_overs < 20) {
+        alertBanner.style.display = 'flex';
+        document.getElementById('rain-alert-overs').textContent = m.actual_overs || m.scheduled_overs;
+      } else {
+        alertBanner.style.display = 'none';
+      }
+    }
 
     // Route to correct view
     if (m.status === 'abandoned') {
