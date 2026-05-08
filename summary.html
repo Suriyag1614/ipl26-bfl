@@ -1045,7 +1045,7 @@ async function loadTeamMatchPredictions() {
         else { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;background:var(--red);color:var(--bg1);border-radius:12px;font-size:10px;font-weight:700;padding:0 4px;">±' + diff + '</span>'; }
       }
       var predVsActual = matchStatus ?
-        '<div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;">' + (match.actual_target ? '<span>Pred: ' + API.getScaledPred(p, match) + ' | Actual: ' + match.actual_target + (match.is_dls_applied ? ' <span class="dls-badge">DLS</span>' : '') + '</span>' : '<span>Target: ' + (p.target_score || '-') + '</span>') + (targetBadge || '') + '</div>' :
+        '<div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;">' + (match.actual_target ? '<span>Pred: ' + (p.target_score || '—') + (match.is_dls_applied ? ' <span style="color:var(--gold);">→ ' + API.getScaledPred(p, match) + '</span>' : '') + ' | Actual: ' + match.actual_target + (match.is_dls_applied ? ' <span class="dls-badge">DLS</span>' : '') + '</span>' : '<span>Target: ' + (p.target_score || '-') + '</span>') + (targetBadge || '') + '</div>' :
         '<div style="font-size:11px;color:var(--text2);">Target: ' + (p.target_score || '-') + '</div>';
       var statusText = isAbandoned ? 'Abandoned' : (isCorrect ? '✓ Correct' : (matchStatus ? '✗ Wrong' : 'Pending'));
       var statusColor = isAbandoned ? 'var(--orange);' : (isCorrect ? 'var(--green);' : (matchStatus ? 'var(--red);' : 'var(--text3);'));

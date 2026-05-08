@@ -576,7 +576,7 @@ function renderAllPredictions(mc) {
     var isMe   = p.fantasy_team_id===_myTeamId;
     return '<tr class="' + (isMe ? 'highlight-me' : '') + '">' +
       '<td class="mc-team">' + UI.championName(p.team?.team_name || '—') + (isMe ? ' <span class="badge badge-accent" style="font-size:10px;">You</span>' : '') + '</td>' +
-      '<td class="mc-label">' + (p.target_score || '—') + '</td>' +
+      '<td class="mc-label">' + (p.target_score || '—') + (m.is_dls_applied ? ' <span style="font-size:11px;color:var(--gold);">→ ' + API.getScaledPred(p, m) + '</span>' : '') + '</td>' +
       '<td>' + UI.esc(UI.tShort(p.predicted_winner) || '—') + '</td>' +
       '<td class="mc-label">' + (m.actual_target || '—') + (m.is_dls_applied ? ' <span class="dls-badge">DLS</span>' : '') + '</td>' +
       '<td>' + (m.winner ? (corW ? '<span class="mc-success">✓</span>' : '<span class="mc-fail">✗</span>') : '—') + (diff !== null ? ' <span style="font-size:11px;color:var(--text3);">(±' + diff + ')</span>' : '') + '</td>' +

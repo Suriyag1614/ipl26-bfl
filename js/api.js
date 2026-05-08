@@ -1463,7 +1463,7 @@ const API = {
       })) give('all_rounder');
 
       // 5. Prediction Pro (correct winner + diff <= 5)
-      if (preds.some(p => p.match?.winner && p.predicted_winner === p.match.winner && p.match?.actual_target && Math.abs(p.target_score - p.match.actual_target) <= 5)) give('prediction-pro');
+      if (preds.some(p => p.match?.winner && p.predicted_winner === p.match.winner && p.match?.actual_target && Math.abs(this.getScaledPred(p, p.match) - p.match.actual_target) <= 5)) give('prediction-pro');
 
       if (newBadges.length) {
 
@@ -1543,7 +1543,7 @@ const API = {
   _calcPredStats(predictions) {
     const done = predictions.filter(p => p.match?.actual_target && p.match?.winner);
     if (!done.length) return { avg_diff: 0, winner_pct: 0, best_streak: 0, total: 0, correct: 0, exact: 0 };
-    const diffs = done.map(p => Math.abs((p.target_score || 0) - (p.match.actual_target || 0)));
+    const diffs = done.map(p => Math.abs(this.getScaledPred(p, p.match) - (p.match.actual_target || 0)));
     const avgDiff = diffs.reduce((a, b) => a + b, 0) / diffs.length;
     const correct = done.filter(p => p.predicted_winner === p.match.winner).length;
     let streak = 0, best = 0;
@@ -1551,7 +1551,7 @@ const API = {
     return {
       avg_diff: Math.round(avgDiff * 10) / 10, winner_pct: Math.round((correct / done.length) * 100),
       best_streak: best, total: done.length, correct,
-      exact: done.filter(p => Math.abs((p.target_score || 0) - (p.match.actual_target || 0)) === 0).length,
+      exact: done.filter(p => Math.abs(this.getScaledPred(p, p.match) - (p.match.actual_target || 0)) === 0).length,
     };
   },
 
