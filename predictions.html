@@ -608,9 +608,8 @@ function renderResult(m, pred, ia) {
   var si   = matchStatusInfo(m);
   var pts  = calcPredPts(pred, m);
   var baseOvers = Number(pred?.base_overs || 20);
-  var actualOvers = Number(m.actual_overs || 20);
-  var scaledPred = (pred && actualOvers !== baseOvers) ? Math.round(Number(pred.target_score) * (actualOvers / baseOvers)) : null;
-  var diff = (pred && m.actual_target != null) ? Math.abs((scaledPred !== null ? scaledPred : Number(pred.target_score || 0)) - m.actual_target) : null;
+  var scaledPred = pred ? API.getScaledPred(pred, m) : null;
+  var diff = (pred && m.actual_target != null) ? Math.abs(scaledPred - m.actual_target) : null;
   var ringCls = accuracyRingCls(diff);
 
   showArea(
@@ -801,9 +800,7 @@ function buildImpactBanner(m) {
 function buildSubmittedBlock(pred, ia, m, pts) {
   var impact = _squad.find(function(s) { return s.is_impact; });
   var impactName = impact ? (impact.player && impact.player.name) || 'Assigned' : 'None';
-  var baseOvers = Number(pred?.base_overs || 20);
-  var actualOvers = Number(m?.actual_overs || 20);
-  var scaledPred = (actualOvers !== baseOvers) ? Math.round(Number(pred.target_score) * (actualOvers / baseOvers)) : Number(pred.target_score);
+  var scaledPred = API.getScaledPred(pred, m);
   var diff = (m && m.actual_target != null && pred) ? Math.abs(scaledPred - m.actual_target) : null;
   var corW = m && m.winner && pred ? pred.predicted_winner === m.winner : null;
   return '<div class="pred-submitted-block">' +

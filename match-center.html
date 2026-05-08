@@ -98,6 +98,15 @@
     .mc-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
     .pred-winner-bar { height: 8px; border-radius: 4px; background: var(--bg3); overflow: hidden; display: flex; margin-top: 6px; }
 
+    /* DLS badge */
+    .dls-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(245,200,66,0.1); border: 1px solid rgba(245,200,66,0.3);
+      border-radius: 4px; padding: 2px 6px; font-family: var(--f-ui);
+      font-size: 10px; font-weight: 800; color: var(--gold);
+      vertical-align: middle; margin-left: 4px;
+    }
+
     /* Tables */
     .mc-table-wrap { 
       max-height: 400px; 
@@ -562,15 +571,15 @@ function renderAllPredictions(mc) {
   var m     = mc.match||{};
   if (!preds.length) { tbody.innerHTML='<tr><td colspan="5" class="empty-state">No predictions submitted</td></tr>'; return; }
   tbody.innerHTML = preds.sort(function(a,b){return (a.team?.team_name||'').localeCompare(b.team?.team_name||'');}).map(function(p) {
-    var diff   = m.actual_target ? Math.abs((p.target_score||0)-(m.actual_target||0)) : null;
+    var diff   = m.actual_target ? Math.abs(API.getScaledPred(p,m)-(m.actual_target||0)) : null;
     var corW   = m.winner && p.predicted_winner===m.winner;
     var isMe   = p.fantasy_team_id===_myTeamId;
-    return '<tr class="'+(isMe?'highlight-me':'')+'">' +
-      '<td class="mc-team">' + UI.championName(p.team?.team_name||'—') + (isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'') + '</td>' +
-      '<td class="mc-label">'+(p.target_score||'—')+'</td>' +
-      '<td>'+UI.esc(UI.tShort(p.predicted_winner)||'—')+'</td>' +
-      '<td class="mc-label">'+(m.actual_target||'—')+'</td>' +
-      '<td>'+(m.winner ? (corW?'<span class="mc-success">✓</span>':'<span class="mc-fail">✗</span>') : '—')+(diff!==null?' <span style="font-size:11px;color:var(--text3);">(±'+diff+')</span>':'')+'</td>' +
+    return '<tr class="' + (isMe ? 'highlight-me' : '') + '">' +
+      '<td class="mc-team">' + UI.championName(p.team?.team_name || '—') + (isMe ? ' <span class="badge badge-accent" style="font-size:10px;">You</span>' : '') + '</td>' +
+      '<td class="mc-label">' + (p.target_score || '—') + '</td>' +
+      '<td>' + UI.esc(UI.tShort(p.predicted_winner) || '—') + '</td>' +
+      '<td class="mc-label">' + (m.actual_target || '—') + (m.is_dls_applied ? ' <span class="dls-badge">DLS</span>' : '') + '</td>' +
+      '<td>' + (m.winner ? (corW ? '<span class="mc-success">✓</span>' : '<span class="mc-fail">✗</span>') : '—') + (diff !== null ? ' <span style="font-size:11px;color:var(--text3);">(±' + diff + ')</span>' : '') + '</td>' +
     '</tr>';
   }).join('');
 }

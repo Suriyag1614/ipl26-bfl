@@ -1825,6 +1825,19 @@ async fetchTeams() {
   // ----------------------------------------------------------
 
   /**
+   * Get the scaled prediction value for a given prediction and match.
+   * Returns Math.round(original * actualOvers/baseOvers) or original if no scaling needed.
+   */
+  getScaledPred(pred, match) {
+    if (!pred || !pred.target_score) return 0;
+    const baseOvers = Number(pred.base_overs || 20);
+    const actualOvers = Number((match && match.actual_overs) || 20);
+    return (actualOvers !== baseOvers)
+      ? Math.round(Number(pred.target_score) * (actualOvers / baseOvers))
+      : Number(pred.target_score);
+  },
+
+  /**
    * Calculate prediction points for a completed match.
    * Handles: DLS revised targets, abandoned (zero), super-over winner.
    */

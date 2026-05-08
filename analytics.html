@@ -98,6 +98,15 @@
     .fl-fstat-val { font-family: var(--f-display); font-size: 32px; font-weight: 900; color: var(--text); line-height: 1; }
     .fl-fstat-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
 
+    /* DLS badge */
+    .dls-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(245,200,66,0.1); border: 1px solid rgba(245,200,66,0.3);
+      border-radius: 4px; padding: 2px 6px; font-family: var(--f-ui);
+      font-size: 10px; font-weight: 800; color: var(--gold);
+      vertical-align: middle; margin-left: 4px;
+    }
+
     .fl-pos { font-family: var(--f-display); font-size: 20px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
     .fl-trend { font-size: 10px; font-weight: 700; width: 14px; text-align: center; }
     .fl-team-logo { width: 36px; height: 36px; object-fit: contain; }
@@ -842,19 +851,19 @@ function renderPredictions() {
       '<div class="metric-row"><span class="metric-label">Avg Target Diff</span><span class="metric-val">±'+ps.avg_diff+'</span></div>'+
       '<div class="metric-row"><span class="metric-label">Best Streak</span><span class="metric-val" style="color:var(--gold);">'+ps.best_streak+'</span></div>';
   var last10Preds = preds.slice(-10);
-  if(last10Preds.length) setTimeout(function(){UI.drawBarChart('chart-pred-diff',last10Preds.map(function(p){return{label:'M'+(p.match.match_no||'?'),value:Math.abs((p.target_score||0)-(p.match.actual_target||0))};}),{height:170,color:'#38d9f5'});},160);
+  if(last10Preds.length) setTimeout(function(){UI.drawBarChart('chart-pred-diff',last10Preds.map(function(p){return{label:'M'+(p.match.match_no||'?'),value:Math.abs(API.getScaledPred(p,p.match)-(p.match.actual_target||0))};}),{height:170,color:'#38d9f5'});},160);
   var tbody=document.getElementById('pred-history-tbody'); if(!tbody) return;
   var allPreds=Array.isArray(_analytics.predictions)?_analytics.predictions:[];
   if(!allPreds.length){tbody.innerHTML='<tr><td colspan="7" class="empty-state">No predictions yet</td></tr>';return;}
   tbody.innerHTML=allPreds.slice().reverse().map(function(p){
     var m=p.match||{};
-    var diff=m.actual_target?Math.abs((p.target_score||0)-(m.actual_target||0)):null;
+    var diff=m.actual_target?Math.abs(API.getScaledPred(p,m)-(m.actual_target||0)):null;
     var corW=m.winner&&p.predicted_winner===m.winner;
     var predPts=API.calcPredictionPoints(p,m);
     var statusHtml=!m.winner?'<span class="match-status status-upcoming" style="font-size:10px;">Pending</span>':(corW?'<span class="match-status status-done" style="font-size:10px;">Correct</span>':'<span class="match-status status-locked" style="font-size:10px;">Wrong</span>');
     return '<tr><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+'M'+(m.match_no||'?')+' · '+UI.tShort(m.team1)+' vs '+UI.tShort(m.team2)+'</td>'+
       '<td class="font-mono">'+(p.target_score||'—')+'</td>'+
-      '<td class="font-mono">'+(m.actual_target||'—')+'</td>'+
+      '<td class="font-mono">'+(m.actual_target||'—')+(m.is_dls_applied ? ' <span class="dls-badge">DLS</span>' : '')+'</td>'+
       '<td class="font-mono" style="color:'+(diff===0?'var(--accent)':diff&&diff<=5?'var(--green)':'var(--red)')+';">'+(diff!==null?'±'+diff:'—')+'</td>'+
       '<td>'+UI.esc(UI.tShort(p.predicted_winner)||'—')+'</td>'+
       '<td>'+statusHtml+'</td>'+
@@ -983,10 +992,10 @@ async function renderPointsBreakdown() {
       }
 
       if (match.actual_target && p.target_score) {
-        var diff = Math.abs(p.target_score - match.actual_target);
+        var diff = Math.abs(API.getScaledPred(p, match) - match.actual_target);
         var targetPts = 0;
         if (diff === 0) targetPts = 250;
-        else if (diff === 1) targetPts = 150;
+        else if (diff <= 1) targetPts = 150;
         else if (diff <= 5) targetPts = 100;
         else if (diff <= 10) targetPts = 50;
         matchPredictions[p.match_id].target += targetPts;
@@ -1266,13 +1275,14 @@ async function loadTeamMatchPredictions() {
       var matchStatus = match.status === 'completed' || match.status === 'processed';
       var targetBadge = '';
       if (matchStatus && match.actual_target && p.target_score) {
-        var diff = Math.abs(p.target_score - match.actual_target);
+        var scaledP = API.getScaledPred(p, match);
+        var diff = Math.abs(scaledP - match.actual_target);
         if (diff === 0) { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--cyan);color:var(--bg1);border-radius:50%;font-size:9px;font-weight:700;">✓</span>'; }
         else if (diff <= 10) { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;background:var(--green);color:var(--bg1);border-radius:12px;font-size:10px;font-weight:700;padding:0 4px;">±' + diff + '</span>'; }
         else { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;background:var(--red);color:var(--bg1);border-radius:12px;font-size:10px;font-weight:700;padding:0 4px;">±' + diff + '</span>'; }
       }
       var predVsActual = matchStatus ? 
-        '<div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;">' + (match.actual_target ? '<span>Pred: ' + p.target_score + ' | Actual: ' + match.actual_target + '</span>' : '<span>Target: ' + (p.target_score || '-') + '</span>') + (targetBadge || '') + '</div>' :
+        '<div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;">' + (match.actual_target ? '<span>Pred: ' + API.getScaledPred(p, match) + ' | Actual: ' + match.actual_target + (match.is_dls_applied ? ' <span class="dls-badge">DLS</span>' : '') + '</span>' : '<span>Target: ' + (p.target_score || '-') + '</span>') + (targetBadge || '') + '</div>' :
         '<div style="font-size:11px;color:var(--text2);">Target: ' + (p.target_score || '-') + '</div>';
       var statusText = isAbandoned ? 'Abandoned' : (isCorrect ? '✓ Correct' : (matchStatus ? '✗ Wrong' : 'Pending'));
       var statusColor = isAbandoned ? 'var(--orange);' : (isCorrect ? 'var(--green);' : (matchStatus ? 'var(--red);' : 'var(--text3);'));
@@ -1298,7 +1308,7 @@ async function loadTeamMatchPredictions() {
       var match = _matches.find(function(m) { return String(m.id) === String(p.match_id) });
       if (!match) return;
       if (match.actual_target && p.target_score && (match.status === 'completed' || match.status === 'processed')) {
-        totalDiff += Math.abs((p.target_score||0) - (match.actual_target||0));
+        totalDiff += Math.abs(API.getScaledPred(p, match) - (match.actual_target||0));
         diffCount++;
       }
       if (match.status === 'abandoned') { abandonedCount++; }

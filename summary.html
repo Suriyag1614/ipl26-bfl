@@ -148,6 +148,15 @@
      .th-sortable:hover { color: var(--accent); }
      .team-insights-table .ti-team { font-weight: 800; min-width: 100px; color: var(--purple); }
      .team-insights-table .ti-num { font-family: var(--f-mono); font-weight: 700; }
+
+    /* DLS badge */
+    .dls-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(245,200,66,0.1); border: 1px solid rgba(245,200,66,0.3);
+      border-radius: 4px; padding: 2px 6px; font-family: var(--f-ui);
+      font-size: 10px; font-weight: 800; color: var(--gold);
+      vertical-align: middle; margin-left: 4px;
+    }
      .team-insights-table .ti-low { color: var(--red); }
      .team-insights-table .ti-high { color: var(--green); }
      .team-insights-table .ti-match { font-size: 10px; color: var(--text3); display: block; }
@@ -1029,13 +1038,14 @@ async function loadTeamMatchPredictions() {
       var targetBadge = '';
 
       if (matchStatus && match.actual_target && p.target_score) {
-        var diff = Math.abs(p.target_score - match.actual_target);
+        var scaledP = API.getScaledPred(p, match);
+        var diff = Math.abs(scaledP - match.actual_target);
         if (diff === 0) { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--cyan);color:var(--bg1);border-radius:50%;font-size:9px;font-weight:700;">✓</span>'; }
         else if (diff <= 10) { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;background:var(--green);color:var(--bg1);border-radius:12px;font-size:10px;font-weight:700;padding:0 4px;">±' + diff + '</span>'; }
         else { targetBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;background:var(--red);color:var(--bg1);border-radius:12px;font-size:10px;font-weight:700;padding:0 4px;">±' + diff + '</span>'; }
       }
       var predVsActual = matchStatus ?
-        '<div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;">' + (match.actual_target ? '<span>Pred: ' + p.target_score + ' | Actual: ' + match.actual_target + '</span>' : '<span>Target: ' + (p.target_score || '-') + '</span>') + (targetBadge || '') + '</div>' :
+        '<div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;">' + (match.actual_target ? '<span>Pred: ' + API.getScaledPred(p, match) + ' | Actual: ' + match.actual_target + (match.is_dls_applied ? ' <span class="dls-badge">DLS</span>' : '') + '</span>' : '<span>Target: ' + (p.target_score || '-') + '</span>') + (targetBadge || '') + '</div>' :
         '<div style="font-size:11px;color:var(--text2);">Target: ' + (p.target_score || '-') + '</div>';
       var statusText = isAbandoned ? 'Abandoned' : (isCorrect ? '✓ Correct' : (matchStatus ? '✗ Wrong' : 'Pending'));
       var statusColor = isAbandoned ? 'var(--orange);' : (isCorrect ? 'var(--green);' : (matchStatus ? 'var(--red);' : 'var(--text3);'));
@@ -1061,7 +1071,7 @@ async function loadTeamMatchPredictions() {
       var match = _matches.find(function(m) { return String(m.id) === String(p.match_id) });
       if (!match) return;
       if (match.actual_target && p.target_score && (match.status === 'completed' || match.status === 'processed') && !match.is_abandoned) {
-        totalDiff += Math.abs((p.target_score||0) - (match.actual_target||0));
+        totalDiff += Math.abs(API.getScaledPred(p, match) - (match.actual_target||0));
         diffCount++;
       }
       if (match.status === 'abandoned') { abandonedCount++; }
@@ -1582,10 +1592,10 @@ async function loadReportCard() {
       }
       predBreakdown[p.fantasy_team_id].total++;
       if (match && match.actual_target && p.target_score) {
-        var diff = Math.abs(p.target_score - match.actual_target);
+        var diff = Math.abs(API.getScaledPred(p, match) - match.actual_target);
         var tp = 0;
         if (diff === 0) tp = 250;
-        else if (diff === 1) tp = 150;
+        else if (diff <= 1) tp = 150;
         else if (diff <= 5) tp = 100;
         else if (diff <= 10) tp = 50;
         predBreakdown[p.fantasy_team_id].target += tp;
@@ -1791,10 +1801,10 @@ async function renderPointsSummary() {
         predBreakdown[p.fantasy_team_id].winner += 25;
       }
       if (match && match.actual_target && p.target_score) {
-        var diff = Math.abs(p.target_score - match.actual_target);
+        var diff = Math.abs(API.getScaledPred(p, match) - match.actual_target);
         var tp = 0;
         if (diff === 0) tp = 250;
-        else if (diff === 1) tp = 150;
+        else if (diff <= 1) tp = 150;
         else if (diff <= 5) tp = 100;
         else if (diff <= 10) tp = 50;
         predBreakdown[p.fantasy_team_id].target += tp;

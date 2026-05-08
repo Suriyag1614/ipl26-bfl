@@ -115,6 +115,8 @@ CREATE TABLE public.matches (
   lock_time timestamp with time zone,
   is_abandoned boolean NOT NULL DEFAULT false,
   is_dls_applied boolean NOT NULL DEFAULT false,
+  scheduled_overs numeric DEFAULT 20,
+  actual_overs numeric DEFAULT 20,
   CONSTRAINT matches_pkey PRIMARY KEY (id),
   CONSTRAINT matches_player_of_match_fkey FOREIGN KEY (player_of_match) REFERENCES public.players(id)
 );
@@ -181,6 +183,7 @@ CREATE TABLE public.predictions (
   impact_player_id uuid,
   submitted_at timestamp with time zone DEFAULT now(),
   is_locked boolean DEFAULT false,
+  base_overs numeric DEFAULT 20,
   CONSTRAINT predictions_pkey PRIMARY KEY (id),
   CONSTRAINT predictions_match_id_fkey FOREIGN KEY (match_id) REFERENCES public.matches(id),
   CONSTRAINT predictions_fantasy_team_id_fkey FOREIGN KEY (fantasy_team_id) REFERENCES public.fantasy_teams(id),
