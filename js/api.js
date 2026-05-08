@@ -1838,15 +1838,15 @@ async fetchTeams() {
     const baseOvers = Number(pred.base_overs || 20);
     const actualOvers = Number(match.actual_overs || 20);
     const scaledPred = (actualOvers !== baseOvers) 
-      ? (Number(pred.target_score || 0) * (actualOvers / baseOvers))
+      ? Math.round(Number(pred.target_score || 0) * (actualOvers / baseOvers))
       : Number(pred.target_score || 0);
 
     const diff = Math.abs(scaledPred - Number(match.actual_target || 0));
     
-    if      (diff === 0) pts += 250;
-    else if (diff <= 1.1) pts += 150; // Use small buffer for rounding in ±1 run
-    else if (diff <= 5.1)  pts += 100;
-    else if (diff <= 10.1) pts += 50;
+    if      (diff === 0)  pts += 250;
+    else if (diff <= 1)   pts += 150;
+    else if (diff <= 5)   pts += 100;
+    else if (diff <= 10)  pts += 50;
     
     if (pred.predicted_winner === match.winner) pts += 25;
     return pts;

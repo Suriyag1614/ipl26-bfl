@@ -256,14 +256,14 @@ function calcPredPts(pred, match) {
     var baseOvers = Number(pred.base_overs || 20);
     var actualOvers = Number(match.actual_overs || 20);
     var scaledPred = (actualOvers !== baseOvers)
-      ? (Number(pred.target_score) * (actualOvers / baseOvers))
+      ? Math.round(Number(pred.target_score) * (actualOvers / baseOvers))
       : Number(pred.target_score);
 
     var diff = Math.abs(scaledPred - Number(match.actual_target));
     if      (diff === 0) targetPts = 250;
-    else if (diff <= 1.1) targetPts = 150;
-    else if (diff <= 5.1)  targetPts = 100;
-    else if (diff <= 10.1) targetPts = 50;
+    else if (diff <= 1)  targetPts = 150;
+    else if (diff <= 5)  targetPts = 100;
+    else if (diff <= 10) targetPts = 50;
   }
   if (match.winner && pred.predicted_winner === match.winner) winnerPts = 25;
   return { target: targetPts, winner: winnerPts, total: targetPts + winnerPts };
@@ -272,19 +272,17 @@ function calcPredPts(pred, match) {
 /** Ring class for target diff. */
 function accuracyRingCls(diff) {
   if (diff === null) return '';
-  if (diff === 0)  return 'exact';
-  var d = Number(diff.toFixed(1));
-  if (d <= 1.1)  return 'close';
-  if (d <= 5.1)  return 'good';
-  if (d <= 10.1) return 'near';
+  if (diff === 0) return 'exact';
+  if (diff <= 1)  return 'close';
+  if (diff <= 5)  return 'good';
+  if (diff <= 10) return 'near';
   return 'miss';
 }
 
 function accuracyLabel(diff) {
   if (diff === null) return '?';
-  if (diff === 0)  return 'Exact!';
-  var d = diff.toFixed(1);
-  return '±' + d;
+  if (diff === 0) return 'Exact!';
+  return '±' + diff;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -611,7 +609,7 @@ function renderResult(m, pred, ia) {
   var pts  = calcPredPts(pred, m);
   var baseOvers = Number(pred?.base_overs || 20);
   var actualOvers = Number(m.actual_overs || 20);
-  var scaledPred = (pred && actualOvers !== baseOvers) ? (Number(pred.target_score) * (actualOvers / baseOvers)) : null;
+  var scaledPred = (pred && actualOvers !== baseOvers) ? Math.round(Number(pred.target_score) * (actualOvers / baseOvers)) : null;
   var diff = (pred && m.actual_target != null) ? Math.abs((scaledPred !== null ? scaledPred : Number(pred.target_score || 0)) - m.actual_target) : null;
   var ringCls = accuracyRingCls(diff);
 
@@ -805,14 +803,14 @@ function buildSubmittedBlock(pred, ia, m, pts) {
   var impactName = impact ? (impact.player && impact.player.name) || 'Assigned' : 'None';
   var baseOvers = Number(pred?.base_overs || 20);
   var actualOvers = Number(m?.actual_overs || 20);
-  var scaledPred = (actualOvers !== baseOvers) ? (Number(pred.target_score) * (actualOvers / baseOvers)) : Number(pred.target_score);
+  var scaledPred = (actualOvers !== baseOvers) ? Math.round(Number(pred.target_score) * (actualOvers / baseOvers)) : Number(pred.target_score);
   var diff = (m && m.actual_target != null && pred) ? Math.abs(scaledPred - m.actual_target) : null;
   var corW = m && m.winner && pred ? pred.predicted_winner === m.winner : null;
   return '<div class="pred-submitted-block">' +
     '<div class="psb-row"><span class="psb-label">Target Predicted</span>' +
       '<span class="psb-value" style="font-family:var(--f-mono);">' + (pred.target_score || '—') +
-        (m && m.actual_overs && pred.base_overs && m.actual_overs !== pred.base_overs ? ' <span style="font-size:11px;color:var(--gold);">→ ' + Math.round(Number(pred.target_score) * (m.actual_overs / pred.base_overs)) + ' (' + (m.actual_overs < pred.base_overs ? 'Scaled Down' : 'Scaled') + ')</span>' : '') +
-        (diff !== null ? ' <span style="font-size:11px;color:' + (diff <= 5.1 ? 'var(--green)' : 'var(--text3)') + ';">diff ±' + diff.toFixed(1) + '</span>' : '') +
+        (m && m.actual_overs && pred.base_overs && m.actual_overs !== pred.base_overs ? ' <span style="font-size:11px;color:var(--gold);">→ ' + scaledPred + ' (' + (m.actual_overs < pred.base_overs ? 'Scaled Down' : 'Scaled') + ')</span>' : '') +
+        (diff !== null ? ' <span style="font-size:11px;color:' + (diff <= 5 ? 'var(--green)' : 'var(--text3)') + ';">diff ±' + diff + '</span>' : '') +
       '</span>' +
     '</div>' +
     '<div class="psb-row"><span class="psb-label">Winner Predicted</span>' +
