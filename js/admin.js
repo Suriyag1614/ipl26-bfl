@@ -625,8 +625,10 @@ function filterFixtures(q) {
 }
 
 function clearFixtureForm() {
+
   $id('fx-id').value=''; $id('fx-no').value=''; $id('fx-date').value='';
   ['fx-team1','fx-team2','fx-venue'].forEach(function(id){var e=$id(id);if(e)e.value='';});
+  $id('fx-overs').value='20';
   $id('fx-time').value='19:30'; $id('fx-status').value='upcoming';
   $id('fx-form-title').textContent='New Match'; $id('fx-delete-btn').style.display='none';
 }
@@ -639,6 +641,7 @@ function editFixture(matchId) {
   $id('fx-delete-btn').style.display='';
   $id('fx-team1').value=m.team1||''; $id('fx-team2').value=m.team2||'';
   $id('fx-venue').value=m.venue||''; $id('fx-status').value=m.status||'upcoming';
+  $id('fx-overs').value=m.scheduled_overs||'20';
   if (m.match_date) {
     var dt = new Date(m.match_date);
     $id('fx-date').value = dt.toLocaleDateString('sv',{timeZone:'Asia/Kolkata'});
@@ -656,11 +659,13 @@ async function saveFixture() {
   var date=$id('fx-date').value, time=$id('fx-time').value||'19:30';
   var no=parseInt($id('fx-no').value||0)||null;
   var venue=$id('fx-venue').value, status=$id('fx-status').value;
+  var overs=parseFloat($id('fx-overs').value||20);
   var matchDate = date ? new Date(date+'T'+time+':00+05:30').toISOString() : null;
   var deadline  = matchDate ? new Date(new Date(matchDate).getTime() - 30 * 60 * 1000).toISOString() : null; // Predictions close 30 minutes before match start
   var lockTime  = deadline;  // Strict locking at deadline time
   var match = { match_no:no, team1, team2, venue, status, match_date:matchDate,
     deadline_time:deadline, lock_time:lockTime,
+    scheduled_overs:overs, actual_overs:overs,
     match_title:'Match '+(no||'?')+' · '+tShort(team1)+' vs '+tShort(team2),
     is_locked: status!=='upcoming' && status!=='live' };
   if (id) match.id = id;
@@ -776,6 +781,8 @@ async function loadResultForm() {
   }
 
   if (m.actual_target) $id('res-target').value = m.actual_target;
+  $id('res-overs').value = m.actual_overs || m.scheduled_overs || 20;
+
   // Note: res-pom value is already set by the 'selected' attribute in the map above
   $id('res-dls').checked = !!m.is_dls_applied;
   body.style.display = '';
@@ -796,6 +803,7 @@ async function saveResult() {
   var winner  = $id('res-winner').value||null;
   var pom     = $id('res-pom').value||null;
   var dls     = $id('res-dls').checked;
+  var overs   = parseFloat($id('res-overs').value||20);
   $id('res-error').textContent='';
   if (!matchId) { $id('res-error').textContent='Select a match first.'; return; }
   if (!winner)  { $id('res-error').textContent='Select the winner.'; return; }
@@ -808,7 +816,7 @@ async function saveResult() {
     onOk: async function() {
       try {
         var match = _matches.find(function(x){return x.id===matchId;});
-        var upd = { winner, actual_target:target, is_locked:true, status:'completed', is_dls_applied:dls };
+        var upd = { winner, actual_target:target, actual_overs:overs, is_locked:true, status:'completed', is_dls_applied:dls };
         if (pom) upd.player_of_match = pom;
         var {error} = await sb.from('matches').update(upd).eq('id',matchId);
         if (error) throw error;
@@ -886,6 +894,8 @@ async function loadCtrlMatch() {
     var off = d.getTimezoneOffset()*60000;
     $id('ctrl-deadline').value = new Date(d-off).toISOString().slice(0,16);
   }
+  $id('ctrl-dls-target').value = m.actual_target || '';
+  $id('ctrl-dls-overs').value = m.actual_overs || m.scheduled_overs || 20;
 }
 
 async function ctrlExtend() {
@@ -917,12 +927,13 @@ async function ctrlReopen() {
 
 async function ctrlDLS() {
   if (!_ctrlMatchId) { UI.toast('Select a match first','warn'); return; }
-  var t = parseInt($id('ctrl-dls').value||0);
+  var t = parseInt($id('ctrl-dls-target').value||0);
+  var o = parseFloat($id('ctrl-dls-overs').value||20);
   if (!t||t<50||t>500) { UI.toast('Enter valid revised target (50–500)','warn'); return; }
-  UI.showConfirm({ icon:'🌧', title:'Set DLS Target?', msg:'Revised target: '+t+' runs',
-    consequence:'All prediction scoring will use this target.', okLabel:'Set DLS', okClass:'btn-gold',
+  UI.showConfirm({ icon:'🌧', title:'Set DLS Target?', msg:'Revised target: '+t+' runs ('+o+' overs)',
+    consequence:'All prediction scoring will use this target and scale accordingly.', okLabel:'Set DLS', okClass:'btn-gold',
     onOk: async function(){
-      try { await API.setDLSTarget(_ctrlMatchId, t); ctrlMsg('✓ DLS target set to '+t+'.','ok'); UI.toast('DLS set!','success'); await loadAllMatches(); loadCtrlMatch(); }
+      try { await API.setDLSTarget(_ctrlMatchId, t, o); ctrlMsg('✓ DLS target set to '+t+' for '+o+' overs.','ok'); UI.toast('DLS set!','success'); await loadAllMatches(); loadCtrlMatch(); }
       catch(e){ ctrlMsg('Error: '+e.message,'err'); UI.toast(e.message,'error'); }
     }
   });

@@ -1793,6 +1793,7 @@ async fetchTeams() {
       predicted_winner:  winner,
       submitted_at:      new Date().toISOString(),
       is_locked:         false,
+      base_overs:        freshMatch.scheduled_overs || 20,
     }, { onConflict: 'match_id,fantasy_team_id' }).select().single();
 
     if (error) throw error;
@@ -1831,11 +1832,22 @@ async fetchTeams() {
     if (!pred || !match) return 0;
     if (match.status === 'abandoned' || match.is_abandoned) return 0;
     let pts = 0;
-    const diff = Math.abs(Number(pred.target_score || 0) - Number(match.actual_target || 0));
+    
+    // Smart Pro-Rata Scaling
+    // Scaled Prediction = Original * (Actual Final Overs / Expected Overs at time of prediction)
+    const baseOvers = Number(pred.base_overs || 20);
+    const actualOvers = Number(match.actual_overs || 20);
+    const scaledPred = (actualOvers !== baseOvers) 
+      ? (Number(pred.target_score || 0) * (actualOvers / baseOvers))
+      : Number(pred.target_score || 0);
+
+    const diff = Math.abs(scaledPred - Number(match.actual_target || 0));
+    
     if      (diff === 0) pts += 250;
-    else if (diff === 1) pts += 150;
-    else if (diff <= 5)  pts += 100;
-    else if (diff <= 10) pts += 50;
+    else if (diff <= 1.1) pts += 150; // Use small buffer for rounding in ±1 run
+    else if (diff <= 5.1)  pts += 100;
+    else if (diff <= 10.1) pts += 50;
+    
     if (pred.predicted_winner === match.winner) pts += 25;
     return pts;
   },
@@ -1901,11 +1913,12 @@ async fetchTeams() {
   /**
    * Mark DLS applied and set the revised target.
    */
-  async setDLSTarget(matchId, revisedTarget) {
+  async setDLSTarget(matchId, revisedTarget, actualOvers) {
     const { data: before } = await sb.from('matches').select('*').eq('id', matchId).maybeSingle();
     const { data, error } = await sb.from('matches').update({
       is_dls_applied: true,
       actual_target:  parseInt(revisedTarget),
+      actual_overs:   Number(actualOvers || 20),
     }).eq('id', matchId).select().single();
     if (error) throw error;
     await this._log('dls_target_set', 'match', matchId, before, data);
@@ -1915,15 +1928,18 @@ async fetchTeams() {
   /**
    * Set match result (winner + target). Locks match automatically.
    */
-  async setMatchResult(matchId, { winner, actualTarget, isDLS }) {
+  async setMatchResult(matchId, { winner, actualTarget, isDLS, actualOvers, pom }) {
     const { data: before } = await sb.from('matches').select('*').eq('id', matchId).maybeSingle();
     const payload = {
       winner:         winner,
       actual_target:  parseInt(actualTarget) || null,
       is_locked:      true,
       status:         'completed',
+      actual_overs:   Number(actualOvers || 20),
     };
     if (isDLS !== undefined) payload.is_dls_applied = !!isDLS;
+    if (pom) payload.player_of_match = pom;
+    
     const { data, error } = await sb.from('matches').update(payload).eq('id', matchId).select().single();
     if (error) throw error;
     await this._log('match_result_set', 'match', matchId, before, data);

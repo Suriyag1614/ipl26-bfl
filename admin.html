@@ -573,15 +573,20 @@
             </select>
           </div>
         </div>
-        <div class="form-group"><label class="form-label">Venue</label>
-          <select class="form-select" id="fx-venue">
-            <option value="">— Select Venue —</option>
-            <option>Bengaluru</option><option>Mumbai</option><option>Kolkata</option>
-            <option>Chennai</option><option>Delhi</option><option>Ahmedabad</option>
-            <option>Hyderabad</option><option>Jaipur</option><option>Lucknow</option>
-            <option>Dharamsala</option><option>Ranchi</option><option>Pune</option>
-            <option>Guwahati</option><option>New Chandigarh</option>
-          </select>
+        <div class="col-2" style="gap:10px;">
+          <div class="form-group"><label class="form-label">Venue</label>
+            <select class="form-select" id="fx-venue">
+              <option value="">— Select Venue —</option>
+              <option>Bengaluru</option><option>Mumbai</option><option>Kolkata</option>
+              <option>Chennai</option><option>Delhi</option><option>Ahmedabad</option>
+              <option>Hyderabad</option><option>Jaipur</option><option>Lucknow</option>
+              <option>Dharamsala</option><option>Ranchi</option><option>Pune</option>
+              <option>Guwahati</option><option>New Chandigarh</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">Scheduled Overs</label>
+            <input class="form-input font-mono" type="number" id="fx-overs" placeholder="20" min="5" max="20" value="20">
+          </div>
         </div>
         <div class="form-group"><label class="form-label">Status</label>
           <select class="form-select" id="fx-status">
@@ -615,12 +620,15 @@
       </div>
       <div id="res-form-body" style="display:none;">
         <div class="col-2" style="gap:10px;">
-          <div class="form-group"><label class="form-label">Actual Target (1st inns + 1)</label>
+          <div class="form-group"><label class="form-label">Actual Target</label>
             <input class="form-input font-mono" type="number" id="res-target" placeholder="e.g. 181" min="50" max="500">
           </div>
-          <div class="form-group"><label class="form-label">Winner</label>
-            <select class="form-select" id="res-winner"><option value="">— Select —</option></select>
+          <div class="form-group"><label class="form-label">Actual Overs</label>
+            <input class="form-input font-mono" type="number" id="res-overs" placeholder="20" min="5" max="20" value="20">
           </div>
+        </div>
+        <div class="form-group"><label class="form-label">Winner</label>
+          <select class="form-select" id="res-winner"><option value="">— Select —</option></select>
         </div>
         <div class="form-group"><label class="form-label">Player of Match</label>
           <select class="form-select" id="res-pom"><option value="">— Select —</option></select>
@@ -667,7 +675,10 @@
       <div class="ctrl-card">
         <div class="ctrl-title" style="color:var(--gold);">🌧 DLS / Lock</div>
         <div class="form-group" style="margin-bottom:10px;"><label class="form-label">DLS Revised Target</label>
-          <input class="form-input font-mono" type="number" id="ctrl-dls" placeholder="e.g. 167" min="50" max="500">
+          <input class="form-input font-mono" type="number" id="ctrl-dls-target" placeholder="e.g. 167" min="50" max="500">
+        </div>
+        <div class="form-group" style="margin-bottom:10px;"><label class="form-label">Actual Overs Played</label>
+          <input class="form-input font-mono" type="number" id="ctrl-dls-overs" placeholder="20" min="5" max="20" value="20">
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
           <button class="btn btn-ghost btn-sm" style="color:var(--gold);" onclick="ctrlDLS()">Set DLS</button>
