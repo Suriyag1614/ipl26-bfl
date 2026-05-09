@@ -1444,7 +1444,7 @@ const API = {
       if (rank <= 5)  give('top-5');
 
       // 3. Prediction Milestones
-      if (preds.some(p => p.match?.actual_target && Number(p.target_score) === Number(p.match.actual_target))) {
+      if (preds.some(p => p.match?.actual_target && Math.abs(this.getScaledPred(p, p.match) - p.match.actual_target) === 0)) {
         give('perfect-pick');
         give('perfect_pred');
       }
