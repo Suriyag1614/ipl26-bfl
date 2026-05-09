@@ -103,7 +103,7 @@
       display: inline-flex; align-items: center; gap: 4px;
       background: rgba(245,200,66,0.1); border: 1px solid rgba(245,200,66,0.3);
       border-radius: 4px; padding: 2px 6px; font-family: var(--f-ui);
-      font-size: 10px; font-weight: 800; color: var(--gold);
+      font-size: 11px; font-weight: 800; color: var(--gold);
       vertical-align: middle; margin-left: 4px;
     }
 
@@ -862,7 +862,7 @@ function renderPredictions() {
     var predPts=API.calcPredictionPoints(p,m);
     var statusHtml=!m.winner?'<span class="match-status status-upcoming" style="font-size:10px;">Pending</span>':(corW?'<span class="match-status status-done" style="font-size:10px;">Correct</span>':'<span class="match-status status-locked" style="font-size:10px;">Wrong</span>');
     return '<tr><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+'M'+(m.match_no||'?')+' · '+UI.tShort(m.team1)+' vs '+UI.tShort(m.team2)+'</td>'+
-      '<td class="font-mono">'+(p.target_score||'—')+(m.is_dls_applied ? ' <span style="font-size:11px;color:var(--gold);">→ '+API.getScaledPred(p, m)+'</span>' : '')+'</td>'+
+      '<td class="font-mono">'+(p.target_score||'—')+(m.is_dls_applied ? ' <span style="color:var(--gold);">→ '+API.getScaledPred(p, m)+'</span>' : '')+'</td>'+
       '<td class="font-mono">'+(m.actual_target||'—')+(m.is_dls_applied ? ' <span class="dls-badge">DLS</span>' : '')+'</td>'+
       '<td class="font-mono" style="color:'+(diff===0?'var(--accent)':diff&&diff<=5?'var(--green)':'var(--red)')+';">'+(diff!==null?'±'+diff:'—')+'</td>'+
       '<td>'+UI.esc(UI.tShort(p.predicted_winner)||'—')+'</td>'+
