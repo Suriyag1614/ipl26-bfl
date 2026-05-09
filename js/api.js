@@ -444,7 +444,7 @@ const API = {
 
   async fetchMyPredictions(teamId) {
     const { data, error } = await sb.from('predictions')
-      .select('*,match:matches(id,match_title,team1,team2,actual_target,winner,match_date,status,match_no)')
+      .select('*,match:matches(id,match_title,team1,team2,actual_target,winner,match_date,status,match_no,actual_overs,is_dls_applied)')
       .eq('fantasy_team_id', teamId).order('submitted_at', { ascending: true });
     if (error) throw error;
     return data || [];
@@ -1541,7 +1541,8 @@ const API = {
   },
 
   _calcPredStats(predictions) {
-    const done = predictions.filter(p => p.match?.actual_target && p.match?.winner);
+    const sorted = [...predictions].sort((a,b) => (a.match?.match_no||0) - (b.match?.match_no||0));
+    const done = sorted.filter(p => p.match?.actual_target && p.match?.winner);
     if (!done.length) return { avg_diff: 0, winner_pct: 0, best_streak: 0, total: 0, correct: 0, exact: 0 };
     const diffs = done.map(p => Math.abs(this.getScaledPred(p, p.match) - (p.match.actual_target || 0)));
     const avgDiff = diffs.reduce((a, b) => a + b, 0) / diffs.length;
@@ -1600,7 +1601,8 @@ const API = {
   },
 
   _calcStreaks(predictions) {
-    const done = predictions.filter(p => p.match?.winner);
+    const sorted = [...predictions].sort((a,b) => (a.match?.match_no||0) - (b.match?.match_no||0));
+    const done = sorted.filter(p => p.match?.winner);
     let streak = 0, max = 0;
     done.forEach(p => { if (p.predicted_winner === p.match.winner) { streak++; max = Math.max(max, streak); } else streak = 0; });
     return { current: streak, max };
