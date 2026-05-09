@@ -371,7 +371,7 @@ async function loadRecent() {
   try {
     var logs = await API.fetchPointsBreakdown(_myTeamId);
     if(!logs.length){ $('#recent-results').innerHTML='<div style="text-align:center;color:var(--text3);padding:16px;font-size:14px;">No match results yet</div>'; return; }
-    $('#recent-results').innerHTML='<div class="table-wrap"><table class="data-table"><thead><tr><th>Match</th><th>Squad</th><th>Pred</th><th>Total</th></tr></thead><tbody>'+
+    $('#recent-results').innerHTML='<div class="table-wrap"><table class="data-table"><thead><tr><th>Match</th><th style="text-align:center;">Squad</th><th style="text-align:center;">Pred</th><th style="text-align:center;">Total</th></tr></thead><tbody>'+
       logs.slice().reverse().slice(0,5).map(function(l){
          var matchTitle = l.match ? ('M'+(l.match.match_no||'?')+' · '+UI.fmtMatch(l.match.team1, l.match.team2)) : '—';
         return '<tr class="clickable-row" onclick="showBreakdown(\''+l.id+'\')"><td style="font-weight:400;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+matchTitle+'</td><td class="font-mono" style="text-align:center;">'+UI.fmtPts(l.squad_points)+'</td><td class="font-mono" style="text-align:center;">'+UI.fmtPts(l.prediction_points)+'</td><td class="pts" style="text-align:center;">'+UI.fmtPts(l.total_points)+'</td></tr>';
@@ -415,12 +415,12 @@ async function loadMiniLB() {
       } catch(e) {}
     }
     var medals={1:'🥇',2:'🥈',3:'🥉'};
-    $('#mini-leaderboard').innerHTML='<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Team</th><th>Played</th><th>Points</th></tr></thead><tbody>'+
+    $('#mini-leaderboard').innerHTML='<div class="table-wrap"><table class="data-table"><thead><tr><th>#</th><th>Team</th><th style="text-align:center;">Played</th><th style="text-align:center;">Points</th></tr></thead><tbody>'+
       lb.slice(0,5).map(function(r){
         var isMe=r.fantasy_team_id===_myTeamId;
         return '<tr'+(isMe?' class="highlight-me"':'')+'>'+
           '<td class="rank">'+(medals[r.rank]||r.rank)+' '+UI.rankBadge(r.rank, r.prev_rank)+'</td>'+
-          '<td style="font-weight:600;">'+UI.championName(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'')+'</td>'+
+          '<td style="font-weight:600;">'+UI.championName(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:10px;">You</span>':'')+'</td>'+ 
           '<td style="color:var(--text2); text-align:center;">'+r.matches_played+'</td>'+
           '<td class="pts" style="text-align:center;">'+UI.fmtPts(r.total_points)+'</td></tr>';
       }).join('')+'</tbody></table></div>';
