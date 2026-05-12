@@ -165,9 +165,9 @@
       background: var(--accent); opacity: 0.03; border-radius: 50%; pointer-events: none; 
     }
     .phase-card::after {
-      content: ""; position: absolute; bottom: -80px; right: 0px; width: 100%; height: 100%;
+      content: ""; position: absolute; bottom: 0px; right: 0px; width: 100%; height: 100%;
       background: url('images/ipl/rounded_spiral-bottom-section-bg.png') no-repeat center;
-      background-size: contain; opacity: 0.35; pointer-events: none; z-index: 0;
+      background-size: contain; opacity: 0.25; pointer-events: none; z-index: 0;
     }
     .phase-card > * { position: relative; z-index: 1; }
 
@@ -1292,6 +1292,10 @@ async function renderPhaseSummary() {
       var statusText = p.status.charAt(0).toUpperCase() + p.status.slice(1);
       var progress = Math.round((p.count / p.totalInPhase) * 100);
       
+      var squadPct = p.total > 0 ? Math.round((p.squad / p.total) * 100) : 0;
+      var predPct  = p.total > 0 ? Math.round((p.pred / p.total) * 100) : 0;
+      var bonusPct = p.total > 0 ? Math.round((p.bonus / p.total) * 100) : 0;
+
       var performersHtml = p.performers.length ? p.performers.map(function(perf) {
         return '<div class="p-perf-row">' +
           '<img src="' + (perf.image_url || 'images/players/placeholder.png') + '" class="p-perf-img" onerror="this.src=\'images/bfl/bfl-logo.png\'">' +
@@ -1299,7 +1303,7 @@ async function renderPhaseSummary() {
             '<div class="p-perf-name">' + UI.esc(perf.name) + '</div>' +
             '<div class="p-perf-role">' + perf.role + '</div>' +
           '</div>' +
-          '<div class="p-perf-pts">' + Math.round(perf.pts) + '</div>' +
+          '<div class="p-perf-pts">' + Math.round(perf.pts) + ' pts</div>' +
         '</div>';
       }).join('') : '<div style="font-size:12px;color:var(--text3);text-align:center;padding:10px;">No matches processed</div>';
 
@@ -1322,9 +1326,9 @@ async function renderPhaseSummary() {
             '</div>' +
           '</div>' +
           '<div class="phase-sub-stats">' +
-            '<div class="p-sub-row"><span>Squad Pts</span><span class="p-sub-val" style="color:#34d399;">+' + UI.fmtPts(p.squad) + '</span></div>' +
-            '<div class="p-sub-row"><span>Prediction Pts</span><span class="p-sub-val" style="color:var(--cyan);">+' + UI.fmtPts(p.pred) + '</span></div>' +
-            '<div class="p-sub-row"><span>Bonus Pts</span><span class="p-sub-val" style="color:var(--purple);">+' + UI.fmtPts(p.bonus) + '</span></div>' +
+            '<div class="p-sub-row"><span>Squad Pts</span><span class="p-sub-val" style="color:#34d399;">+' + UI.fmtPts(p.squad) + ' (' + squadPct + '%)</span></div>' +
+            '<div class="p-sub-row"><span>Prediction Pts</span><span class="p-sub-val" style="color:var(--cyan);">+' + UI.fmtPts(p.pred) + ' (' + predPct + '%)</span></div>' +
+            '<div class="p-sub-row"><span>Bonus Pts</span><span class="p-sub-val" style="color:var(--purple);">+' + UI.fmtPts(p.bonus) + ' (' + bonusPct + '%)</span></div>' +
           '</div>' +
           '<div class="phase-progress-track">' +
             '<div class="phase-progress-fill" style="width:' + progress + '%;"></div>' +
@@ -1338,17 +1342,19 @@ async function renderPhaseSummary() {
     }).join('');
 
     // Phase Charts
-    var cum = 0;
+    var runningPts = 0, runningMatches = 0;
     var lineData = [];
     var barData = [];
     
     phaseData.forEach(function(p) {
-      cum += Number(p.total);
-      lineData.push({ label: 'P' + p.id, value: cum });
+      runningPts += Number(p.total);
+      runningMatches += Number(p.count);
+      var cumAvg = runningMatches > 0 ? (runningPts / runningMatches).toFixed(1) : 0;
+      lineData.push({ label: 'P' + p.id, value: Number(cumAvg) });
       barData.push({ label: 'P' + p.id, value: p.total });
     });
     
-    if (cum > 0) {
+    if (runningPts > 0) {
       setTimeout(function(){
         UI.drawLineChart('chart-phase-cumulative', lineData, { height: 200, color: '#f0b429', showValues: true });
         if ($id('chart-phase-contribution')) {
@@ -1356,6 +1362,7 @@ async function renderPhaseSummary() {
         }
       }, 100);
     } else {
+
 
       var wrap = $id('chart-phase-cumulative').parentElement;
       if (wrap) wrap.innerHTML = '<div class="empty-state">No points data available yet</div>';
