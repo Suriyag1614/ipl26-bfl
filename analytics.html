@@ -164,6 +164,13 @@
       content: ""; position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; 
       background: var(--accent); opacity: 0.03; border-radius: 50%; pointer-events: none; 
     }
+    .phase-card::after {
+      content: ""; position: absolute; bottom: -80px; right: 0px; width: 100%; height: 100%;
+      background: url('images/ipl/rounded_spiral-bottom-section-bg.png') no-repeat center;
+      background-size: contain; opacity: 0.35; pointer-events: none; z-index: 0;
+    }
+    .phase-card > * { position: relative; z-index: 1; }
+
     .phase-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
     .phase-title { font-family: var(--f-display); font-size: 26px; font-weight: 900; color: var(--accent); line-height: 1; }
     .phase-matches { font-size: 11px; font-weight: 800; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 6px; }
@@ -189,7 +196,7 @@
     .p-perf-info { flex: 1; }
     .p-perf-name { font-size: 14px; font-weight: 700; color: var(--text); }
     .p-perf-role { font-size: 10px; color: var(--text3); text-transform: uppercase; font-weight: 600; }
-    .p-perf-pts { font-family: var(--f-mono); font-size: 13px; font-weight: 800; color: var(--accent); }
+    .p-perf-pts { font-family: var(--f-mono); font-size: 16px; font-weight: 800; color: var(--accent); }
 
     .phase-progress-track { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; margin-top: 12px; }
     .phase-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--cyan)); transition: width 1s ease; }
