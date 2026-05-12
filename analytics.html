@@ -145,7 +145,56 @@
       .fl-name strong { font-size: 16px; }
       .fl-rating { font-size: 20px; }
     }
+
+    /* Phase Summary Styles */
+    .phase-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 20px; margin-top: 20px; }
+    .phase-card { 
+      background: linear-gradient(145deg, var(--bg2), var(--bg3)); 
+      border: 1px solid var(--border); 
+      border-radius: var(--radius-lg); 
+      padding: 24px; 
+      position: relative; 
+      overflow: hidden; 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+    }
+    .phase-card:hover { border-color: var(--accent-dim); transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    .phase-card::before { 
+      content: ""; position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; 
+      background: var(--accent); opacity: 0.03; border-radius: 50%; pointer-events: none; 
+    }
+    .phase-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+    .phase-title { font-family: var(--f-display); font-size: 26px; font-weight: 900; color: var(--accent); line-height: 1; }
+    .phase-matches { font-size: 11px; font-weight: 800; color: var(--text3); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 6px; }
+    .phase-status { font-size: 10px; padding: 4px 10px; border-radius: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+    .status-active { background: rgba(52, 211, 153, 0.1); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+    .status-locked { background: rgba(255, 255, 255, 0.05); color: var(--text3); border: 1px solid var(--border); }
+    .status-completed { background: rgba(56, 217, 245, 0.1); color: #38d9f5; border: 1px solid rgba(56, 217, 245, 0.3); }
+
+    .phase-main-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    .p-stat-box { background: rgba(0,0,0,0.2); padding: 14px; border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.05); text-align: center; }
+    .p-stat-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .p-stat-val { font-family: var(--f-display); font-size: 24px; font-weight: 900; color: var(--text); }
+
+    .phase-sub-stats { font-size: 12px; color: var(--text2); display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--border); padding-top: 16px; margin-top: 4px; }
+    .p-sub-row { display: flex; justify-content: space-between; align-items: center; }
+    .p-sub-val { font-weight: 700; color: var(--text); font-family: var(--f-mono); }
+
+    .phase-performers { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+    .p-perf-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--text3); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; letter-spacing: 1px; }
+    .p-perf-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding: 6px; border-radius: var(--radius); transition: background 0.2s; }
+    .p-perf-row:hover { background: rgba(255,255,255,0.03); }
+    .p-perf-img { width: 36px; height: 36px; border-radius: 50%; background: var(--bg3); border: 1px solid var(--border); object-fit: cover; }
+    .p-perf-info { flex: 1; }
+    .p-perf-name { font-size: 14px; font-weight: 700; color: var(--text); }
+    .p-perf-role { font-size: 10px; color: var(--text3); text-transform: uppercase; font-weight: 600; }
+    .p-perf-pts { font-family: var(--f-mono); font-size: 13px; font-weight: 800; color: var(--accent); }
+
+    .phase-progress-track { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; margin-top: 12px; }
+    .phase-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--cyan)); transition: width 1s ease; }
   </style>
+
 </head>
 <body>
 <div id="toast-container"></div>
@@ -183,6 +232,8 @@
     <button class="tab-btn" onclick="switchTab('predictions')">Predictions</button>
     <button class="tab-btn" onclick="switchTab('impact')">Impact</button>
     <button class="tab-btn" onclick="switchTab('breakdown')">Points Breakdown</button>
+    <button class="tab-btn" onclick="switchTab('phase')">Phase Summary</button>
+
     <button class="tab-btn" onclick="switchTab('badges')">Badges</button>
   </div>
 
@@ -364,6 +415,29 @@
       </div>
     </div>
   </div>
+
+  <!-- PHASE SUMMARY -->
+  <div class="tab-panel" id="tab-phase">
+    <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:20px;margin-bottom:20px;">
+      <div class="card">
+        <div class="card-title">Cumulative Performance</div>
+        <div class="chart-wrap" style="height: 200px;"><canvas id="chart-phase-cumulative"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Point Contribution per Phase</div>
+        <div class="chart-wrap" style="height: 200px;"><canvas id="chart-phase-contribution"></canvas></div>
+      </div>
+    </div>
+    
+    <div class="phase-grid" id="phase-cards-container">
+
+      <!-- Generated via JS -->
+      <div class="skel skel-card" style="height:400px;"></div>
+      <div class="skel skel-card" style="height:400px;"></div>
+      <div class="skel skel-card" style="height:400px;"></div>
+    </div>
+  </div>
+
 
   <!-- BADGES -->
   <div class="tab-panel" id="tab-badges">
@@ -792,7 +866,11 @@ function renderCharts() {
   }
   var last10 = rh.slice(-10);
   setTimeout(function(){UI.drawBarChart('chart-pts-per-match',last10.map(function(r){return{label:r.label,value:r.pts};}),{height:170});},100);
-  setTimeout(function(){UI.drawLineChart('chart-cumulative',last10.map(function(r){return{label:r.label,value:r.cumPts};}),{height:170,color:'#38d9f5'});},120);
+  if(last10.length) {
+    setTimeout(function(){
+      UI.drawLineChart('chart-cumulative', last10.map(function(r){ return {label:r.label, value:r.cumPts}; }), { height: 170, color: '#38d9f5', showValues: true });
+    }, 120);
+  }
 
   var bd=Array.isArray(a.breakdown)?a.breakdown:[];
   var totBat=0,totBowl=0,totFld=0,totPred=0;
@@ -851,7 +929,7 @@ function renderPredictions() {
       '<div class="metric-row"><span class="metric-label">Avg Target Diff</span><span class="metric-val">±'+ps.avg_diff+'</span></div>'+
       '<div class="metric-row"><span class="metric-label">Best Streak</span><span class="metric-val" style="color:var(--gold);">'+ps.best_streak+'</span></div>';
   var last10Preds = preds.slice(-10);
-  if(last10Preds.length) setTimeout(function(){UI.drawBarChart('chart-pred-diff',last10Preds.map(function(p){return{label:'M'+(p.match.match_no||'?'),value:Math.abs(API.getScaledPred(p,p.match)-(p.match.actual_target||0))};}),{height:170,color:'#38d9f5'});},160);
+  if(last10Preds.length) setTimeout(function(){UI.drawBarChart('chart-pred-diff',last10Preds.map(function(p){return{label:'M'+(p.match.match_no||'?'),value:Math.abs(API.getScaledPred(p,p.match)-(p.match.actual_target||0))};}),{height:170,color:'#38d9f5',showValues:true});},160);
   var tbody=document.getElementById('pred-history-tbody'); if(!tbody) return;
   var allPreds=Array.isArray(_analytics.predictions)?_analytics.predictions:[];
   if(!allPreds.length){tbody.innerHTML='<tr><td colspan="7" class="empty-state">No predictions yet</td></tr>';return;}
@@ -1111,6 +1189,180 @@ async function renderPointsBreakdown() {
     }).join('');
   }
 }
+
+async function renderPhaseSummary() {
+  var container = $id('phase-cards-container');
+  if (!container || !_analytics) return;
+  
+  try {
+    var bd = safeArr(_analytics.breakdown);
+    // Fetch all stats and players in parallel
+    var [allPlayerStats, allPlayers] = await Promise.all([
+      API.fetchAllPlayerStats(),
+      API.fetchAllPlayers()
+    ]);
+    
+    var playerStats = safeArr(allPlayerStats);
+    var playerMap = {}; 
+    safeArr(allPlayers).forEach(function(p){ playerMap[p.id] = p; });
+
+    var phases = [
+      { id: 1, name: 'Foundation Phase', start: 1, end: 14 },
+      { id: 2, name: 'Mid-Season Surge', start: 15, end: 28 },
+      { id: 3, name: 'Strategic Push', start: 29, end: 42 },
+      { id: 4, name: 'Climb to Playoffs', start: 43, end: 56 },
+      { id: 5, name: 'Grand Finale Push', start: 57, end: 70 }
+    ];
+
+    var phaseData = phases.map(function(ph) {
+      // 1. Get all matches belonging to this phase
+      var matchesInPhase = _matches.filter(function(m){ 
+        var n = Number(m.match_no);
+        return n >= ph.start && n <= ph.end; 
+      });
+      
+      // 2. Identify which of those are accounted for (completed, processed, or abandoned)
+      var accountedInPhase = matchesInPhase.filter(function(m){ 
+        return m.status === 'processed' || m.status === 'completed' || m.status === 'abandoned'; 
+      });
+      
+      // 3. Filter points_log (bd) for matches in this phase
+      var logsInPhase = bd.filter(function(l) {
+        var n = Number(l.match?.match_no || 0);
+        return n >= ph.start && n <= ph.end;
+      });
+
+      var totalPts = logsInPhase.reduce(function(s, l){ return s + (l.total_points || 0); }, 0);
+      var squadPts = logsInPhase.reduce(function(s, l){ return s + (l.batting_pts || 0) + (l.bowling_pts || 0) + (l.fielding_pts || 0); }, 0);
+      var predPts  = logsInPhase.reduce(function(s, l){ return s + (l.prediction_points || 0); }, 0);
+      var bonusPts = logsInPhase.reduce(function(s, l){ return s + (l.bonus_pts || 0); }, 0);
+
+      // 4. Top Performers in Phase (aggregated from all players stats in these matches)
+      var matchIds = matchesInPhase.map(function(m){ return m.id; });
+      var pStatsInPhase = playerStats.filter(function(s){ return matchIds.includes(s.match_id); });
+      var playerAgg = {};
+      
+      // Use the actual squad IDs from _analytics.squad
+      var mySquadIds = new Set(_analytics.squad.map(function(sp){ return sp.player?.id; }).filter(Boolean));
+
+      pStatsInPhase.forEach(function(s) {
+        var pid = s.player_id;
+        if (!mySquadIds.has(pid)) return;
+        if (!playerAgg[pid]) playerAgg[pid] = { pts: 0, id: pid };
+        playerAgg[pid].pts += (API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s));
+      });
+      
+      var topPerformers = Object.values(playerAgg)
+        .sort(function(a, b){ return b.pts - a.pts; })
+        .slice(0, 3)
+        .map(function(p){ 
+           var player = playerMap[p.id];
+           return { 
+             pts: p.pts, 
+             name: player?.name || 'Unknown', 
+             role: player?.role || '', 
+             image_url: player?.image_url 
+           }; 
+        });
+
+      return {
+        id: ph.id, name: ph.name, start: ph.start, end: ph.end,
+        total: totalPts,
+        squad: squadPts,
+        pred: predPts,
+        bonus: bonusPts,
+        avg: accountedInPhase.length ? (totalPts / accountedInPhase.length).toFixed(1) : 0,
+        count: accountedInPhase.length,
+        totalInPhase: matchesInPhase.length,
+        status: accountedInPhase.length === 0 ? 'locked' : (accountedInPhase.length < matchesInPhase.length ? 'active' : 'completed'),
+        performers: topPerformers
+      };
+    });
+
+    // Render Cards
+    container.innerHTML = phaseData.map(function(p, i) {
+      var statusCls = 'status-' + p.status;
+      var statusText = p.status.charAt(0).toUpperCase() + p.status.slice(1);
+      var progress = Math.round((p.count / p.totalInPhase) * 100);
+      
+      var performersHtml = p.performers.length ? p.performers.map(function(perf) {
+        return '<div class="p-perf-row">' +
+          '<img src="' + (perf.image_url || 'images/players/placeholder.png') + '" class="p-perf-img" onerror="this.src=\'images/bfl/bfl-logo.png\'">' +
+          '<div class="p-perf-info">' +
+            '<div class="p-perf-name">' + UI.esc(perf.name) + '</div>' +
+            '<div class="p-perf-role">' + perf.role + '</div>' +
+          '</div>' +
+          '<div class="p-perf-pts">' + Math.round(perf.pts) + '</div>' +
+        '</div>';
+      }).join('') : '<div style="font-size:12px;color:var(--text3);text-align:center;padding:10px;">No matches processed</div>';
+
+      return '<div class="phase-card" style="animation: fade-up .4s ease ' + (i * 0.1) + 's both;">' +
+          '<div class="phase-header">' +
+            '<div>' +
+              '<div class="phase-title">Phase ' + p.id + '</div>' +
+              '<div class="phase-matches">Matches ' + p.start + ' — ' + p.end + '</div>' +
+            '</div>' +
+            '<div class="phase-status ' + statusCls + '">' + statusText + '</div>' +
+          '</div>' +
+          '<div class="phase-main-stats">' +
+            '<div class="p-stat-box">' +
+              '<div class="p-stat-lbl">Total Pts</div>' +
+              '<div class="p-stat-val" style="color:var(--accent);">' + UI.fmtPts(p.total) + '</div>' +
+            '</div>' +
+            '<div class="p-stat-box">' +
+              '<div class="p-stat-lbl">Avg / Match</div>' +
+              '<div class="p-stat-val" style="color:var(--gold);">' + p.avg + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="phase-sub-stats">' +
+            '<div class="p-sub-row"><span>Squad Pts</span><span class="p-sub-val" style="color:#34d399;">+' + UI.fmtPts(p.squad) + '</span></div>' +
+            '<div class="p-sub-row"><span>Prediction Pts</span><span class="p-sub-val" style="color:var(--cyan);">+' + UI.fmtPts(p.pred) + '</span></div>' +
+            '<div class="p-sub-row"><span>Bonus Pts</span><span class="p-sub-val" style="color:var(--purple);">+' + UI.fmtPts(p.bonus) + '</span></div>' +
+          '</div>' +
+          '<div class="phase-progress-track">' +
+            '<div class="phase-progress-fill" style="width:' + progress + '%;"></div>' +
+          '</div>' +
+          '<div style="font-size:10px;color:var(--text3);margin-top:6px;text-align:right;font-weight:700;">' + p.count + ' / ' + p.totalInPhase + ' MATCHES</div>' +
+          '<div class="phase-performers">' +
+            '<div class="p-perf-title"><span>★</span> Top 3 Performers</div>' +
+            performersHtml +
+          '</div>' +
+        '</div>';
+    }).join('');
+
+    // Phase Charts
+    var cum = 0;
+    var lineData = [];
+    var barData = [];
+    
+    phaseData.forEach(function(p) {
+      cum += Number(p.total);
+      lineData.push({ label: 'P' + p.id, value: cum });
+      barData.push({ label: 'P' + p.id, value: p.total });
+    });
+    
+    if (cum > 0) {
+      setTimeout(function(){
+        UI.drawLineChart('chart-phase-cumulative', lineData, { height: 200, color: '#f0b429', showValues: true });
+        if ($id('chart-phase-contribution')) {
+          UI.drawBarChart('chart-phase-contribution', barData, { height: 200, color: '#38d9f5', showValues: true });
+        }
+      }, 100);
+    } else {
+
+      var wrap = $id('chart-phase-cumulative').parentElement;
+      if (wrap) wrap.innerHTML = '<div class="empty-state">No points data available yet</div>';
+    }
+
+
+
+  } catch (e) {
+    console.error('Phase Summary Error:', e);
+    container.innerHTML = '<div class="empty-state">Error loading phase data</div>';
+  }
+}
+
+
 
 async function loadPredictionsSummary() {
   var teamWins = $id('pred-team-wins');
@@ -1669,7 +1921,8 @@ async function switchTab(tab) {
     prevPanel.classList.remove('active', 'leaving');
   }
 
-  var tabs=['overview','players','predictions','impact','breakdown','badges'];
+  var tabs=['overview','players','predictions','impact','breakdown','phase','badges'];
+
   document.querySelectorAll('.tab-btn').forEach(function(b){
     var id = b.getAttribute('onclick').match(/'([^']+)'/)[1];
     b.classList.toggle('active', id === tab);
@@ -1692,7 +1945,9 @@ async function switchTab(tab) {
   if(tab==='predictions') setTimeout(renderPredictions,60);
   if(tab==='impact') setTimeout(renderImpact,60);
   if(tab==='breakdown') renderPointsBreakdown();
+  if(tab==='phase') renderPhaseSummary();
 }
+
 init();
 </script>
 </div>

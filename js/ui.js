@@ -259,7 +259,15 @@ const UI = {
         const lbl = String(labels[i]).substring(0,6);
         ctx.fillText(lbl, x, H - pad.bottom + 16);
       }
+      // Value label
+      if (options.showValues) {
+        ctx.fillStyle = options.valueColor || '#fff';
+        ctx.font = 'bold 10px Barlow Condensed, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.fmtPts(v), x, y - 10);
+      }
     });
+
   },
 
   // Bar chart
@@ -303,7 +311,16 @@ const UI = {
       ctx.fill();
       ctx.fillStyle='rgba(148,163,184,0.8)'; ctx.font='10px Barlow Condensed,sans-serif'; ctx.textAlign='center';
       if (labels[i]) ctx.fillText(String(labels[i]).substring(0,5), pad.left+i*xStep+xStep/2, H-pad.bottom+16);
+
+      // Value label
+      if (options.showValues) {
+        ctx.fillStyle = options.valueColor || '#fff';
+        ctx.font = 'bold 10px Barlow Condensed, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.fmtPts(v), x + barW/2, y - 6);
+      }
     });
+
   },
 
   // Donut chart
