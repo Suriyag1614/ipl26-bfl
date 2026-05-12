@@ -187,9 +187,21 @@ const UI = {
   drawLineChart(canvasId, data, options = {}) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
-    const ctx    = canvas.getContext('2d');
-    const W = canvas.width = canvas.offsetWidth || 400;
-    const H = canvas.height = options.height || 180;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    
+    // Scale for High-DPI
+    const w = options.width || rect.width || canvas.offsetWidth || 400;
+    const h = options.height || rect.height || canvas.offsetHeight || 180;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.scale(dpr, dpr);
+
+    const W = w;
+    const H = h;
     const pad = options.pad || { top:20, right:20, bottom:40, left:52 };
     const vals = data.map(d => typeof d === 'number' ? d : d.value);
     const labels = data.map((d,i) => typeof d === 'number' ? (i+1) : (d.label || ''));
@@ -275,8 +287,19 @@ const UI = {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const W   = canvas.width  = canvas.offsetWidth || 400;
-    const H   = canvas.height = options.height || 160;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+
+    const w = options.width || rect.width || canvas.offsetWidth || 400;
+    const h = options.height || rect.height || canvas.offsetHeight || 160;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.scale(dpr, dpr);
+
+    const W = w;
+    const H = h;
     const pad = { top:20, right:20, bottom:40, left:52 };
     const vals   = data.map(d => typeof d === 'number' ? d : d.value);
     const labels = data.map((d,i) => typeof d === 'number' ? (i+1) : (d.label || ''));
@@ -327,9 +350,15 @@ const UI = {
   drawDonutChart(canvasId, slices, options = {}) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
-    const ctx  = canvas.getContext('2d');
-    const size = options.size || Math.min(canvas.offsetWidth, 160);
-    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    
+    const size = options.size || rect.width || canvas.offsetWidth || 160;
+    canvas.width = canvas.height = size * dpr;
+    canvas.style.width = canvas.style.height = size + 'px';
+    ctx.scale(dpr, dpr);
+
     const cx = size/2, cy = size/2, r = size/2 - 8, inner = r * 0.62;
     ctx.clearRect(0,0,size,size);
     const total  = slices.reduce((s,sl) => s + sl.value, 0) || 1;

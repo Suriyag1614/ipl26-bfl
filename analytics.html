@@ -165,7 +165,7 @@
       background: var(--accent); opacity: 0.03; border-radius: 50%; pointer-events: none; 
     }
     .phase-card::after {
-      content: ""; position: absolute; bottom: 0px; right: 0px; width: 100%; height: 100%;
+      content: ""; position: absolute; bottom: -50px; right: 0px; width: 100%; height: 100%;
       background: url('images/ipl/rounded_spiral-bottom-section-bg.png') no-repeat center;
       background-size: contain; opacity: 0.25; pointer-events: none; z-index: 0;
     }
@@ -200,6 +200,36 @@
 
     .phase-progress-track { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; margin-top: 12px; }
     .phase-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--cyan)); transition: width 1s ease; }
+
+    /* Layout enhancements */
+    .analytics-grid { 
+      display: grid; 
+      grid-template-columns: repeat(2, 1fr); 
+      gap: 20px; 
+      margin-bottom: 24px; 
+    }
+    .chart-container { 
+      height: 200px; 
+      display: flex; 
+      flex-direction: column; 
+      justify-content: center; 
+    }
+    .card-full { grid-column: 1 / -1; }
+
+    /* Ensure all cards in the grid have equal height */
+    .analytics-grid > .card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .analytics-grid > .card > .chart-wrap {
+      flex: 1;
+    }
+    
+    @media (max-width: 900px) {
+      .analytics-grid { grid-template-columns: 1fr; }
+      .chart-container { height: 180px; }
+    }
   </style>
 
 </head>
@@ -246,8 +276,8 @@
 
   <!-- OVERVIEW -->
   <div class="tab-panel active" id="tab-overview">
-    <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin-bottom:18px;">
-        <div class="card" style="padding:0; overflow:auto;">
+    <div class="analytics-grid">
+        <div class="card card-full" style="padding:0; overflow:hidden;">
           <div class="card-title" style="padding:16px 20px 0;">Performance Benchmark</div>
           <div id="league-comparison-card" style="padding:24px;">
             <div class="skel skel-row" style="margin-bottom:12px;"></div>
@@ -257,29 +287,30 @@
             Comparison based on <strong>League Wide</strong> data from processed matches.
           </div>
         </div>
-      </div>
-    <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin-bottom:18px;">
-      <div class="card">
-        <div class="card-title">Points Per Match</div>
-        <div class="chart-wrap"><canvas id="chart-pts-per-match" style="height:170px;"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Cumulative Points</div>
-        <div class="chart-wrap"><canvas id="chart-cumulative" style="height:170px;"></canvas></div>
-      </div>
-    </div>
-    <div class="card mb-20">
-      <div class="card-title">Point Sources Breakdown</div>
-      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;">
-        <div class="chart-wrap" style="flex-shrink:0;"><canvas id="chart-donut" style="width:150px;height:150px;"></canvas></div>
-        <div style="flex:1;min-width:160px;padding-top:8px;" id="donut-legend"></div>
-      </div>
-    </div>
-    <div class="card" id="streaks-card">
-      <div class="card-title">Prediction Streaks</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;" id="streaks-wrap">
-        <div class="skel skel-card" style="height:88px;"></div>
-      </div>
+
+        <div class="card">
+          <div class="card-title">Points Per Match</div>
+          <div class="chart-wrap chart-container"><canvas id="chart-pts-per-match"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cumulative Points</div>
+          <div class="chart-wrap chart-container"><canvas id="chart-cumulative"></canvas></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Point Sources Breakdown</div>
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:12px 0;flex:1;">
+            <canvas id="chart-donut" style="width:110px !important;height:110px !important;flex-shrink:0;"></canvas>
+            <div style="width:100%;font-size:12px;" id="donut-legend"></div>
+          </div>
+        </div>
+
+        <div class="card" id="streaks-card">
+          <div class="card-title">Prediction Streaks</div>
+          <div class="chart-wrap" style="display:grid;grid-template-columns:1fr;gap:10px;align-content:start;overflow-y:auto;padding-right:4px;" id="streaks-wrap">
+            <div class="skel skel-card" style="height:70px;"></div>
+          </div>
+        </div>
     </div>
   </div>
 
@@ -345,14 +376,14 @@
 
   <!-- PREDICTIONS -->
   <div class="tab-panel" id="tab-predictions">
-    <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin-bottom:18px;">
+    <div class="analytics-grid">
       <div class="card">
         <div class="card-title">Prediction Stats</div>
         <div id="pred-stats-wrap"><div class="skel skel-row"></div></div>
       </div>
       <div class="card">
         <div class="card-title">Target Accuracy (diff per match)</div>
-        <div class="chart-wrap"><canvas id="chart-pred-diff" style="height:170px;"></canvas></div>
+        <div class="chart-wrap chart-container"><canvas id="chart-pred-diff"></canvas></div>
       </div>
     </div>
     <div class="card" style="max-height: 525px;">
@@ -425,14 +456,14 @@
 
   <!-- PHASE SUMMARY -->
   <div class="tab-panel" id="tab-phase">
-    <div class="analytics-chart-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:20px;margin-bottom:20px;">
+    <div class="analytics-grid">
       <div class="card">
-        <div class="card-title">Cumulative Performance</div>
-        <div class="chart-wrap" style="height: 200px;"><canvas id="chart-phase-cumulative"></canvas></div>
+        <div class="card-title">Average Points per Phase</div>
+        <div class="chart-wrap chart-container"><canvas id="chart-phase-cumulative"></canvas></div>
       </div>
       <div class="card">
-        <div class="card-title">Point Contribution per Phase</div>
-        <div class="chart-wrap" style="height: 200px;"><canvas id="chart-phase-contribution"></canvas></div>
+        <div class="card-title">Points Contribution per Phase</div>
+        <div class="chart-wrap chart-container"><canvas id="chart-phase-contribution"></canvas></div>
       </div>
     </div>
     
@@ -885,7 +916,7 @@ function renderCharts() {
   var slices=[{label:'Batting',value:totBat,color:'#f87171'},{label:'Bowling',value:totBowl,color:'#60a5fa'},{label:'Fielding',value:totFld,color:'#34d399'},{label:'Prediction',value:totPred,color:'#fbbf24'}];
   var total=totBat+totBowl+totFld+totPred||1;
   setTimeout(function(){
-    UI.drawDonutChart('chart-donut',slices,{size:150,centerLabel:total+'pts'});
+    UI.drawDonutChart('chart-donut',slices,{size:110,centerLabel:total+'pts'});
     var leg=document.getElementById('donut-legend');
     if(leg) leg.innerHTML=slices.map(function(s){
       var pct = Math.round((s.value / total) * 100);
@@ -1961,6 +1992,18 @@ async function switchTab(tab) {
   if(tab==='breakdown') renderPointsBreakdown();
   if(tab==='phase') renderPhaseSummary();
 }
+
+// Responsive charts
+var _resizeTimeout;
+window.addEventListener('resize', function() {
+  clearTimeout(_resizeTimeout);
+  _resizeTimeout = setTimeout(function() {
+    var activeTab = document.querySelector('.tab-btn.active')?.getAttribute('onclick').match(/'([^']+)'/)[1];
+    if (activeTab === 'overview') renderCharts();
+    if (activeTab === 'predictions') renderPredictions();
+    if (activeTab === 'phase') renderPhaseSummary();
+  }, 300);
+});
 
 init();
 </script>
