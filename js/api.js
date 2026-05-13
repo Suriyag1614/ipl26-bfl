@@ -64,14 +64,17 @@ const API = {
 
   async fetchAllPlayers() {
     const { data, error } = await sb.from('players')
-      .select('id,name,ipl_team,role,image_url,is_overseas,availability_status,availability_note').order('name');
+      .select('id,name,ipl_team,role,image_url,is_overseas,availability_status,availability_note')
+      .order('name')
+      .limit(5000);
     if (error) throw error;
     return data || [];
   },
 
   async fetchSquadPlayersAll() {
     const { data, error } = await sb.from('squad_players')
-      .select('*,fantasy_team:fantasy_teams(team_name)');
+      .select('*,fantasy_team:fantasy_teams(team_name)')
+      .limit(5000);
     if (error) throw error;
     return data || [];
   },
@@ -2028,8 +2031,9 @@ async fetchTeams() {
    */
   async fetchAllPredictionsAllMatches() {
     const { data, error } = await sb.from('predictions')
-      .select('*')
-      .order('submitted_at', { ascending: false });
+      .select('*,match:matches(match_no,team1,team2,match_date),fantasy_team:fantasy_teams(team_name,owner_name)')
+      .order('submitted_at', { ascending: false })
+      .limit(5000);
     if (error) throw error;
     return data || [];
   },
@@ -2040,7 +2044,8 @@ async fetchTeams() {
   async fetchAllPlayerStats() {
     const { data, error } = await sb.from('player_match_stats')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(5000);
     if (error) throw error;
     return data || [];
   },
