@@ -2431,7 +2431,6 @@ async function loadPlayerStats() {
       $id('ps-bfl-team').innerHTML = '<option value="">All BFL Teams</option>' + bflTeams.map(t => `<option value="${t}">${t}</option>`).join('');
       
     } catch(e) { console.warn('Player stats load error:', e); }
-  }
   renderPlayerStats();
 }
 
