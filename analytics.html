@@ -1644,7 +1644,7 @@ async function loadFantasyLeaderboard() {
     var playerMatches = {};
     var playerIds = [];
     stats.forEach(function(s) {
-      if (s.match_id && completedMatchIds.includes(s.match_id)) {
+      if (s.match_id && completedMatchIds.includes(String(s.match_id))) {
         var pid = s.player_id;
         if (!playerIds.includes(pid)) playerIds.push(pid);
         var pts = API.calcBattingPoints(s) + API.calcBowlingPoints(s) + API.calcFieldingPoints(s);
