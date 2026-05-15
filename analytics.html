@@ -963,7 +963,7 @@ function renderPredictions() {
     ?'<div class="empty-state" style="padding:20px;"><div class="empty-state-text">No completed predictions yet</div></div>'
     :'<div class="metric-row"><span class="metric-label">Total Predictions</span><span class="metric-val">'+ps.total+'</span></div>'+
       '<div class="metric-row"><span class="metric-label">Correct Winners</span><span class="metric-val" style="color:var(--green);">'+ps.correct+' ('+ps.winner_pct+'%)</span></div>'+
-      '<div class="metric-row"><span class="metric-label">Exact Targets</span><span class="metric-val" style="color:var(--accent);">'+ps.exact+'</span></div>'+
+      '<div class="metric-row"><span class="metric-label">Exact Targets</span><span class="metric-val" style="color:var(--cyan);">'+ps.exact+'</span></div>'+
       '<div class="metric-row"><span class="metric-label">Avg Target Diff</span><span class="metric-val">±'+ps.avg_diff+'</span></div>'+
       '<div class="metric-row"><span class="metric-label">Best Streak</span><span class="metric-val" style="color:var(--gold);">'+ps.best_streak+'</span></div>';
   var last10Preds = preds.slice(-10);
@@ -976,7 +976,7 @@ function renderPredictions() {
     var diff=m.actual_target?Math.abs(API.getScaledPred(p,m)-(m.actual_target||0)):null;
     var corW=m.winner&&p.predicted_winner===m.winner;
     var predPts=API.calcPredictionPoints(p,m);
-    var statusHtml=!m.winner?'<span class="match-status status-upcoming" style="font-size:10px;">Pending</span>':(corW?'<span class="match-status status-done" style="font-size:10px;">Correct</span>':'<span class="match-status status-locked" style="font-size:10px;">Wrong</span>');
+    var statusHtml=!m.winner?'<span class="match-status status-upcoming" style="font-size:10px;">Pending</span>':(corW?'<span class="match-status status-done" style="font-size:10px;color:var(--green)">Correct</span>':'<span class="match-status status-locked" style="font-size:10px;color:var(--red)">Wrong</span>');
     return '<tr><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+'M'+(m.match_no||'?')+' · '+UI.tShort(m.team1)+' vs '+UI.tShort(m.team2)+'</td>'+
       '<td class="font-mono">'+(p.target_score||'—')+(m.is_dls_applied ? ' <span style="color:var(--gold);">→ '+API.getScaledPred(p, m)+'</span>' : '')+'</td>'+
       '<td class="font-mono">'+(m.actual_target||'—')+(m.is_dls_applied ? ' <span class="dls-badge">DLS</span>' : '')+'</td>'+
