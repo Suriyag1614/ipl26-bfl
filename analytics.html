@@ -980,7 +980,7 @@ function renderPredictions() {
     return '<tr><td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+'M'+(m.match_no||'?')+' · '+UI.tShort(m.team1)+' vs '+UI.tShort(m.team2)+'</td>'+
       '<td class="font-mono">'+(p.target_score||'—')+(m.is_dls_applied ? ' <span style="color:var(--gold);">→ '+API.getScaledPred(p, m)+'</span>' : '')+'</td>'+
       '<td class="font-mono">'+(m.actual_target||'—')+(m.is_dls_applied ? ' <span class="dls-badge">DLS</span>' : '')+'</td>'+
-      '<td class="font-mono" style="color:'+(diff===0?'var(--accent)':diff&&diff<=5?'var(--green)':'var(--red)')+';">'+(diff!==null?'±'+diff:'—')+'</td>'+
+      '<td class="font-mono" style="color:'+(diff===0?'var(--cyan)':diff&&diff<=5?'var(--accent)':diff<=10?'var(--green)':'var(--red)')+';">'+(diff!==null?'±'+diff:'—')+'</td>'+
       '<td>'+UI.esc(UI.tShort(p.predicted_winner)||'—')+'</td>'+
       '<td>'+statusHtml+'</td>'+
       '<td class="pts">'+predPts+'</td></tr>';
@@ -991,7 +991,7 @@ function renderImpact() {
   var is=_analytics.impactStats||EMPTY_ANALYTICS.impactStats;
   var su=document.getElementById('impact-summary-wrap');
   if(su) su.innerHTML=
-    '<div class="metric-row"><span class="metric-label">Uses Remaining</span><span class="metric-val" style="color:var(--accent);">'+is.remaining+'/8</span></div>'+
+    '<div class="metric-row"><span class="metric-label">Uses Remaining</span><span class="metric-val" style="color:var(--purple);">'+is.remaining+'/8</span></div>'+
     '<div class="metric-row"><span class="metric-label">Points from Impact</span><span class="metric-val" style="color:var(--gold);">'+UI.fmtPts(is.total_pts)+'</span></div>'+
     '<div class="metric-row"><span class="metric-label">Times Activated</span><span class="metric-val">'+is.uses+'</span></div>';
   var pl=document.getElementById('impact-picks-list');
@@ -1000,7 +1000,7 @@ function renderImpact() {
      var pName = (u.player && u.player.name) || (u.player && u.player.effective_name) || '—';
 var ptsSign = (u.points_earned||0) >= 0 ? '+' : '';
       return '<div class="impact-pick-row"><div style="flex:1;"><div style="font-weight:700;">'+UI.esc(pName)+'</div><div style="font-size:12px;color:var(--text2);">'+UI.esc(mTitle)+'</div></div>'+
-        '<div style="font-family:var(--f-display);font-weight:900;font-size:17px;color:var(--accent);">'+ptsSign+UI.fmtPts(u.points_earned)+'</div></div>';
+        '<div style="font-family:var(--f-display);font-weight:900;font-size:17px;color:var(--gold);">'+ptsSign+UI.fmtPts(u.points_earned)+'</div></div>';
    }).join('') : '<div style="padding:12px;color:var(--text3);font-size:13px;">No impact activations yet</div>';
   
   var ih = document.getElementById('impact-history-tbody');
@@ -1009,7 +1009,7 @@ var ptsSign = (u.points_earned||0) >= 0 ? '+' : '';
      var pName = (u.player && u.player.name) || (u.player && u.player.effective_name) || '—';
      var role = (u.player && u.player.role) || '—';
      var ptsSign = (u.points_earned||0) >= 0 ? '+' : '';
-      return '<tr><td>'+UI.esc(mTitle)+'</td><td>'+UI.esc(pName)+'</td><td>'+UI.esc(role)+'</td><td style="color:var(--accent);font-weight:700;">'+ptsSign+UI.fmtPts(u.points_earned)+'</td></tr>';
+      return '<tr><td>'+UI.esc(mTitle)+'</td><td>'+UI.esc(pName)+'</td><td>'+UI.esc(role)+'</td><td style="color:var(--gold);font-weight:700;">'+ptsSign+UI.fmtPts(u.points_earned)+'</td></tr>';
    }).join('') : '<tr><td colspan="4" class="empty-state">No impact activations yet</td></tr>';
 }
 
