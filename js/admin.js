@@ -44,7 +44,7 @@ var _playerSquadMap = {}; // player_id → {team_id, team_name} (BFL team that p
 var _ctrlMatchId  = null;
 var _squadEdits   = {};   // teamId → {captainId,vcId,impactId}
 var _sidebarOpen  = true;
-var _psSort       = { col: 'name', asc: true };
+var _psSort       = { col: 'season_avg', asc: false };
 
 /* ══════════════════════════════════════════════════════════════
    HELPERS
@@ -599,7 +599,7 @@ function loadTeamActivity() { loadTeamActivityDashboard(); }
 async function loadPhaseSummary() {
   var tbody = $id('phase-summary-tbody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
+  tbody.innerHTML = '<tr><td colspan="8"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
 
   try {
     var logs = safeArr(await API.fetchAllPointsLogAllTeams());
@@ -682,14 +682,31 @@ async function loadPhaseSummary() {
         var nameB = (b.name || '').toLowerCase();
         if (nameA === nameB) return 0;
         return sortAsc ? (nameA > nameB ? 1 : -1) : (nameB > nameA ? 1 : -1);
+      } else if (sortCol === 'season_avg') {
+        var totalPtsA = a.pts.reduce(function(s, v){return s + v;}, 0);
+        var totalCountA = a.count.reduce(function(s, v){return s + v;}, 0);
+        var avgA = totalCountA > 0 ? (totalPtsA / totalCountA) : null;
+
+        var totalPtsB = b.pts.reduce(function(s, v){return s + v;}, 0);
+        var totalCountB = b.count.reduce(function(s, v){return s + v;}, 0);
+        var avgB = totalCountB > 0 ? (totalPtsB / totalCountB) : null;
+
+        if (avgA === null && avgB === null) return (a.name || '').localeCompare(b.name || '');
+        if (avgA === null) return 1;
+        if (avgB === null) return -1;
+
+        if (Math.abs(avgA - avgB) < 0.001) {
+          return (a.name || '').localeCompare(b.name || '');
+        }
+        return sortAsc ? (avgA - avgB) : (avgB - avgA);
       } else {
         var phaseIdx = Number(sortCol);
         var avgA = a.count[phaseIdx] > 0 ? (a.pts[phaseIdx] / a.count[phaseIdx]) : null;
         var avgB = b.count[phaseIdx] > 0 ? (b.pts[phaseIdx] / b.count[phaseIdx]) : null;
 
         if (avgA === null && avgB === null) return (a.name || '').localeCompare(b.name || '');
-        if (avgA === null) return 1; // Put null values at the bottom
-        if (avgB === null) return -1; // Put null values at the bottom
+        if (avgA === null) return 1;
+        if (avgB === null) return -1;
 
         if (Math.abs(avgA - avgB) < 0.001) {
           return (a.name || '').localeCompare(b.name || '');
@@ -698,8 +715,26 @@ async function loadPhaseSummary() {
       }
     });
 
+    // Calculate season average min/max for highlighting
+    var seasonAvgs = [];
+    teamList.forEach(function(item) {
+      var totalPts = item.pts.reduce(function(s, v){return s + v;}, 0);
+      var totalCount = item.count.reduce(function(s, v){return s + v;}, 0);
+      if (totalCount > 0) {
+        seasonAvgs.push(totalPts / totalCount);
+      }
+    });
+    var seasonMinMax = null;
+    if (seasonAvgs.length > 0) {
+      var minVal = Math.min.apply(null, seasonAvgs);
+      var maxVal = Math.max.apply(null, seasonAvgs);
+      if (maxVal > minVal) {
+        seasonMinMax = { min: minVal, max: maxVal };
+      }
+    }
+
     // Update header sort indicators UI
-    ['name', 1, 2, 3, 4, 5, 6].forEach(function(col) {
+    ['name', 'season_avg', 1, 2, 3, 4, 5, 6].forEach(function(col) {
       var indicator = $id('ps-sort-' + col);
       if (indicator) {
         if (String(_psSort.col) === String(col)) {
@@ -730,12 +765,44 @@ async function loadPhaseSummary() {
           }
         }
 
-        cols += '<td style="' + cellStyle + '">' + avg + '</td>';
+        var trendHtml = '';
+        if (i >= 2 && avgNum !== null) {
+          var prevPts = stats.pts[i - 1];
+          var prevCount = stats.count[i - 1];
+          var prevAvgNum = prevCount > 0 ? (prevPts / prevCount) : null;
+          if (prevAvgNum !== null) {
+            var diff = avgNum - prevAvgNum;
+            if (diff > 0) {
+              trendHtml = '<span style="background:rgba(34,197,94,0.12);color:var(--green);padding:2px 4px;border-radius:4px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;vertical-align:middle;margin-left:4px;font-family:var(--f-ui);line-height:1;gap:1px;">▲' + diff.toFixed(1) + '</span>';
+            } else if (diff < 0) {
+              trendHtml = '<span style="background:rgba(239,68,68,0.12);color:var(--red);padding:2px 4px;border-radius:4px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;vertical-align:middle;margin-left:4px;font-family:var(--f-ui);line-height:1;gap:1px;">▼' + Math.abs(diff).toFixed(1) + '</span>';
+            } else {
+              trendHtml = '<span style="background:rgba(148,163,184,0.12);color:var(--text3);padding:2px 4px;border-radius:4px;font-size:11px;font-weight:700;display:inline-flex;align-items:center;vertical-align:middle;margin-left:4px;font-family:var(--f-ui);line-height:1;">—</span>';
+            }
+          }
+        }
+
+        cols += '<td style="' + cellStyle + '">' + avg + trendHtml + '</td>';
       }
+
+      var totalPts = stats.pts.reduce(function(s, v){return s + v;}, 0);
+      var totalCount = stats.count.reduce(function(s, v){return s + v;}, 0);
+      var sAvgNum = totalCount > 0 ? (totalPts / totalCount) : null;
+      var sAvg = sAvgNum !== null ? sAvgNum.toFixed(1) : '—';
+
+      var sCellStyle = 'text-align:center;font-family:var(--f-mono);font-weight:800;transition:all var(--t);background:rgba(255,255,255,0.015);border-right:1px solid var(--border);';
+      if (sAvgNum !== null && seasonMinMax) {
+        if (Math.abs(sAvgNum - seasonMinMax.max) < 0.001) {
+          sCellStyle += 'color:var(--green);background:rgba(34,197,94,0.07);';
+        } else if (Math.abs(sAvgNum - seasonMinMax.min) < 0.001) {
+          sCellStyle += 'color:var(--red);background:rgba(239,68,68,0.07);';
+        }
+      }
+      var seasonAvgCell = '<td style="' + sCellStyle + '">' + sAvg + '</td>';
 
       var logoUrl = UI.getTeamLogo(stats.name) || 'images/bfl/bfl-logo.png';
       var teamColor = tColor(stats.name);
-      var teamHtml = '<td style="font-weight:700;font-size:13px;padding:12px;">' +
+      var teamHtml = '<td style="font-weight:700;padding:12px;border-right:1px solid var(--border);">' +
         '<div style="display:flex;align-items:center;gap:10px;">' +
           '<div style="width:30px;height:30px;border-radius:50%;border:2px solid ' + teamColor + ';background:var(--bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,0.1);">' +
             '<img src="' + logoUrl + '" style="width:20px;height:20px;object-fit:contain;" onerror="this.src=\'images/bfl/bfl-logo.png\'">' +
@@ -746,16 +813,17 @@ async function loadPhaseSummary() {
 
       return '<tr style="background:var(--bg2);border-bottom:1px solid var(--border);">' +
         teamHtml +
+        seasonAvgCell +
         cols +
       '</tr>';
     }).join('');
 
-    if (!rowsHtml) rowsHtml = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px;">No data available</td></tr>';
+    if (!rowsHtml) rowsHtml = '<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:20px;">No data available</td></tr>';
     tbody.innerHTML = rowsHtml;
 
   } catch(e) {
     console.error(e);
-    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--red);text-align:center;padding:20px;">Failed to load data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="color:var(--red);text-align:center;padding:20px;">Failed to load data</td></tr>';
   }
 }
 

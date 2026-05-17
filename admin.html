@@ -1114,7 +1114,8 @@
         <table class="data-table" style="min-width:700px;">
           <thead>
             <tr>
-              <th style="cursor:pointer;user-select:none;" onclick="sortPhaseSummary('name')">Team <span id="ps-sort-name" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span></th>
+              <th style="cursor:pointer;user-select:none;border-right:1px solid var(--border);" onclick="sortPhaseSummary('name')">Team <span id="ps-sort-name" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span></th>
+              <th style="text-align:center;cursor:pointer;user-select:none;border-right:1px solid var(--border);color:var(--accent);" onclick="sortPhaseSummary('season_avg')">Season Avg <span id="ps-sort-season_avg" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span><br><span style="font-size:10px;color:var(--text3);font-weight:normal;">All Matches</span></th>
               <th style="text-align:center;cursor:pointer;user-select:none;" onclick="sortPhaseSummary(1)">Phase 1 <span id="ps-sort-1" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span><br><span style="font-size:10px;color:var(--text3);font-weight:normal;">M1-14</span></th>
               <th style="text-align:center;cursor:pointer;user-select:none;" onclick="sortPhaseSummary(2)">Phase 2 <span id="ps-sort-2" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span><br><span style="font-size:10px;color:var(--text3);font-weight:normal;">M15-28</span></th>
               <th style="text-align:center;cursor:pointer;user-select:none;" onclick="sortPhaseSummary(3)">Phase 3 <span id="ps-sort-3" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span><br><span style="font-size:10px;color:var(--text3);font-weight:normal;">M29-42</span></th>
@@ -1124,7 +1125,7 @@
             </tr>
           </thead>
           <tbody id="phase-summary-tbody">
-            <tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr>
+            <tr><td colspan="8"><div class="skel skel-row" style="margin:8px;"></div></td></tr>
           </tbody>
         </table>
       </div>
