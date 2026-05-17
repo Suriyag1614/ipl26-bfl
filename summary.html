@@ -444,6 +444,14 @@
         <div class="card-title">Actual Target Score Distribution</div>
         <div id="actual-target-dist"><div class="skel skel-row"></div></div>
       </div>
+      <div class="card">
+        <div class="card-title">Predicted Target Scores Frequency Distribution</div>
+        <div id="pred-target-freq-dist"><div class="skel skel-row"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Actual Target Scores Frequency Distribution</div>
+        <div id="actual-target-freq-dist"><div class="skel skel-row"></div></div>
+      </div>
     </div>
   </div>
 
@@ -859,11 +867,15 @@ async function init() {
 async function loadPredictionsSummary() {
   var teamWins = $id('pred-team-wins');
   var targetDist = $id('pred-target-dist');
+  var predFreqDist = $id('pred-target-freq-dist');
   var actualDist = $id('actual-target-dist');
+  var actualFreqDist = $id('actual-target-freq-dist');
   if (!teamWins || !targetDist) return;
   teamWins.innerHTML = '<div class="skel skel-row"></div>';
   targetDist.innerHTML = '<div class="skel skel-row"></div>';
+  if (predFreqDist) predFreqDist.innerHTML = '<div class="skel skel-row"></div>';
   if (actualDist) actualDist.innerHTML = '<div class="skel skel-row"></div>';
+  if (actualFreqDist) actualFreqDist.innerHTML = '<div class="skel skel-row"></div>';
 
   try {
     var preds = safeArr(await API.fetchAllPredictionsAllMatches());
@@ -934,6 +946,29 @@ async function loadPredictionsSummary() {
 
     renderDist(targetScores, targetDist, 'var(--cyan)', 'No target score predictions yet.');
     renderDist(actualScores, actualDist, 'var(--purple)', 'No actual target scores yet.');
+
+    var renderFreqDist = function(scores, container, emptyMsg) {
+      if (!container) return;
+      if (scores.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:20px;">' + emptyMsg + '</div>';
+        return;
+      }
+      var freq = {};
+      scores.forEach(function(s) { freq[s] = (freq[s] || 0) + 1; });
+      var sortedScores = Object.keys(freq).map(Number).sort(function(a,b){
+        if (freq[b] === freq[a]) return b - a; // Secondary sort by score (desc) if frequency tied
+        return freq[b] - freq[a]; // Primary sort by frequency (desc)
+      });
+      var html = '<div class="table-wrap table-scroller" style="max-height:360px;overflow-y:auto;position:relative;"><table class="data-table" style="width:100%;font-size:13px;">';
+      html += '<thead><tr><th style="position:sticky;top:0;background:var(--bg3);text-align:left;">Target Score</th><th style="position:sticky;top:0;background:var(--bg3);text-align:right;">Frequency</th></tr></thead><tbody>';
+      sortedScores.forEach(function(s) {
+        html += '<tr><td style="text-align:left;font-weight:bold;color:var(--text);">' + s + '</td><td style="text-align:right;color:var(--text2);">' + freq[s] + '</td></tr>';
+      });
+      html += '</tbody></table></div>';
+      container.innerHTML = html;
+    };
+    if (predFreqDist) renderFreqDist(targetScores, predFreqDist, 'No target score predictions yet.');
+    if (actualFreqDist) renderFreqDist(actualScores, actualFreqDist, 'No actual target scores yet.');
 
   } catch(e) { 
     console.warn('Predictions Summary Error:', e);
