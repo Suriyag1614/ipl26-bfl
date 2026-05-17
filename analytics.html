@@ -1260,9 +1260,13 @@ async function renderPhaseSummary() {
         return n >= ph.start && n <= ph.end; 
       });
       
-      // 2. Identify which of those are accounted for (completed, processed, or abandoned)
+      // 2. Matches fully accounted for (completed, processed, or abandoned)
       var accountedInPhase = matchesInPhase.filter(function(m){ 
         return m.status === 'processed' || m.status === 'completed' || m.status === 'abandoned'; 
+      });
+      // 2b. Matches actually played (exclude abandoned) — used for avg calculation
+      var playedInPhase = matchesInPhase.filter(function(m){ 
+        return m.status === 'processed' || m.status === 'completed'; 
       });
       
       // 3. Filter points_log (bd) for matches in this phase
@@ -1310,8 +1314,9 @@ async function renderPhaseSummary() {
         squad: squadPts,
         pred: predPts,
         bonus: bonusPts,
-        avg: accountedInPhase.length ? (totalPts / accountedInPhase.length).toFixed(1) : 0,
+        avg: playedInPhase.length ? (totalPts / playedInPhase.length).toFixed(1) : 0,
         count: accountedInPhase.length,
+        played: playedInPhase.length,
         totalInPhase: matchesInPhase.length,
         status: accountedInPhase.length === 0 ? 'locked' : (accountedInPhase.length < matchesInPhase.length ? 'active' : 'completed'),
         performers: topPerformers
@@ -1380,9 +1385,10 @@ async function renderPhaseSummary() {
     
     phaseData.forEach(function(p) {
       runningPts += Number(p.total);
-      runningMatches += Number(p.count);
+      runningMatches += Number(p.played); // exclude abandoned from avg
       var cumAvg = runningMatches > 0 ? (runningPts / runningMatches).toFixed(1) : 0;
       lineData.push({ label: 'P' + p.id, value: Number(cumAvg) });
+
       barData.push({ label: 'P' + p.id, value: p.total });
     });
     

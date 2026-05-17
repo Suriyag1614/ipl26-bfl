@@ -802,7 +802,7 @@ async function loadPhaseSummary() {
 
       var logoUrl = UI.getTeamLogo(stats.name) || 'images/bfl/bfl-logo.png';
       var teamColor = tColor(stats.name);
-      var teamHtml = '<td style="font-weight:700;padding:12px;border-right:1px solid var(--border);">' +
+      var teamHtml = '<td style="font-family:var(--f-ui);font-weight:700;padding:12px;border-right:1px solid var(--border);">' +
         '<div style="display:flex;align-items:center;gap:10px;">' +
           '<div style="width:30px;height:30px;border-radius:50%;border:2px solid ' + teamColor + ';background:var(--bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,0.1);">' +
             '<img src="' + logoUrl + '" style="width:20px;height:20px;object-fit:contain;" onerror="this.src=\'images/bfl/bfl-logo.png\'">' +
