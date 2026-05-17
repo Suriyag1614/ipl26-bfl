@@ -960,9 +960,9 @@ async function loadPredictionsSummary() {
         return freq[b] - freq[a]; // Primary sort by frequency (desc)
       });
       var html = '<div class="table-wrap table-scroller" style="max-height:360px;overflow-y:auto;position:relative;"><table class="data-table" style="width:100%;font-size:13px;">';
-      html += '<thead><tr><th style="position:sticky;top:0;background:var(--bg3);text-align:left;">Target Score</th><th style="position:sticky;top:0;background:var(--bg3);text-align:right;">Frequency</th></tr></thead><tbody>';
+      html += '<thead><tr><th style="position:sticky;top:0;background:var(--bg3);text-align:center;">Target Score</th><th style="position:sticky;top:0;background:var(--bg3);text-align:center;">Frequency</th></tr></thead><tbody>';
       sortedScores.forEach(function(s) {
-        html += '<tr><td style="text-align:left;font-weight:bold;color:var(--text);">' + s + '</td><td style="text-align:right;color:var(--text2);">' + freq[s] + '</td></tr>';
+        html += '<tr><td style="text-align:center;font-weight:bold;color:var(--text);">' + s + '</td><td style="text-align:center;color:var(--text2);">' + freq[s] + '</td></tr>';
       });
       html += '</tbody></table></div>';
       container.innerHTML = html;
