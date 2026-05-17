@@ -1442,6 +1442,7 @@ async function loadReportCard() {
     // Fetch data similar to renderTeamInsights
     var allLogs = safeArr(await API.fetchAllPointsLogAllTeams());
     var allTeams = safeArr(await API.fetchAllTeamPoints());
+    var lb = safeArr(await API.fetchLeaderboard());
     var matches = _matches.filter(function(m) { return m.status === 'completed' || m.status === 'processed'; });
 
     // Build team data
@@ -1617,7 +1618,11 @@ async function loadReportCard() {
     // Compute records
     var records = {
       batting: {
-        mostMatches: (() => { var maxTeam = Object.keys(teamData).reduce((maxId, id) => (teamData[id].logs.length > teamData[maxId].logs.length) ? id : maxId); return { team: teamData[maxTeam].team_short, val: teamData[maxTeam].logs.length }; })(),
+        mostMatches: (() => {
+          if (!lb.length) return { team: '', val: 0 };
+          var maxTeam = lb.reduce((max, t) => (t.matches_played > (max.matches_played || 0)) ? t : max, { matches_played: 0 });
+          return { team: UI.tShort(maxTeam.team?.team_name), val: maxTeam.matches_played || 0 };
+        })(),
         mostInnings: teamStatsList.reduce((max, t) => t.batting.innings > max.val ? { team: t.team_short, val: t.batting.innings } : max, { team: '', val: 0 }),
         mostRuns: teamStatsList.reduce((max, t) => t.batting.runs > max.val ? { team: t.team_short, val: t.batting.runs } : max, { team: '', val: 0 }),
         mostBallsFaced: teamStatsList.reduce((max, t) => t.batting.balls_faced > max.val ? { team: t.team_short, val: t.batting.balls_faced } : max, { team: '', val: 0 }),
