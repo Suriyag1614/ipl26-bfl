@@ -44,6 +44,7 @@ var _playerSquadMap = {}; // player_id → {team_id, team_name} (BFL team that p
 var _ctrlMatchId  = null;
 var _squadEdits   = {};   // teamId → {captainId,vcId,impactId}
 var _sidebarOpen  = true;
+var _psSort       = { col: 'name', asc: true };
 
 /* ══════════════════════════════════════════════════════════════
    HELPERS
@@ -160,6 +161,7 @@ function showPanel(id) {
     'fantasy-leaderboard': loadFantasyLeaderboard,
     'match-preds':  loadMatchPredictionsPanel,
     'team-activity': loadTeamActivityDashboard,
+    'phase-summary': loadPhaseSummary,
   };
   if (loaders[id]) loaders[id]();
 
@@ -590,6 +592,182 @@ async function loadTeamActivityDashboard() {
 }
 
 function loadTeamActivity() { loadTeamActivityDashboard(); }
+
+/* ══════════════════════════════════════════════════════════════
+   PHASE SUMMARY
+══════════════════════════════════════════════════════════════ */
+async function loadPhaseSummary() {
+  var tbody = $id('phase-summary-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr>';
+
+  try {
+    var logs = safeArr(await API.fetchAllPointsLogAllTeams());
+    var phases = [
+      { id: 1, start: 1, end: 14 },
+      { id: 2, start: 15, end: 28 },
+      { id: 3, start: 29, end: 42 },
+      { id: 4, start: 43, end: 56 },
+      { id: 5, start: 57, end: 70 },
+      { id: 6, start: 71, end: 74 }
+    ];
+
+    // Build map: match_id -> { match_no, status }
+    var matchesMap = {};
+    _matches.forEach(function(m) {
+      matchesMap[m.id] = m;
+    });
+
+    // Build teamPhaseStats template
+    var teamPhaseStats = {};
+    _teams.forEach(function(t) {
+      teamPhaseStats[t.fantasy_team_id] = { name: t.team ? t.team.team_name : 'Unknown', pts: [0,0,0,0,0,0,0], count: [0,0,0,0,0,0,0] };
+    });
+
+    // Populate data
+    logs.forEach(function(l) {
+      var m = matchesMap[l.match_id];
+      if (!m || !m.match_no) return;
+      
+      // We only count matches that are completed/processed towards the phase average
+      if (m.status !== 'completed' && m.status !== 'processed') return;
+      
+      var p = phases.find(function(ph) { return m.match_no >= ph.start && m.match_no <= ph.end; });
+      if (!p) return;
+      
+      var teamId = l.fantasy_team_id;
+      if (teamId && teamPhaseStats[teamId]) {
+        teamPhaseStats[teamId].pts[p.id] += (l.total_points || 0);
+        teamPhaseStats[teamId].count[p.id] += 1;
+      }
+    });
+
+    // Calculate min/max for each phase (highest/lowest average)
+    var phaseMinMax = {};
+    for (var i = 1; i <= 6; i++) {
+      var phaseAvgs = [];
+      Object.keys(teamPhaseStats).forEach(function(teamId) {
+        var stats = teamPhaseStats[teamId];
+        var count = stats.count[i];
+        if (count > 0) {
+          phaseAvgs.push(stats.pts[i] / count);
+        }
+      });
+      if (phaseAvgs.length > 0) {
+        var minVal = Math.min.apply(null, phaseAvgs);
+        var maxVal = Math.max.apply(null, phaseAvgs);
+        if (maxVal > minVal) {
+          phaseMinMax[i] = { min: minVal, max: maxVal };
+        }
+      }
+    }
+
+    // Convert to list for sorting
+    var teamList = Object.keys(teamPhaseStats).map(function(teamId) {
+      var stats = teamPhaseStats[teamId];
+      return {
+        teamId: teamId,
+        name: stats.name,
+        pts: stats.pts,
+        count: stats.count
+      };
+    });
+
+    // Sort the list
+    var sortCol = _psSort.col;
+    var sortAsc = _psSort.asc;
+    teamList.sort(function(a, b) {
+      if (sortCol === 'name') {
+        var nameA = (a.name || '').toLowerCase();
+        var nameB = (b.name || '').toLowerCase();
+        if (nameA === nameB) return 0;
+        return sortAsc ? (nameA > nameB ? 1 : -1) : (nameB > nameA ? 1 : -1);
+      } else {
+        var phaseIdx = Number(sortCol);
+        var avgA = a.count[phaseIdx] > 0 ? (a.pts[phaseIdx] / a.count[phaseIdx]) : null;
+        var avgB = b.count[phaseIdx] > 0 ? (b.pts[phaseIdx] / b.count[phaseIdx]) : null;
+
+        if (avgA === null && avgB === null) return (a.name || '').localeCompare(b.name || '');
+        if (avgA === null) return 1; // Put null values at the bottom
+        if (avgB === null) return -1; // Put null values at the bottom
+
+        if (Math.abs(avgA - avgB) < 0.001) {
+          return (a.name || '').localeCompare(b.name || '');
+        }
+        return sortAsc ? (avgA - avgB) : (avgB - avgA);
+      }
+    });
+
+    // Update header sort indicators UI
+    ['name', 1, 2, 3, 4, 5, 6].forEach(function(col) {
+      var indicator = $id('ps-sort-' + col);
+      if (indicator) {
+        if (String(_psSort.col) === String(col)) {
+          indicator.innerHTML = _psSort.asc ? '▲' : '▼';
+          indicator.style.color = 'var(--accent)';
+        } else {
+          indicator.innerHTML = '↕';
+          indicator.style.color = 'var(--text3)';
+        }
+      }
+    });
+
+    // Render rows
+    var rowsHtml = teamList.map(function(stats) {
+      var cols = '';
+      for (var i = 1; i <= 6; i++) {
+        var pts = stats.pts[i];
+        var count = stats.count[i];
+        var avgNum = count > 0 ? (pts / count) : null;
+        var avg = avgNum !== null ? avgNum.toFixed(1) : '—';
+        
+        var cellStyle = 'text-align:center;font-family:var(--f-mono);transition:all var(--t);';
+        if (avgNum !== null && phaseMinMax[i]) {
+          if (Math.abs(avgNum - phaseMinMax[i].max) < 0.001) {
+            cellStyle += 'color:var(--green);font-weight:800;background:rgba(34,197,94,0.07);';
+          } else if (Math.abs(avgNum - phaseMinMax[i].min) < 0.001) {
+            cellStyle += 'color:var(--red);font-weight:800;background:rgba(239,68,68,0.07);';
+          }
+        }
+
+        cols += '<td style="' + cellStyle + '">' + avg + '</td>';
+      }
+
+      var logoUrl = UI.getTeamLogo(stats.name) || 'images/bfl/bfl-logo.png';
+      var teamColor = tColor(stats.name);
+      var teamHtml = '<td style="font-weight:700;font-size:13px;padding:12px;">' +
+        '<div style="display:flex;align-items:center;gap:10px;">' +
+          '<div style="width:30px;height:30px;border-radius:50%;border:2px solid ' + teamColor + ';background:var(--bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,0.1);">' +
+            '<img src="' + logoUrl + '" style="width:20px;height:20px;object-fit:contain;" onerror="this.src=\'images/bfl/bfl-logo.png\'">' +
+          '</div>' +
+          '<span>' + UI.championName(stats.name) + '</span>' +
+        '</div>' +
+      '</td>';
+
+      return '<tr style="background:var(--bg2);border-bottom:1px solid var(--border);">' +
+        teamHtml +
+        cols +
+      '</tr>';
+    }).join('');
+
+    if (!rowsHtml) rowsHtml = '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px;">No data available</td></tr>';
+    tbody.innerHTML = rowsHtml;
+
+  } catch(e) {
+    console.error(e);
+    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--red);text-align:center;padding:20px;">Failed to load data</td></tr>';
+  }
+}
+
+function sortPhaseSummary(col) {
+  if (String(_psSort.col) === String(col)) {
+    _psSort.asc = !_psSort.asc;
+  } else {
+    _psSort.col = col;
+    _psSort.asc = (col === 'name'); // default asc for name, desc for averages
+  }
+  loadPhaseSummary();
+}
 
 function buildTeamOpts() {
   var opts = '<option value="">— Select team —</option>' +

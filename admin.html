@@ -453,9 +453,18 @@
 
     <span class="sb-section-label">Analytics</span>
 
+    <a href="leaderboard.html" class="sb-link" style="text-decoration:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+      Leaderboard
+    </a>
+
     <button class="sb-link" data-panel="match-preds" onclick="showPanel('match-preds')">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       Match Predictions
+    </button>
+    <button class="sb-link" data-panel="phase-summary" onclick="showPanel('phase-summary')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+      Phase Summary
     </button>
     <button class="sb-link" data-panel="fantasy-leaderboard" onclick="showPanel('fantasy-leaderboard')">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 15l-2 5-3-1-3 1-2-5"/><circle cx="12" cy="8" r="5"/></svg>
@@ -1093,6 +1102,34 @@
   </div>
 
 
+
+  <!-- ════ PHASE SUMMARY ════ -->
+  <div class="admin-panel" id="panel-phase-summary">
+    <div class="section-hdr">
+      <div><div class="section-title">Phase Summary</div><div class="section-sub">Average points of teams phase-wise</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="loadPhaseSummary()">↻ Refresh</button>
+    </div>
+    <div class="card" style="padding:0;overflow:auto;">
+      <div class="table-wrap table-scroller">
+        <table class="data-table" style="min-width:700px;">
+          <thead>
+            <tr>
+              <th style="cursor:pointer;user-select:none;" onclick="sortPhaseSummary('name')">Team <span id="ps-sort-name" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span></th>
+              <th style="text-align:center;cursor:pointer;user-select:none;" onclick="sortPhaseSummary(1)">Phase 1 <span id="ps-sort-1" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span><br><span style="font-size:10px;color:var(--text3);font-weight:normal;">M1-14</span></th>
+              <th style="text-align:center;cursor:pointer;user-select:none;" onclick="sortPhaseSummary(2)">Phase 2 <span id="ps-sort-2" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span><br><span style="font-size:10px;color:var(--text3);font-weight:normal;">M15-28</span></th>
+              <th style="text-align:center;cursor:pointer;user-select:none;" onclick="sortPhaseSummary(3)">Phase 3 <span id="ps-sort-3" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span><br><span style="font-size:10px;color:var(--text3);font-weight:normal;">M29-42</span></th>
+              <th style="text-align:center;cursor:pointer;user-select:none;" onclick="sortPhaseSummary(4)">Phase 4 <span id="ps-sort-4" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span><br><span style="font-size:10px;color:var(--text3);font-weight:normal;">M43-56</span></th>
+              <th style="text-align:center;cursor:pointer;user-select:none;" onclick="sortPhaseSummary(5)">Phase 5 <span id="ps-sort-5" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span><br><span style="font-size:10px;color:var(--text3);font-weight:normal;">M57-70</span></th>
+              <th style="text-align:center;cursor:pointer;user-select:none;" onclick="sortPhaseSummary(6)">Phase 6 <span id="ps-sort-6" style="font-size:10px;margin-left:4px;color:var(--text3);">↕</span><br><span style="font-size:10px;color:var(--text3);font-weight:normal;">M71-74</span></th>
+            </tr>
+          </thead>
+          <tbody id="phase-summary-tbody">
+            <tr><td colspan="7"><div class="skel skel-row" style="margin:8px;"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
 </div><!-- /admin-body -->
 

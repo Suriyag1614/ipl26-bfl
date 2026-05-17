@@ -159,10 +159,14 @@ var _myTeamId=null, _lb=[], _breakdownLoaded=false, _tournament_matches_played=0
 
 async function init() {
   var sess=await Auth.requireAuth(); if(!sess) return;
-  if(Auth.isAdmin(sess.user)){window.location.href='admin.html';return;}
+  var isAdmin = Auth.isAdmin(sess.user);
   await initNavbar('leaderboard');
-  var team=await Auth.fetchTeam(sess.user.id); if(!team) return;
-  _myTeamId=team.id;
+  if (!isAdmin) {
+    var team=await Auth.fetchTeam(sess.user.id); if(!team) return;
+    _myTeamId=team.id;
+  } else {
+    document.querySelectorAll('.tab-btn').forEach(function(b){ if(b.textContent==='My History') b.style.display='none'; });
+  }
   await populateMatchSel();
   await loadLeaderboard();
 }
@@ -248,13 +252,22 @@ function renderSeasonTable() {
       leadStr = '<div style="font-size:10px;color:transparent;margin-top:2px;">-</div>';
     }
 
+    var teamName = r.team ? r.team.team_name : '—';
+    var logoUrl = UI.getTeamLogo(teamName) || 'images/bfl/bfl-logo.png';
+    var teamColor = UI.getTeamColor(teamName);
+
     return '<div class="lb-row'+(isMe?' me':'')+'">'+
       '<div style="display:flex;justify-content:center;align-items:center;flex-direction:column;gap:2px;">'+
         '<span class="rank-badge '+rCls+'">'+(medals[r.rank]||r.rank)+'</span>'+
         UI.rankBadge(r.rank, r.prev_rank)+
       '</div>'+
-      '<div><div class="lb-team">'+UI.championName(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
-        '<div class="lb-sub">'+r.matches_played+' matches · avg '+avg+'</div></div>'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+
+        '<div style="width:30px;height:30px;border-radius:50%;border:2px solid ' + teamColor + ';background:var(--bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,0.1);">'+
+          '<img src="' + logoUrl + '" style="width:20px;height:20px;object-fit:contain;" onerror="this.src=\'images/bfl/bfl-logo.png\'">'+
+        '</div>'+
+        '<div><div class="lb-team">'+UI.championName(teamName)+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
+          '<div class="lb-sub">'+r.matches_played+' matches · avg '+avg+'</div></div>'+
+      '</div>'+
       '<div style="text-align:right;"><div class="lb-pts">'+UI.fmtPts(r.total_points)+'</div><div class="lb-pts-label">pts</div>'+leadStr+'</div>'+
     '</div>';
   }).join('');
@@ -309,12 +322,21 @@ function renderProjectedTable() {
       leadStr = '<div style="font-size:10px;color:transparent;margin-top:2px;">-</div>';
     }
 
+    var teamName = r.team ? r.team.team_name : '—';
+    var logoUrl = UI.getTeamLogo(teamName) || 'images/bfl/bfl-logo.png';
+    var teamColor = UI.getTeamColor(teamName);
+
     return '<div class="lb-row'+(isMe?' me':'')+'">'+
       '<div style="display:flex;justify-content:center;align-items:center;flex-direction:column;gap:2px;">'+
         '<span class="rank-badge '+rCls+'">'+(medals[r.proj_rank]||r.proj_rank)+'</span>'+
       '</div>'+
-      '<div><div class="lb-team">'+UI.championName(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
-        '<div class="lb-sub">Projecting '+M_rem_tourn+' matches @ '+avgStr+' avg</div></div>'+
+      '<div style="display:flex;align-items:center;gap:10px;">'+
+        '<div style="width:30px;height:30px;border-radius:50%;border:2px solid ' + teamColor + ';background:var(--bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,0.1);">'+
+          '<img src="' + logoUrl + '" style="width:20px;height:20px;object-fit:contain;" onerror="this.src=\'images/bfl/bfl-logo.png\'">'+
+        '</div>'+
+        '<div><div class="lb-team">'+UI.championName(teamName)+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
+          '<div class="lb-sub">Projecting '+M_rem_tourn+' matches @ '+avgStr+' avg</div></div>'+
+      '</div>'+
       '<div style="text-align:right;"><div class="lb-pts">'+Math.round(r.projected_pts)+'</div><div class="lb-pts-label">proj. pts</div>'+leadStr+'</div>'+
     '</div>';
   }).join('');
@@ -353,10 +375,19 @@ async function loadMatchLB(matchId) {
         leadStr = '<div style="font-size:10px;color:transparent;margin-top:2px;">-</div>';
       }
 
+      var teamName = r.team ? r.team.team_name : '—';
+      var logoUrl = UI.getTeamLogo(teamName) || 'images/bfl/bfl-logo.png';
+      var teamColor = UI.getTeamColor(teamName);
+
       return '<div class="lb-row'+(isMe?' me':'')+'">'+
         '<div style="display:flex;justify-content:center;"><span class="rank-badge '+rCls+'">'+(medals[r.match_rank]||r.match_rank)+'</span></div>'+
-        '<div><div class="lb-team">'+UI.championName(r.team?r.team.team_name:'—')+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
-          '<div class="lb-sub">Squad: '+r.squad_points+' · Pred: '+r.prediction_points+'</div></div>'+
+        '<div style="display:flex;align-items:center;gap:10px;">'+
+          '<div style="width:30px;height:30px;border-radius:50%;border:2px solid ' + teamColor + ';background:var(--bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,0.1);">'+
+            '<img src="' + logoUrl + '" style="width:20px;height:20px;object-fit:contain;" onerror="this.src=\'images/bfl/bfl-logo.png\'">'+
+          '</div>'+
+          '<div><div class="lb-team">'+UI.championName(teamName)+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
+            '<div class="lb-sub">Squad: '+r.squad_points+' · Pred: '+r.prediction_points+'</div></div>'+
+        '</div>'+
         '<div style="text-align:right;"><div class="lb-pts">'+r.total_points+'</div><div class="lb-pts-label">pts</div>'+leadStr+'</div>'+
       '</div>';
     }).join('');
