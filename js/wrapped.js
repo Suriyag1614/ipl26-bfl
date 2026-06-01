@@ -471,12 +471,12 @@ function computePredictionStory(data) {
 function computeTeamReportCard(data, squadDNA, predStory) {
   const myTeamId = data.leaderboard.fantasy_team_id;
 
-  // Aggregate league points by category
-  const categorySums = {}; // team_id -> { total, bat, bowl, fld, pred }
+  // Aggregate league points by category: Squad points should exclude predictions and bonus; batting/bowling/fielding are squad subcomponents.
+  const categorySums = {}; // team_id -> { squad, batting, bowling, fielding, prediction }
   data.allPointsLogs.forEach(l => {
     const tid = l.fantasy_team_id;
-    if (!categorySums[tid]) categorySums[tid] = { total: 0, batting: 0, bowling: 0, fielding: 0, prediction: 0 };
-    categorySums[tid].total += Number(l.total_points || 0);
+    if (!categorySums[tid]) categorySums[tid] = { squad: 0, batting: 0, bowling: 0, fielding: 0, prediction: 0 };
+    categorySums[tid].squad += Number(l.squad_points || 0);
     categorySums[tid].batting += Number(l.batting_pts || 0);
     categorySums[tid].bowling += Number(l.bowling_pts || 0);
     categorySums[tid].fielding += Number(l.fielding_pts || 0);
@@ -512,11 +512,11 @@ function computeTeamReportCard(data, squadDNA, predStory) {
   };
 
   const reportCards = [
-    { name: 'Squad Points', ...getRankAndGrade('total') },
+    { name: 'Overall Squad Performance', ...getRankAndGrade('squad') },
     { name: 'Batting Performance', ...getRankAndGrade('batting') },
     { name: 'Bowling Performance', ...getRankAndGrade('bowling') },
     { name: 'Fielding Performance', ...getRankAndGrade('fielding') },
-    { name: 'Predictions Accuracy', ...getRankAndGrade('prediction') }
+    { name: 'Predictions Performance', ...getRankAndGrade('prediction') }
   ];
 
   // Add narratives to each report card based on rank
