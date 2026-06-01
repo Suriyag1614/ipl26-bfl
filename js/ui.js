@@ -547,13 +547,27 @@ const UI = {
   },
 
   roleBadge(role) {
+    const normalized = String(role || '').trim().toLowerCase();
+    const canonical = {
+      'batter': 'Batter',
+      'batsman': 'Batter',
+      'bat': 'Batter',
+      'bowler': 'Bowler',
+      'all-rounder': 'All-Rounder',
+      'all rounder': 'All-Rounder',
+      'allrounder': 'All-Rounder',
+      'wicket-keeper': 'Wicket-Keeper',
+      'wicket keeper': 'Wicket-Keeper',
+      'wk': 'Wicket-Keeper',
+      'keeper': 'Wicket-Keeper'
+    }[normalized] || (role || '—');
     const map = {
       'Batter':        {cls:'rt-bat',  s:'BAT',  icon:'images/ipl/teams-batter-icon.svg'},
       'Bowler':        {cls:'rt-bowl', s:'BOWL', icon:'images/ipl/teams-bowler-icon.svg'},
       'All-Rounder':   {cls:'rt-ar',   s:'AR',   icon:'images/ipl/teams-all-rounder-icon.svg'},
       'Wicket-Keeper': {cls:'rt-wk',   s:'WK',   icon:'images/ipl/teams-wicket-keeper-icon.svg'},
     };
-    const r = map[role] || {cls:'', s:(role||'—').substring(0,4), icon:null};
+    const r = map[canonical] || {cls:'', s:(String(role||'—').substring(0,4)), icon:null};
     const iconHtml = r.icon ? `<img src="${r.icon}" alt="${r.s}">` : '';
     return `<span class="role-tag ${r.cls}">${iconHtml}${r.s}</span>`;
   },

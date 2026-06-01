@@ -30,7 +30,7 @@
     { "source": "/leaderboard",  "destination": "/leaderboard.html" },
     { "source": "/analytics",    "destination": "/analytics.html" },
     { "source": "/blogs",        "destination": "/blogs.html" },
-    { "source": "/match-center", "destination": "/match-center.html" },
-    { "source": "/admin",        "destination": "/admin.html" }
+    { "source": "/admin",        "destination": "/admin.html" },
+    { "source": "/wrapped",      "destination": "/wrapped.html" }
   ]
 }

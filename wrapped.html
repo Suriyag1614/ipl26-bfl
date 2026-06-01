@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="images/bfl/bfl-logo.png">
+  <meta name="theme-color" content="#f0b429">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IPL 2026 — Season Highlights</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Work+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/wrapped.css">
+</head>
+<body class="wrapped-body">
+  <!-- Top bar controls -->
+  <div class="wrapped-header">
+    <div class="wrapped-header-top">
+      <button class="btn-wrapped-back" onclick="window.location.href='dashboard.html'" title="Back to Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <div class="wrapped-action-group">
+        <button id="wrapped-pause-btn" class="btn-wrapped-toggle" type="button" title="Pause or resume the highlights autoplay">
+          <span>Pause</span>
+        </button>
+      </div>
+    </div>
+    <div class="wrapped-progress-container" id="wrapped-progress">
+      <!-- Generated via JS -->
+    </div>
+    <div class="wrapped-control-note" id="wrapped-control-note">Tap left/right to navigate, space to pause, or use the button above.</div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="wrapped-loader" id="wrapped-loader">
+    <div class="spinner"></div>
+    <div class="loader-text">Assembling your season highlights...</div>
+  </div>
+
+  <!-- Error State -->
+  <div class="wrapped-error" id="wrapped-error" style="display:none;">
+    <div class="error-icon">⚠️</div>
+    <div class="error-title">Failed to load Highlights</div>
+    <div class="error-msg" id="wrapped-error-msg">Something went wrong.</div>
+    <button class="btn btn-accent" onclick="window.location.reload()">Try Again</button>
+  </div>
+
+  <!-- Fullscreen Slide Container -->
+  <div class="wrapped-story-wrap" id="story-wrap" style="display:none;">
+    <!-- Tap triggers for navigation -->
+    <div class="tap-target tap-left" onclick="prevSlide()" aria-label="Previous Slide"></div>
+    <div class="tap-target tap-right" onclick="nextSlide()" aria-label="Next Slide"></div>
+
+    <!-- Slide 0: Team Story (The Journey) -->
+    <section class="slide active" id="slide-0">
+      <div class="slide-bg-orb" style="background:radial-gradient(circle, rgba(96,165,250,0.15) 0%, transparent 70%);"></div>
+      <div class="slide-content">
+        <span class="slide-kicker">TEAM STORY</span>
+        <h2 class="slide-title">The Campaign</h2>
+        <div class="journey-chart-container">
+          <canvas id="chart-journey-line"></canvas>
+        </div>
+        <div class="journey-grid">
+          <div class="meta-card">
+            <span class="meta-lbl">Best Match</span>
+            <span class="meta-val text-green" id="journey-best-match">--</span>
+          </div>
+          <div class="meta-card">
+            <span class="meta-lbl">Worst Match</span>
+            <span class="meta-val text-red" id="journey-worst-match">--</span>
+          </div>
+          <div class="meta-card">
+            <span class="meta-lbl">Rank Range</span>
+            <span class="meta-val text-cyan" id="journey-rank-range">--</span>
+          </div>
+          <div class="meta-card">
+            <span class="meta-lbl">Climb / Fall</span>
+            <span class="meta-val text-accent" id="journey-climb-fall">--</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 1: Squad Story -->
+    <section class="slide" id="slide-1">
+      <div class="slide-bg-orb" style="background:radial-gradient(circle, rgba(52,211,153,0.15) 0%, transparent 70%);"></div>
+      <div class="slide-content">
+        <span class="slide-kicker">SQUAD DNA</span>
+        <h2 class="slide-title">Squad Performance</h2>
+        <div class="squad-dna-donut-wrap">
+          <canvas id="chart-squad-dna-donut"></canvas>
+        </div>
+        <div class="dna-legend" id="dna-legend-container">
+          <!-- Filled via JS -->
+        </div>
+        <div class="squad-records-box">
+          <div class="squad-record-item">
+            <span class="lbl">Runs Leader</span>
+            <span class="val text-gold" id="squad-runs-leader">--</span>
+          </div>
+          <div class="squad-record-item">
+            <span class="lbl">Wickets Leader</span>
+            <span class="val text-cyan" id="squad-wickets-leader">--</span>
+          </div>
+          <div class="squad-record-item">
+            <span class="lbl">Catches Leader</span>
+            <span class="val text-green" id="squad-catches-leader">--</span>
+          </div>
+          <div class="squad-record-item squad-coverage-item">
+            <span class="lbl">System Coverage</span>
+            <span class="val text-accent" id="squad-coverage-score">--</span>
+          </div>
+        </div>
+        <div class="squad-coverage-note" id="squad-coverage-status">Balanced squad coverage across batting, bowling and fielding.</div>
+      </div>
+    </section>
+
+    <!-- Slide 2: Captain Story -->
+    <section class="slide" id="slide-2">
+      <div class="slide-bg-orb" style="background:radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%);"></div>
+      <div class="slide-content">
+        <span class="slide-kicker">THE LEADER</span>
+        <h2 class="slide-title">Captain's Legacy</h2>
+        
+        <div class="captain-card">
+          <div class="captain-header-row">
+            <div class="captain-avatar-wrap">
+              <span class="captain-avatar-icon">👑</span>
+            </div>
+            <div class="captain-meta">
+              <div class="captain-name" id="captain-name">--</div>
+              <div class="captain-title-label">SQUAD CAPTAIN</div>
+            </div>
+          </div>
+          <div class="captain-stats-grid">
+            <div class="cap-stat-item">
+              <span class="lbl">Points Contribution</span>
+              <span class="val text-gold" id="captain-points">--</span>
+            </div>
+            <div class="cap-stat-item">
+              <span class="lbl">Contribution %</span>
+              <span class="val text-accent" id="captain-contrib-pct">--</span>
+            </div>
+            <div class="cap-stat-item card-full-stat">
+              <span class="lbl">Rank Among Captains</span>
+              <span class="val text-cyan" id="captain-league-rank">--</span>
+            </div>
+          </div>
+        </div>
+        <p class="slide-narrative" id="captain-narrative">Analyzing leadership impact...</p>
+      </div>
+    </section>
+
+    <!-- Slide 3: MVP Story -->
+    <section class="slide" id="slide-3">
+      <div class="slide-bg-orb" style="background:radial-gradient(circle, rgba(248,113,113,0.15) 0%, transparent 70%);"></div>
+      <div class="slide-content">
+        <span class="slide-kicker">THE FRANCHISE</span>
+        <h2 class="slide-title">Face of the Franchise</h2>
+        
+        <div class="mvp-player-card">
+          <div class="mvp-card-shiny"></div>
+          <div class="mvp-photo-frame">
+            <img id="mvp-player-img" alt="MVP Player" onerror="this.src='images/bfl/bfl-logo.png'">
+            <div class="mvp-player-role" id="mvp-player-role">ALL-ROUNDER</div>
+          </div>
+          <div class="mvp-details">
+            <div class="mvp-name" id="mvp-player-name">--</div>
+            <div class="mvp-team" id="mvp-player-team">--</div>
+            <div class="mvp-stats-grid">
+              <div class="mvp-stat-item">
+                <span class="lbl">Season Points</span>
+                <span class="val text-gold" id="mvp-total-pts">--</span>
+              </div>
+              <div class="mvp-stat-item">
+                <span class="lbl">Share of Total</span>
+                <span class="val text-accent" id="mvp-contribution-pct">--</span>
+              </div>
+              <div class="mvp-stat-item card-full-stat">
+                <span class="lbl">Peak Match Score</span>
+                <span class="val text-cyan" id="mvp-best-match">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="slide-narrative" id="mvp-narrative">Analyzing player score share...</p>
+      </div>
+    </section>
+
+    <!-- Slide 4: Prediction Story -->
+    <section class="slide" id="slide-4">
+      <div class="slide-bg-orb" style="background:radial-gradient(circle, rgba(167,139,250,0.15) 0%, transparent 70%);"></div>
+      <div class="slide-content">
+        <span class="slide-kicker">THE PREDICTOR</span>
+        <h2 class="slide-title">Prediction Highlights</h2>
+        
+        <div class="predictions-summary-card">
+          <div class="pred-identity-banner" id="pred-identity">THE RISK TAKER</div>
+          <div class="pred-stats-list">
+            <div class="pred-stat-row">
+              <span>Winner Accuracy</span>
+              <strong class="text-green" id="pred-accuracy">--</strong>
+            </div>
+            <div class="pred-stat-row">
+              <span>Longest Correct Streak</span>
+              <strong class="text-gold" id="pred-streak">--</strong>
+            </div>
+            <div class="pred-stat-row">
+              <span>Most Backed Franchise</span>
+              <strong class="text-cyan" id="pred-backed-team">--</strong>
+            </div>
+            <div class="pred-stat-row">
+              <span>Biggest Upset Called</span>
+              <strong class="text-purple" id="pred-upset-called">--</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 5: Team Report Card -->
+    <section class="slide" id="slide-5">
+      <div class="slide-bg-orb" style="background:radial-gradient(circle, rgba(34,211,238,0.15) 0%, transparent 70%);"></div>
+      <div class="slide-content">
+        <span class="slide-kicker">THE RANKINGS</span>
+        <h2 class="slide-title">Team Report Card</h2>
+        <div class="report-card-list" id="report-card-container">
+          <!-- Filled dynamically via JS -->
+        </div>
+        <div style="font-size:11px;color:var(--w-text-muted);margin-top:12px;text-align:center;font-style:italic;">
+          Note: Rankings are only displayed for league-wide Top 3 and Bottom 3 performances.
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 6: Records & Achievements -->
+    <section class="slide" id="slide-6">
+      <div class="slide-bg-orb" style="background:radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 70%);"></div>
+      <div class="slide-content">
+        <span class="slide-kicker">HONOR ROLL</span>
+        <h2 class="slide-title">Season Milestones</h2>
+        <div class="records-grid-container" id="records-grid">
+          <!-- Filled dynamically with badges/achievements via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 7: Hidden Truths -->
+    <section class="slide" id="slide-7">
+      <div class="slide-bg-orb" style="background:radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%);"></div>
+      <div class="slide-content">
+        <span class="slide-kicker">THE INSIGHTS</span>
+        <h2 class="slide-title">Hidden Truths</h2>
+        
+        <div class="truth-card-wrap">
+          <div class="truth-card-inner">
+            <div class="truth-card-glass"></div>
+            <div class="truth-icon">🕵️‍♂️</div>
+            <div class="truth-header">Did You Know?</div>
+            <p class="truth-statement" id="truth-statement-text">Searching for anomalous metrics...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 8: The Verdict -->
+    <section class="slide" id="slide-8">
+      <div class="slide-bg-orb" style="background:radial-gradient(circle, rgba(34,211,238,0.15) 0%, transparent 70%);"></div>
+      <div class="slide-content">
+        <span class="slide-kicker">THE STANDINGS</span>
+        <h2 class="slide-title">The Verdict</h2>
+        
+        <div class="verdict-display-wrap">
+          <div class="verdict-points" id="verdict-points-count">0</div>
+          <div class="verdict-points-lbl">Season Points</div>
+          
+          <div class="verdict-divider"></div>
+          
+          <div class="verdict-rank-badge">
+            <span class="rank-hash">#</span><span class="rank-num" id="verdict-rank-num">--</span>
+          </div>
+          <div class="verdict-rank-lbl">League Rank</div>
+          <div class="verdict-percentile" id="verdict-percentile-label">--</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Slide 9: The Final Frame -->
+    <section class="slide" id="slide-9">
+      <div class="slide-bg-orb" style="background:radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 70%);"></div>
+      <div class="slide-content">
+        <span class="slide-kicker">SQUAD LEGACY</span>
+        <h2 class="slide-title" id="final-team-name">Your Squad</h2>
+        
+        <div class="legacy-card">
+          <div class="legacy-badge-icon" id="legacy-archetype-icon">🛡️</div>
+          <div class="legacy-archetype-title" id="legacy-archetype-title">THE TACTICIAN</div>
+          <p class="legacy-statement-text" id="legacy-statement-text">Description</p>
+        </div>
+
+      </div>
+    </section>
+  </div>
+
+  <!-- Supabase & BFL Core Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/wrapped.js"></script>
+</body>
+</html>

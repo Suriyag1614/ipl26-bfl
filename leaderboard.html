@@ -236,6 +236,16 @@ function renderProjectedPodium(projectedLb) {
   '</div>';
 }
 
+function teamAvatarHtml(teamName, teamColor) {
+  var logoUrl = UI.getTeamLogo(teamName);
+  if (logoUrl) {
+    return '<img src="' + logoUrl + '" class="team-logo team-logo-sm" alt="' + UI.esc(teamName) + ' logo" onerror="this.src=\'images/bfl/bfl-logo.png\'">';
+  }
+  var initials = (teamName || '').split(/\s+/).filter(Boolean).map(function(w){return w[0];}).join('').substring(0,3).toUpperCase() || 'BFL';
+  var bg = teamColor || 'rgba(148,163,184,0.65)';
+  return '<div class="team-avatar team-avatar-sm" style="background:'+bg+';color:#fff;display:inline-flex;align-items:center;justify-content:center;width:100%;height:100%;font-weight:700;letter-spacing:0.04em;">'+UI.esc(initials)+'</div>';
+}
+
 function renderSeasonTable() {
   var medals={1:'🥇',2:'🥈',3:'🥉'};
   if(!_lb.length){document.getElementById('season-lb').innerHTML='<div class="empty-state" style="padding:24px;"><div class="empty-state-text">No results yet</div></div>';return;}
@@ -253,7 +263,6 @@ function renderSeasonTable() {
     }
 
     var teamName = r.team ? r.team.team_name : '—';
-    var logoUrl = UI.getTeamLogo(teamName) || 'images/bfl/bfl-logo.png';
     var teamColor = UI.getTeamColor(teamName);
 
     return '<div class="lb-row'+(isMe?' me':'')+'">'+
@@ -263,8 +272,8 @@ function renderSeasonTable() {
       '</div>'+
       '<div style="display:flex;align-items:center;gap:10px;">'+
         '<div style="width:30px;height:30px;border-radius:50%;border:2px solid ' + teamColor + ';background:var(--bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,0.1);">'+
-          '<img src="' + logoUrl + '" style="width:20px;height:20px;object-fit:contain;" onerror="this.src=\'images/bfl/bfl-logo.png\'">'+
-        '</div>'+
+          teamAvatarHtml(teamName, teamColor)+
+        </div>'+
         '<div><div class="lb-team">'+UI.championName(teamName)+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
           '<div class="lb-sub">'+r.matches_played+' matches · avg '+avg+'</div></div>'+
       '</div>'+
@@ -323,7 +332,6 @@ function renderProjectedTable() {
     }
 
     var teamName = r.team ? r.team.team_name : '—';
-    var logoUrl = UI.getTeamLogo(teamName) || 'images/bfl/bfl-logo.png';
     var teamColor = UI.getTeamColor(teamName);
 
     return '<div class="lb-row'+(isMe?' me':'')+'">'+
@@ -332,7 +340,7 @@ function renderProjectedTable() {
       '</div>'+
       '<div style="display:flex;align-items:center;gap:10px;">'+
         '<div style="width:30px;height:30px;border-radius:50%;border:2px solid ' + teamColor + ';background:var(--bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,0.1);">'+
-          '<img src="' + logoUrl + '" style="width:20px;height:20px;object-fit:contain;" onerror="this.src=\'images/bfl/bfl-logo.png\'">'+
+        teamAvatarHtml(teamName, teamColor)+
         '</div>'+
         '<div><div class="lb-team">'+UI.championName(teamName)+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
           '<div class="lb-sub">Projecting '+M_rem_tourn+' matches @ '+avgStr+' avg</div></div>'+
@@ -376,14 +384,13 @@ async function loadMatchLB(matchId) {
       }
 
       var teamName = r.team ? r.team.team_name : '—';
-      var logoUrl = UI.getTeamLogo(teamName) || 'images/bfl/bfl-logo.png';
       var teamColor = UI.getTeamColor(teamName);
 
       return '<div class="lb-row'+(isMe?' me':'')+'">'+
-        '<div style="display:flex;justify-content:center;"><span class="rank-badge '+rCls+'">'+(medals[r.match_rank]||r.match_rank)+'</span></div>'+
+        '<div style="display:flex;justify-content:center;"><span class="rank-badge '+rCls+'">'+(medals[r.match_rank]||r.match_rank)+'</span></div>'+ 
         '<div style="display:flex;align-items:center;gap:10px;">'+
           '<div style="width:30px;height:30px;border-radius:50%;border:2px solid ' + teamColor + ';background:var(--bg3);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;box-shadow:0 2px 4px rgba(0,0,0,0.1);">'+
-            '<img src="' + logoUrl + '" style="width:20px;height:20px;object-fit:contain;" onerror="this.src=\'images/bfl/bfl-logo.png\'">'+
+            teamAvatarHtml(teamName, teamColor)+
           '</div>'+
           '<div><div class="lb-team">'+UI.championName(teamName)+(isMe?' <span class="badge badge-accent" style="font-size:9px;">You</span>':'')+'</div>'+
             '<div class="lb-sub">Squad: '+r.squad_points+' · Pred: '+r.prediction_points+'</div></div>'+

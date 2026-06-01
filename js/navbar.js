@@ -18,6 +18,8 @@ var NAV_LINKS = [
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' },
   { href:'summary.html', label:'Season Analytics', page:'summary',     bnav:false,
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9H4a2 2 0 00-2 2v2c0 2.21 1.79 4 4 4h4"/><path d="M18 9h2a2 2 0 012 2v2c0 2.21-1.79 4-4 4h-4"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 1012 0V2z"/></svg>' },
+  { href:'wrapped.html', label:'IPL26 Wrapped', page:'wrapped', bnav:false,
+    icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' },
 
   { href:'instructions.html', label:'Guide',         page:'instructions',   bnav:false,
     icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="12" x2="12.01" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' },
@@ -89,7 +91,7 @@ function buildNavbar(activePage, isAdmin) {
         '<span class="sb-section-lbl">Rankings</span>' +
         buildSbLinks(['leaderboard'], links, activePage) +
         '<span class="sb-section-lbl">Insights</span>' +
-        buildSbLinks(['analytics','summary'], links, activePage) +
+        buildSbLinks(['analytics','summary','wrapped'], links, activePage) +
         '<span class="sb-section-lbl">Resources</span>' +
         buildSbLinks(['instructions'], links, activePage) +
       '</nav>' +

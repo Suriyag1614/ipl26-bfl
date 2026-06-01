@@ -2210,6 +2210,58 @@ async fetchTeams() {
     // Simple linear scale: 0 range = 100, 1000 range = 0
     const score = Math.max(0, Math.min(100, 100 - Math.round(range / 10)));
     return score;
+  },
+
+  // ══════════════════════════════════════════════════════════════════
+  //  WRAPPED DATA AGGREGATION
+  // ══════════════════════════════════════════════════════════════════
+  async fetchSeasonWrappedData(teamId) {
+    const [
+      leaderboardRes,
+      totalTeamsRes,
+      pointsLogRes,
+      predictionsRes,
+      badgesRes,
+      squadRes,
+      allPointsLogsRes,
+      allPlayerStatsRes,
+      allPlayersRes,
+      allMatchesRes,
+      allCaptainsRes
+    ] = await Promise.all([
+      sb.from('leaderboard').select('*,team:fantasy_teams(*)').eq('fantasy_team_id', teamId).maybeSingle(),
+      sb.from('leaderboard').select('id', { count: 'exact', head: true }),
+      sb.from('points_log').select('*,match:matches(*)').eq('fantasy_team_id', teamId),
+      sb.from('predictions').select('*,match:matches(*)').eq('fantasy_team_id', teamId),
+      sb.from('user_badges').select('*,badge:badge_definitions(*),match:matches(*)').eq('fantasy_team_id', teamId),
+      sb.from('squad_players').select('*,player:players(*)').eq('fantasy_team_id', teamId).eq('is_released', false),
+      sb.from('points_log').select('match_id,fantasy_team_id,total_points,batting_pts,bowling_pts,fielding_pts,prediction_points'),
+      this.fetchAllPlayerStats(),
+      this.fetchAllPlayers(),
+      this.fetchMatches(),
+      sb.from('squad_players').select('fantasy_team_id,player_id,player:players(name)').eq('is_captain', true).eq('is_released', false)
+    ]);
+
+    if (leaderboardRes.error) throw leaderboardRes.error;
+    if (pointsLogRes.error) throw pointsLogRes.error;
+    if (predictionsRes.error) throw predictionsRes.error;
+    if (badgesRes.error) throw badgesRes.error;
+    if (squadRes.error) throw squadRes.error;
+    if (allPointsLogsRes.error) throw allPointsLogsRes.error;
+
+    return {
+      leaderboard: leaderboardRes.data || null,
+      totalTeams: totalTeamsRes.count || 0,
+      pointsLog: pointsLogRes.data || [],
+      predictions: predictionsRes.data || [],
+      badges: badgesRes.data || [],
+      squad: squadRes.data || [],
+      allPointsLogs: allPointsLogsRes.data || [],
+      allPlayerStats: allPlayerStatsRes || [],
+      allPlayers: allPlayersRes || [],
+      allMatches: allMatchesRes || [],
+      allCaptains: allCaptainsRes.data || []
+    };
   }
 };
 

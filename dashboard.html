@@ -257,7 +257,7 @@ async function loadStats() {
 
     // Badges
     var badges = '';
-    if(rank===1) badges+='<span class="badge badge-gold">🥇 Leader</span> ';
+    if(rank===1) badges+='<span class="badge badge-gold">🥇 Winner</span> ';
     if(played>0) badges+='<span class="badge badge-accent">'+played+' matches</span> ';
     $('#hero-badges').innerHTML = badges || '<span style="font-size:12px;color:var(--text3);">Season just started!</span>';
 
@@ -304,7 +304,7 @@ async function loadNextMatch() {
   try {
     var matches = await API.fetchMatches({upcoming:true, limit:1});
     var m = matches[0];
-    if(!m) { card.innerHTML='<div class="card-title">Next Match</div><div class="empty-state" style="padding:20px;"><div class="empty-state-text">No upcoming matches</div></div>'; return; }
+    if(!m) { card.innerHTML='<div class="card-title">Next Match</div><div class="empty-state" style="padding:20px;"><div class="empty-state-text" style="font-size:20px;">Season is Ended! Take a Peek at the your <button class="btn btn-accent btn-sm" onclick="window.location.href=\'wrapped.html\'">Season Highlights</button></div></div>'; return; }
     var pred = await API.fetchPrediction(m.id, _myTeamId);
     var isOpen = API.isMatchOpen(m);
     var cdId = 'next-cd';
