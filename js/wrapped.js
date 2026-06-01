@@ -632,73 +632,80 @@ function computeRecordsAchievements(data, journey, squadDNA, predStory) {
 
 function computeUnexpectedTruth(data, squadDNA, mvp, captain) {
   const logs = data.pointsLog || [];
-  let totBat = 0, totBowl = 0;
+  let totBat = 0, totBowl = 0, totFld = 0;
   logs.forEach(l => {
     totBat += Number(l.batting_pts || 0);
     totBowl += Number(l.bowling_pts || 0);
+    totFld += Number(l.fielding_pts || 0);
   });
+
+  const totSquad = Math.max(1, totBat + totBowl + totFld);
+  const batShare = Math.round((totBat / totSquad) * 100);
+  const bowlShare = Math.round((totBowl / totSquad) * 100);
+  const fldShare = Math.round((totFld / totSquad) * 100);
 
   const candidates = [];
 
-  // Candidate 1: Bowlers outscoring batters
+  // Candidate 1: Bowling-led squad
   if (totBowl > totBat * 1.1) {
     candidates.push({
       icon: '🛡️',
-      statement: `Bowlers Rule. Your bowling attack generated ${Math.round(totBowl - totBat)} more points than your batting lineup. Stifling the opposition saved your season.`
+      statement: `Bowling first. Your squad leaned on wickets and pressure, with bowlers outscoring batters by ${Math.round(totBowl - totBat)} points. Defense was the engine of your campaign.`
     });
   }
 
-  // Candidate 2: Captain outperforming MVP expectation (Captain was better choice)
-  if (captain.points > mvp.points) {
+  // Candidate 2: Fielding edge
+  if (totFld > totBat * 0.5) {
     candidates.push({
-      icon: '👑',
-      statement: `Masterful Leadership. Your Captain, ${captain.name}, outscored your MVP, ${mvp.name}, delivering ${captain.points} total captaincy points. The smart choice rewarded.`
+      icon: '🧤',
+      statement: `Fielding Factor. Your fielders were more than support—they were a real scoring source. That extra work in the field shifted tight matches in your favor.`
     });
   }
 
-  // Candidate 3: High MVP points share (over-reliance on single player)
-  if (mvp.pct >= 24) {
+  // Candidate 3: One-dimensional squad focus
+  if (batShare >= 52) {
     candidates.push({
-      icon: '🏋️‍♂️',
-      statement: `The Carrier. A single player, ${mvp.name}, carried ${mvp.pct}% of your squad's season points. One man show—sometimes genius, sometimes risky.`
+      icon: '💥',
+      statement: `Batting Bias. ${batShare}% of your squad score came from batting, which made your team explosive but also vulnerable when the batters misfired.`
     });
-  } else if (mvp.pct >= 15) {
+  } else if (bowlShare >= 52) {
     candidates.push({
-      icon: '⭐',
-      statement: `Star Power. ${mvp.name} was your leading light, delivering ${mvp.pct}% of total squad output—a significant but sustainable contribution.`
+      icon: '🏰',
+      statement: `Bowling Bias. ${bowlShare}% of squad points were earned through bowling, creating a strong defensive spine but exposing weakness when wickets were hard to take.`
+    });
+  } else if (fldShare >= 45) {
+    candidates.push({
+      icon: '🧤',
+      statement: `Fielding Identity. ${fldShare}% of your squad points came from fielding, making your side unusually reliant on catches, run outs, and saving runs.`
     });
   }
 
-  // Candidate 4: Team representation concentration
+  // Candidate 4: Team concentration risk
   const squadTeams = {};
   data.squad.forEach(sp => {
     if (sp.player?.ipl_team) squadTeams[sp.player.ipl_team] = (squadTeams[sp.player.ipl_team] || 0) + 1;
   });
-  const topSquadTeamEntry = Object.entries(squadTeams).sort((a,b) => b[1] - a[1])[0];
+  const topSquadTeamEntry = Object.entries(squadTeams).sort((a, b) => b[1] - a[1])[0];
   if (topSquadTeamEntry && topSquadTeamEntry[1] >= 4) {
     const pct = Math.round((topSquadTeamEntry[1] / data.squad.length) * 100);
     candidates.push({
       icon: '🚩',
-      statement: `Franchise Bias. Players from ${UI.tShort(topSquadTeamEntry[0])} occupied ${pct}% of your squad roster slots. Loyalty runs deep—sometimes dangerously so.`
+      statement: `Franchise Bias. ${pct}% of your roster came from one IPL team, which can help cohesion but also makes your squad vulnerable to that team's form swings.`
     });
   }
 
-  // Candidate 5: Fielding dominance (if available)
-  let totFld = 0;
-  logs.forEach(l => {
-    totFld += Number(l.fielding_pts || 0);
-  });
-  if (totFld > totBat * 0.5) {
+  // Candidate 5: Balanced squad strength
+  if (batShare >= 30 && bowlShare >= 30 && fldShare >= 20) {
     candidates.push({
-      icon: '🧤',
-      statement: `Fielding Factor. Your fielders contributed significantly to the match total, proving that catches and ground fielding weren't overlooked in your strategy.`
+      icon: '⚖️',
+      statement: `Balanced Build. Your squad spread points across batting, bowling, and fielding, making the team hard to predict and giving you steady all-round value.`
     });
   }
 
-  // Pick the first insight from candidates, fallback to prediction accuracy
+  // Fallback insight
   return candidates.length ? candidates[0] : {
     icon: '🔮',
-    statement: `Predictions Anchor. In a season of squad fluctuations, your balanced approach and prediction decisions kept your leaderboard rank stable and competitive.`
+    statement: `Predictions Anchor. When squad output was mixed, your prediction decisions helped stabilize your campaign and keep you competitive.`
   };
 }
 
@@ -713,7 +720,7 @@ function computeLegacy(data, journey, captain, mvp) {
   if (rank <= 3) {
     archetype = 'The Champion Legend';
     icon = '👑';
-    legacyText = `Elite tier reached. Your championship-caliber campaign—powered by ${mvp.name}'s ${mvp.points} points and ${captain.name}'s captaincy—culminated in a podium finish at Rank #${rank}. History made.`;
+    legacyText = `Elite tier reached. Your championship-caliber campaign was built on squad depth and clutch decision-making, culminating in a podium finish at Rank #${rank}. History made.`;
   } else if (rank <= 5) {
     archetype = 'The Ascendant Master';
     icon = '📈';
@@ -737,7 +744,7 @@ function computeLegacy(data, journey, captain, mvp) {
   } else if (rank >= totalTeams * 0.75) {
     archetype = 'The Struggling Manager';
     icon = '📉';
-    legacyText = `A difficult season. Rank #${rank} with only ${totalPoints} points indicates fundamental issues—poor squad selections, weak captain choice (${captain.name} underperformed), and inconsistent predictions. Next season demands a fresh approach.`;
+    legacyText = `A difficult season. Rank #${rank} with only ${totalPoints} points indicates fundamental squad issues and inconsistent decision-making. Next season demands a fresh approach.`;
   } else if (rank >= totalTeams * 0.5) {
     archetype = 'The Learning Experience';
     icon = '🎓';
