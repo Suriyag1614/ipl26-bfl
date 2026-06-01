@@ -855,7 +855,7 @@ function renderReportCardSlide(reportCard) {
         <div class="report-top-row">
           <span class="report-label">${rc.name}</span>
           <div class="report-value-wrap">
-            <span class="report-rank-text" style="color: ${rc.isHighlight ? '#34d399' : rc.highlight ? '#f87171' : '#9ca3af'};">${dispVal}</span>
+            <span class="report-rank-text" style="color: ${tierClass === 'top-tier' ? '#34d399' : tierClass === 'bottom-tier' ? '#f87171' : '#9ca3af'};">${dispVal}</span>
             <span class="report-grade ${tierClass}">${rc.grade}</span>
           </div>
         </div>
